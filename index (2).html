@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIELD SPECIMEN LOG — Anomalous Husbandry Division</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+:root{
+  --parchment: #e6dab8;
+  --parchment-dark: #d7c69a;
+  --panel: #f1e7c9;
+  --panel-shadow: #b9a06a;
+  --ink: #2a2015;
+  --ink-soft: #4d3f2a;
+  --rule: #a9925f;
+  --stamp-red: #7a2020;
+  --stamp-olive: #4f5b34;
+  --danger: #7a2020;
+  --warn: #8a5a12;
+  --good: #3f5c2e;
+  --paper-hole: #00000022;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse at top left, rgba(0,0,0,0.06), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(0,0,0,0.08), transparent 60%),
+    var(--parchment);
+  color:var(--ink);
+  font-family:'Courier Prime', monospace;
+  min-height:100vh;
+  padding:18px;
+  line-height:1.45;
+}
+.wrap{max-width:920px;margin:0 auto;}
+
+/* ===== Header ===== */
+.masthead{
+  border:3px double var(--ink);
+  background:var(--panel);
+  padding:14px 18px;
+  position:relative;
+  box-shadow:0 3px 0 var(--panel-shadow), 0 4px 10px rgba(0,0,0,0.25);
+}
+.masthead-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;}
+.masthead h1{
+  font-family:'IM Fell English SC','Special Elite',serif;
+  font-size:1.5rem;
+  letter-spacing:2px;
+  margin:0 0 2px 0;
+  text-transform:uppercase;
+}
+.masthead .sub{font-size:0.72rem;letter-spacing:1px;color:var(--ink-soft);text-transform:uppercase;}
+.credits-box{
+  font-family:'Special Elite',monospace;
+  border:2px solid var(--ink);
+  padding:6px 12px;
+  background:var(--parchment-dark);
+  text-align:right;
+  min-width:150px;
+}
+.credits-box .amt{font-size:1.3rem;font-weight:bold;}
+.credits-box .lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--ink-soft);}
+
+/* ===== Tabs ===== */
+.tabbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:2px;
+  margin-top:10px;
+}
+.tabbtn{
+  font-family:'Special Elite',monospace;
+  background:var(--parchment-dark);
+  border:2px solid var(--ink);
+  border-bottom:none;
+  padding:8px 14px 7px 14px;
+  cursor:pointer;
+  font-size:0.78rem;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  border-radius:6px 6px 0 0;
+  position:relative;
+  top:2px;
+}
+.tabbtn.active{
+  background:var(--panel);
+  color:var(--ink);
+  font-weight:bold;
+  top:0;
+  border-bottom:2px solid var(--panel);
+  z-index:2;
+}
+.tabbtn:hover{color:var(--ink);}
+
+/* ===== Panel / Page ===== */
+.page{
+  border:3px double var(--ink);
+  border-top:2px solid var(--ink);
+  background:var(--panel);
+  padding:20px;
+  min-height:420px;
+  box-shadow:0 3px 0 var(--panel-shadow), 0 5px 14px rgba(0,0,0,0.25);
+  position:relative;
+}
+.page::before{
+  content:"";
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+  opacity:0.5;
+}
+h2.section-title{
+  font-family:'IM Fell English SC','Special Elite',serif;
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+  border-bottom:2px solid var(--rule);
+  padding-bottom:6px;
+  margin-top:0;
+  font-size:1.15rem;
+}
+h3.sub-title{
+  font-family:'Special Elite',monospace;
+  font-size:0.9rem;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:var(--ink-soft);
+  border-bottom:1px dashed var(--rule);
+  padding-bottom:4px;
+  margin:18px 0 8px 0;
+}
+.hr{border:none;border-top:1px dashed var(--rule);margin:14px 0;}
+
+/* ===== Common bits ===== */
+.stamp{
+  display:inline-block;
+  font-family:'Special Elite',monospace;
+  border:3px solid var(--stamp-red);
+  color:var(--stamp-red);
+  padding:3px 10px;
+  transform:rotate(-4deg);
+  text-transform:uppercase;
+  letter-spacing:2px;
+  font-weight:bold;
+  font-size:0.75rem;
+  border-radius:4px;
+  opacity:0.88;
+}
+.stamp.olive{border-color:var(--stamp-olive);color:var(--stamp-olive);}
+.badge{
+  display:inline-block;
+  border:1px solid var(--ink);
+  padding:2px 8px;
+  font-size:0.68rem;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  background:var(--parchment-dark);
+}
+.badge.frozen{background:#cfe0e8;border-color:#2c4a5a;color:#2c4a5a;}
+.badge.danger{background:#ecd2d2;border-color:var(--danger);color:var(--danger);}
+
+.meter{
+  width:100%;
+  height:16px;
+  border:1px solid var(--ink);
+  background:repeating-linear-gradient(45deg, #d8cba3, #d8cba3 4px, #cabb8c 4px, #cabb8c 8px);
+  position:relative;
+  margin:4px 0;
+}
+.meter-fill{height:100%;background:var(--good);transition:width 0.4s ease;}
+.meter-fill.warn{background:var(--warn);}
+.meter-fill.danger{background:var(--danger);}
+.meter-label{font-size:0.72rem;color:var(--ink-soft);display:flex;justify-content:space-between;}
+
+button, .btnlike{
+  font-family:'Special Elite',monospace;
+  background:var(--parchment-dark);
+  border:1.5px solid var(--ink);
+  padding:7px 12px;
+  cursor:pointer;
+  font-size:0.76rem;
+  letter-spacing:0.5px;
+  text-transform:uppercase;
+  color:var(--ink);
+  border-radius:3px;
+}
+button:hover:not(:disabled){background:#c9b57f;}
+button:disabled{opacity:0.42;cursor:not-allowed;}
+button.primary{background:var(--stamp-olive);color:#f1e7c9;border-color:var(--stamp-olive);}
+button.primary:hover:not(:disabled){background:#3f4a29;}
+button.danger-btn{background:var(--danger);color:#f1e7c9;border-color:var(--danger);}
+button.danger-btn:hover:not(:disabled){background:#5c1717;}
+input[type=number], input[type=text], textarea{
+  font-family:'Courier Prime',monospace;
+  border:1.5px solid var(--ink);
+  background:#fbf5e2;
+  padding:7px 9px;
+  font-size:0.85rem;
+  color:var(--ink);
+  border-radius:2px;
+}
+textarea{width:100%;resize:vertical;}
+label{font-size:0.78rem;color:var(--ink-soft);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+
+.card{
+  border:1.5px solid var(--ink);
+  background:var(--parchment);
+  padding:12px 14px;
+  margin-bottom:10px;
+}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:640px){.grid{grid-template-columns:1fr;}}
+
+.taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.tag{
+  font-size:0.7rem;
+  border:1px solid var(--rule);
+  padding:2px 7px;
+  background:#efe3c0;
+  color:var(--ink-soft);
+}
+.tag.new{border-color:var(--stamp-red);color:var(--stamp-red);font-weight:bold;}
+
+.logline{
+  font-size:0.78rem;
+  border-bottom:1px dotted var(--rule);
+  padding:5px 0;
+}
+.logline .ts{color:var(--ink-soft);font-size:0.68rem;display:block;}
+
+.empty-state{
+  border:2px dashed var(--rule);
+  padding:22px;
+  text-align:center;
+  color:var(--ink-soft);
+  font-style:italic;
+}
+
+.foodrow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border:1px solid var(--ink);
+  background:var(--parchment);
+  padding:9px 12px;
+  margin-bottom:8px;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.foodrow .fname{font-weight:bold;}
+.foodrow .fmeta{font-size:0.7rem;color:var(--ink-soft);}
+.foodrow.soldout{opacity:0.5;}
+
+.footerbar{
+  margin-top:10px;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:6px;
+  font-size:0.68rem;
+  color:var(--ink-soft);
+  padding:0 4px;
+}
+
+/* stamp pop animation */
+#stampLayer{position:fixed;top:0;left:0;right:0;pointer-events:none;display:flex;justify-content:center;z-index:999;}
+.stamp-pop{
+  margin-top:40px;
+  font-family:'Special Elite',monospace;
+  background:rgba(241,231,201,0.97);
+  border:4px solid var(--stamp-red);
+  color:var(--stamp-red);
+  padding:14px 26px;
+  font-size:1.1rem;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  font-weight:bold;
+  border-radius:6px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.35);
+  animation:stampAnim 2.6s ease forwards;
+}
+@keyframes stampAnim{
+  0%{transform:scale(2.2) rotate(-8deg);opacity:0;}
+  12%{transform:scale(1) rotate(-4deg);opacity:1;}
+  80%{transform:scale(1) rotate(-4deg);opacity:1;}
+  100%{transform:scale(1) rotate(-4deg);opacity:0;}
+}
+
+.warn-text{color:var(--warn);font-weight:bold;}
+.danger-text{color:var(--danger);font-weight:bold;}
+.good-text{color:var(--good);font-weight:bold;}
+
+table.simple{width:100%;border-collapse:collapse;font-size:0.78rem;}
+table.simple th, table.simple td{border:1px solid var(--rule);padding:6px 8px;text-align:left;}
+table.simple th{background:var(--parchment-dark);text-transform:uppercase;font-size:0.68rem;letter-spacing:0.5px;}
+
+.archive-item{border:1.5px solid var(--ink);background:var(--parchment);padding:10px 14px;margin-bottom:10px;cursor:pointer;}
+.archive-item summary{cursor:pointer;font-weight:bold;}
+.archive-item[open]{background:var(--panel);}
+
+.inline-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+.small-note{font-size:0.7rem;color:var(--ink-soft);margin-top:4px;}
+</style>
+</head>
+<body>
+<div id="stampLayer"></div>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-top">
+      <div>
+        <h1>Field Specimen Log</h1>
+        <div class="sub">Division of Anomalous Husbandry &amp; Reading-Linked Provisioning</div>
+      </div>
+      <div class="credits-box">
+        <div class="amt" id="hdrCredits">0 RC</div>
+        <div class="lbl">Ration Credits</div>
+      </div>
+    </div>
+    <div class="tabbar" id="tabbar"></div>
+  </div>
+
+  <div class="page" id="page"></div>
+
+  <div class="footerbar">
+    <span id="footStatus">—</span>
+    <span id="footClock">—</span>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+/* =========================================================================
+   CONSTANTS
+   ========================================================================= */
+var SAVE_KEY = 'abomination_husbandry_save_v1';
+var HOUR = 3600000, DAY = 86400000;
+var STAGE_NAMES = ['', 'Larval Anomaly', 'Juvenile Specimen', 'Subadult Specimen', 'Mature Specimen', 'Fully Matured Specimen'];
+var STAGE_THRESH_H = [0, 24, 60, 108, 168]; // hours of ACTIVE age at which stage (index+1) begins
+var STAGE_THRESH_MS = STAGE_THRESH_H.map(function(h){ return h*HOUR; });
+var HUNGER_DECAY_PER_MS = 100 / (24*HOUR); // full->empty in 24 active hours
+var STARVE_GRACE_MS = 8*HOUR; // time at 0 hunger before death
+var AMBIENT_CHECK_MS = HOUR;
+var AMBIENT_CHANCE = 0.15;
+var CURRENCY_K = 9;
+var REROLL_BASE = 8, REROLL_STEP = 6;
+var GREEK = ['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa','Lambda','Mu','Nu','Xi','Omicron','Sigma','Tau','Omega'];
+var CATS = ['meat','flora','mineral','liquid','anomalous'];
+var CAT_LABEL = {meat:'Carnivorous', flora:'Floral/Fungal', mineral:'Mineral', liquid:'Liquid/Chemical', anomalous:'Anomalous', neutral:'Baseline'};
+
+var BODY_PARTS = {
+  'Head': [
+    {id:'h_neu', name:'Featureless Smooth Head', category:'neutral'},
+    {id:'h_ano', name:'Fused Twin Skull', category:'anomalous'},
+    {id:'h_mea', name:'Elongated Canine Snout', category:'meat'},
+    {id:'h_flo', name:'Bulbous Fungal Cap', category:'flora'},
+    {id:'h_min', name:'Crystalline Cranial Ridge', category:'mineral'},
+    {id:'h_liq', name:'Skinless Weeping Head', category:'liquid'}
+  ],
+  'Eyes': [
+    {id:'e_neu', name:'Ordinary Dull Eyes', category:'neutral'},
+    {id:'e_ano', name:'Cluster of Seven Eyes', category:'anomalous'},
+    {id:'e_mea', name:'Predatory Slit Pupils', category:'meat'},
+    {id:'e_flo', name:'Photosynthetic Eye-Spots', category:'flora'},
+    {id:'e_min', name:'Faceted Gem-Like Eyes', category:'mineral'},
+    {id:'e_liq', name:'Eyes That Weep Dark Fluid', category:'liquid'}
+  ],
+  'Limbs': [
+    {id:'l_neu', name:'Standard Four Limbs', category:'neutral'},
+    {id:'l_ano', name:'Extra Pair of Jointed Legs', category:'anomalous'},
+    {id:'l_mea', name:'Muscular Clawed Forelimbs', category:'meat'},
+    {id:'l_flo', name:'Vine-Like Prehensile Limbs', category:'flora'},
+    {id:'l_min', name:'Stone-Plated Stumps', category:'mineral'},
+    {id:'l_liq', name:'Boneless Tentacular Limbs', category:'liquid'}
+  ],
+  'Tail': [
+    {id:'t_neu', name:'Short Stub Tail', category:'neutral'},
+    {id:'t_ano', name:'Second, Vestigial Tail', category:'anomalous'},
+    {id:'t_mea', name:'Barbed Whip-Tail', category:'meat'},
+    {id:'t_flo', name:'Thorned Vine Tail', category:'flora'},
+    {id:'t_min', name:'Segmented Armored Tail', category:'mineral'},
+    {id:'t_liq', name:'Constantly Dripping Tail', category:'liquid'}
+  ],
+  'Skin/Hide': [
+    {id:'s_neu', name:'Smooth Grey Skin', category:'neutral'},
+    {id:'s_ano', name:'Skin That Phases Translucent', category:'anomalous'},
+    {id:'s_mea', name:'Thick, Scarred Hide', category:'meat'},
+    {id:'s_flo', name:'Moss-Covered Bark-Like Skin', category:'flora'},
+    {id:'s_min', name:'Rock-Plated Carapace', category:'mineral'},
+    {id:'s_liq', name:'Perpetually Slick, Wet Skin', category:'liquid'}
+  ],
+  'Mouth': [
+    {id:'m_neu', name:'Small Simple Mouth', category:'neutral'},
+    {id:'m_ano', name:'Mouth Lined with Concentric Teeth Rings', category:'anomalous'},
+    {id:'m_mea', name:'Wide, Fanged Maw', category:'meat'},
+    {id:'m_flo', name:'Toothless Filtering Maw', category:'flora'},
+    {id:'m_min', name:'Grinding Stone Jaw', category:'mineral'},
+    {id:'m_liq', name:'Mouth That Drools Corrosive Fluid', category:'liquid'}
+  ],
+  'Appendage': [
+    {id:'a_neu', name:'Small Fleshy Nub', category:'neutral'},
+    {id:'a_ano', name:'Pair of Reality-Flickering Wings', category:'anomalous'},
+    {id:'a_mea', name:'Curved Ivory Horns', category:'meat'},
+    {id:'a_flo', name:'Blooming Flower Cluster', category:'flora'},
+    {id:'a_min', name:'Protruding Quartz Spikes', category:'mineral'},
+    {id:'a_liq', name:'Pulsating Bio-Sac', category:'liquid'}
+  ],
+  'Internal Organ': [
+    {id:'o_neu', name:'Unremarkable Organ Cluster', category:'neutral'},
+    {id:'o_ano', name:'A Second, Silent Heart', category:'anomalous'},
+    {id:'o_mea', name:'Overdeveloped Digestive Tract', category:'meat'},
+    {id:'o_flo', name:'Chlorophyll-Rich Bloodstream', category:'flora'},
+    {id:'o_min', name:'Mineral-Dense Bone Marrow', category:'mineral'},
+    {id:'o_liq', name:'Internal Bioluminescent Bladder', category:'liquid'}
+  ]
+};
+
+var TRAITS = [
+  {id:'tr_carn', name:'Carnivorous Instinct', category:'meat'},
+  {id:'tr_terr', name:'Territorial Aggression', category:'meat'},
+  {id:'tr_pack', name:'Pack-Hunting Urge', category:'meat'},
+  {id:'tr_stalk', name:'Predatory Stalking Gait', category:'meat'},
+  {id:'tr_blood', name:'Heightened Blood-Scent Sensitivity', category:'meat'},
+  {id:'tr_photo', name:'Photosynthetic Dependency', category:'flora'},
+  {id:'tr_docile', name:'Unusually Docile Temperament', category:'flora'},
+  {id:'tr_root', name:'Root-Bound Stillness', category:'flora'},
+  {id:'tr_pollen', name:'Pollen-Release Reflex', category:'flora'},
+  {id:'tr_dorm', name:'Seasonal Dormancy Urge', category:'flora'},
+  {id:'tr_calc', name:'Calcified Reflexes', category:'mineral'},
+  {id:'tr_mag', name:'Magnetic Field Sensitivity', category:'mineral'},
+  {id:'tr_slow', name:'Abnormally Slow Metabolic Rate', category:'mineral'},
+  {id:'tr_weight', name:'Weight Far Exceeding Appearance', category:'mineral'},
+  {id:'tr_static', name:'Static Charge Buildup', category:'mineral'},
+  {id:'tr_corr', name:'Corrosive Secretion', category:'liquid'},
+  {id:'tr_biolum', name:'Bioluminescent Pulse', category:'liquid'},
+  {id:'tr_leak', name:'Constant Low-Level Leaking', category:'liquid'},
+  {id:'tr_mood', name:'Chemical Mood Signaling', category:'liquid'},
+  {id:'tr_osmo', name:'Osmotic Skin Absorption', category:'liquid'},
+  {id:'tr_flick', name:'Intermittent Reality Flicker', category:'anomalous'},
+  {id:'tr_euclid', name:'Non-Euclidean Geometry', category:'anomalous'},
+  {id:'tr_echo', name:'Temporal Echo (Lags Behind Itself)', category:'anomalous'},
+  {id:'tr_perm', name:'Object Permanence Failure', category:'anomalous'},
+  {id:'tr_cog', name:'Mild Cognitohazardous Presence', category:'anomalous'},
+  {id:'tr_tele', name:'Spontaneous Minor Teleportation', category:'anomalous'},
+  {id:'tr_noct', name:'Nocturnal Restlessness', category:'neutral'},
+  {id:'tr_voc', name:'Unusual Vocalization Pattern', category:'neutral'},
+  {id:'tr_hum', name:'Persistent Faint Humming', category:'neutral'},
+  {id:'tr_circ', name:'Habitual Circling Behavior', category:'neutral'}
+];
+
+var FOOD_ITEMS = [
+  {id:'fd_ration', name:'Stale Ration Bar', category:'neutral', price:12, restore:30, mut:0.02},
+  {id:'fd_paste', name:'Lab-Grade Nutrient Paste', category:'neutral', price:18, restore:40, mut:0.03},
+  {id:'fd_fruit', name:'Bruised Mixed Fruit', category:'neutral', price:10, restore:25, mut:0.02},
+  {id:'fd_grain', name:'Dried Grain Mash', category:'neutral', price:14, restore:32, mut:0.02},
+  {id:'fd_meat1', name:'Unidentified Raw Meat', category:'meat', price:28, restore:28, mut:0.10},
+  {id:'fd_meat2', name:'Cultured Muscle Tissue', category:'meat', price:34, restore:24, mut:0.12},
+  {id:'fd_meat3', name:'Frozen Game Offcuts', category:'meat', price:22, restore:26, mut:0.08},
+  {id:'fd_flo1', name:'Luminous Moss Clump', category:'flora', price:24, restore:24, mut:0.10},
+  {id:'fd_flo2', name:'Root Vegetable Bundle', category:'flora', price:20, restore:26, mut:0.08},
+  {id:'fd_flo3', name:'Spore-Laden Bark', category:'flora', price:30, restore:22, mut:0.12},
+  {id:'fd_min1', name:'Iron Filings', category:'mineral', price:26, restore:20, mut:0.10},
+  {id:'fd_min2', name:'Quartz Shard Cluster', category:'mineral', price:32, restore:20, mut:0.12},
+  {id:'fd_min3', name:'Powdered Limestone', category:'mineral', price:20, restore:22, mut:0.08},
+  {id:'fd_liq1', name:'Vial of Unknown Solvent', category:'liquid', price:30, restore:22, mut:0.11},
+  {id:'fd_liq2', name:'Bioluminescent Sludge', category:'liquid', price:36, restore:20, mut:0.13},
+  {id:'fd_liq3', name:'Condensed Mucus Sample', category:'liquid', price:24, restore:24, mut:0.09},
+  {id:'fd_ano1', name:'Reality-Adjacent Residue', category:'anomalous', price:85, restore:16, mut:0.28},
+  {id:'fd_ano2', name:'Temporally Confused Egg', category:'anomalous', price:95, restore:14, mut:0.30},
+  {id:'fd_ano3', name:'Unstable Anomalous Compound', category:'anomalous', price:110, restore:12, mut:0.32}
+];
+var FOOD_BY_ID = {};
+FOOD_ITEMS.forEach(function(f){ FOOD_BY_ID[f.id]=f; });
+
+var AMBIENT_LOGS = [
+  'Specimen remained motionless for an extended period.',
+  'A faint, unidentifiable sound was recorded near the enclosure.',
+  'Specimen appears to be observing its surroundings with unusual intensity.',
+  'Routine check: no anomalous activity to report.',
+  'Specimen exhibited a brief, untraceable shudder.',
+  'Enclosure temperature fluctuated by less than one degree; noted for the record.',
+  'Specimen pressed itself against the enclosure wall for several minutes.',
+  'A researcher noted the specimen "seemed to be waiting for something."',
+  'Specimen behavior during this period was, notably, entirely unremarkable.',
+  'Faint bioluminescent flickering observed near the specimen; cause unknown.'
+];
+
+var BIO_INTROS = [
+  'Field notes on {des}, presently classified {stage}:',
+  'Observation summary for specimen {des} ({stage}):',
+  'Case file excerpt — {des}, currently designated {stage}:',
+  'Handler log, {des}: subject remains under {stage} classification.'
+];
+var BIO_CLOSINGS_ALIVE = [
+  'Containment remains nominal. Further observation recommended.',
+  'No breach attempts recorded. Feeding schedule to be maintained.',
+  'Subject continues to defy easy taxonomic classification.',
+  'Handlers are advised to document any further deviation immediately.'
+];
+var BIO_CLOSINGS_DEAD = [
+  'Subject is no longer viable. File closed pending review.',
+  'Cause of termination has been logged. Case archived.',
+  'Specimen expired under handler supervision. Post-mortem notes filed.',
+  'End of active observation. Remains catalogued for the record.'
+];
+
+/* =========================================================================
+   UTILITIES
+   ========================================================================= */
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function rand(){ return Math.random(); }
+function choice(arr){ return arr[Math.floor(rand()*arr.length)]; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function todayStr(d){
+  d = d || new Date();
+  var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
+function addDaysStr(dateStr, n){
+  var parts = dateStr.split('-').map(Number);
+  var d = new Date(parts[0], parts[1]-1, parts[2]);
+  d.setDate(d.getDate()+n);
+  return todayStr(d);
+}
+function fmtDur(ms){
+  if(ms<=0) return '0s';
+  var s = Math.floor(ms/1000);
+  var d = Math.floor(s/86400); s-=d*86400;
+  var h = Math.floor(s/3600); s-=h*3600;
+  var m = Math.floor(s/60); s-=m*60;
+  var out=[];
+  if(d>0) out.push(d+'d');
+  if(h>0 || d>0) out.push(h+'h');
+  if(m>0 || h>0 || d>0) out.push(m+'m');
+  out.push(s+'s');
+  return out.join(' ');
+}
+function fmtTime(ts){
+  var d = new Date(ts);
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+function weightedPickIndex(weights){
+  var total = weights.reduce(function(a,b){return a+b;},0);
+  var r = rand()*total;
+  for(var i=0;i<weights.length;i++){
+    if(r<weights[i]) return i;
+    r-=weights[i];
+  }
+  return weights.length-1;
+}
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+var state = null;
+var activeTab = 'report';
+var confirmResetArmed = false;
+
+function defaultState(){
+  var s = {
+    version: 1,
+    currency: 40,
+    lastLoggedDate: null,
+    readingLog: [],
+    creature: null,
+    inventory: {},
+    shop: { dateGenerated: null, items: [], rerollsUsed: 0 },
+    fieldLog: [],
+    archive: [],
+    settings: { autosaveMinutes: 5 },
+    lastSaveTime: 0
+  };
+  s.creature = generateCreature();
+  addLogTo(s, 'A new specimen has entered containment. Designation: ' + s.creature.designation + '.');
+  return s;
+}
+
+function generateDesignation(){
+  var n = 100 + Math.floor(rand()*900);
+  return 'SCP-'+n+'-'+choice(GREEK);
+}
+
+function generateCreature(){
+  var c = {
+    id: uid(),
+    designation: generateDesignation(),
+    bornAt: Date.now(),
+    stage: 1,
+    ageMs: 0,
+    hunger: 100,
+    lastUpdate: Date.now(),
+    starvingMs: 0,
+    lowHungerWarned: false,
+    frozen: false,
+    alive: true,
+    traits: [],
+    bodyParts: [],
+    stageFoodTally: {},
+    ambientAccumMs: 0
+  };
+  growCreature(c, 1, 1, null);
+  return c;
+}
+
+function dominantCategory(tally){
+  var best=null, bestN=0;
+  CATS.forEach(function(cat){
+    var n = tally[cat]||0;
+    if(n>bestN){ bestN=n; best=cat; }
+  });
+  return best;
+}
+
+function growCreature(c, numParts, numTraits, biasCategory){
+  var gained = [];
+  for(var i=0;i<numParts;i++){
+    var slots = Object.keys(BODY_PARTS);
+    var slot = choice(slots);
+    var pool = BODY_PARTS[slot].filter(function(p){
+      return !c.bodyParts.some(function(bp){ return bp.id===p.id; });
+    });
+    if(pool.length===0) pool = BODY_PARTS[slot].slice();
+    var picked;
+    if(biasCategory && rand()<0.75){
+      var biased = pool.filter(function(p){ return p.category===biasCategory; });
+      picked = biased.length ? choice(biased) : choice(pool);
+    } else {
+      picked = choice(pool);
+    }
+    var part = {id:picked.id, slot:slot, name:picked.name, category:picked.category, acquiredAtStage:c.stage, acquiredAt:Date.now()};
+    c.bodyParts.push(part);
+    gained.push({type:'part', name:part.name});
+  }
+  for(var j=0;j<numTraits;j++){
+    var poolT = TRAITS.filter(function(t){
+      return !c.traits.some(function(tt){ return tt.id===t.id; });
+    });
+    if(poolT.length===0) poolT = TRAITS.slice();
+    var pickedT;
+    if(biasCategory && rand()<0.75){
+      var biasedT = poolT.filter(function(t){ return t.category===biasCategory; });
+      pickedT = biasedT.length ? choice(biasedT) : choice(poolT);
+    } else {
+      pickedT = choice(poolT);
+    }
+    var trait = {id:pickedT.id, name:pickedT.name, category:pickedT.category, acquiredAtStage:c.stage, acquiredAt:Date.now()};
+    c.traits.push(trait);
+    gained.push({type:'trait', name:trait.name});
+  }
+  return gained;
+}
+
+function classificationOf(c){
+  var total = c.traits.length + c.bodyParts.length;
+  if(total<6) return 'SAFE';
+  if(total<11) return 'EUCLID';
+  return 'KETER';
+}
+
+/* =========================================================================
+   CORE TICK LOGIC
+   ========================================================================= */
+function flushCreature(c, now){
+  if(!c || !c.alive || c.frozen) { if(c) c.lastUpdate = now; return; }
+  var elapsed = now - c.lastUpdate;
+  if(elapsed<=0){ c.lastUpdate = now; return; }
+  c.ageMs += elapsed;
+  c.hunger = clamp(c.hunger - elapsed*HUNGER_DECAY_PER_MS, 0, 100);
+  if(c.hunger<=0){ c.starvingMs += elapsed; }
+  else { c.starvingMs = 0; }
+
+  if(c.hunger < 20 && !c.lowHungerWarned){
+    c.lowHungerWarned = true;
+    addLog('Specimen '+c.designation+' is showing signs of distress. Hunger critical.');
+  } else if(c.hunger >= 35 && c.lowHungerWarned){
+    c.lowHungerWarned = false;
+  }
+
+  c.ambientAccumMs += elapsed;
+  while(c.ambientAccumMs >= AMBIENT_CHECK_MS){
+    c.ambientAccumMs -= AMBIENT_CHECK_MS;
+    if(rand() < AMBIENT_CHANCE){
+      addLog(choice(AMBIENT_LOGS));
+    }
+  }
+  c.lastUpdate = now;
+}
+
+function checkEvolution(c){
+  if(!c || !c.alive) return;
+  var evolved = false;
+  while(c.stage < 5 && c.ageMs >= STAGE_THRESH_MS[c.stage]){
+    c.stage++;
+    var bias = dominantCategory(c.stageFoodTally);
+    var gained = growCreature(c, 1, 1, bias);
+    c.stageFoodTally = {};
+    addLog('EVOLUTION: '+c.designation+' has progressed to Stage '+c.stage+' — '+STAGE_NAMES[c.stage]+'.');
+    gained.forEach(function(g){
+      addLog('New '+g.type+' developed: '+g.name+'.');
+    });
+    showStamp('Specimen Evolved — Stage '+c.stage);
+    evolved = true;
+  }
+  return evolved;
+}
+
+function checkDeath(c){
+  if(!c || !c.alive) return false;
+  if(c.starvingMs >= STARVE_GRACE_MS){
+    c.alive = false;
+    var bio = generateBiography(c, 'Neglect (Prolonged Starvation)');
+    state.archive.unshift({
+      id:c.id, designation:c.designation, bornAt:c.bornAt, diedAt:Date.now(),
+      cause:'Neglect (Prolonged Starvation)', stageReached:c.stage,
+      traits:c.traits.slice(), bodyParts:c.bodyParts.slice(), biography:bio
+    });
+    addLog('TERMINATION: '+c.designation+' has died of neglect. Case archived.');
+    showStamp('Specimen Deceased');
+    state.creature = null;
+    return true;
+  }
+  return false;
+}
+
+function refreshShopIfNeeded(now){
+  var t = todayStr(new Date(now));
+  if(state.shop.dateGenerated !== t){
+    var first = state.shop.dateGenerated === null;
+    state.shop.dateGenerated = t;
+    state.shop.items = generateShopItems();
+    state.shop.rerollsUsed = 0;
+    if(!first) addLog('The provisions market has restocked for a new day.');
+  }
+}
+
+function generateShopItems(){
+  var pool = FOOD_ITEMS.map(function(f,i){ return {f:f, w: f.category==='anomalous' ? 0.35 : 1}; });
+  var picks = [];
+  var n = Math.min(5, pool.length);
+  for(var k=0;k<n;k++){
+    var idx = weightedPickIndex(pool.map(function(p){return p.w;}));
+    var chosen = pool.splice(idx,1)[0];
+    picks.push({
+      foodId: chosen.f.id,
+      stock: 2 + Math.floor(rand()*4) // 2-5
+    });
+  }
+  return picks;
+}
+
+/* =========================================================================
+   PLAYER ACTIONS
+   ========================================================================= */
+function addLog(msg){ addLogTo(state, msg); }
+function addLogTo(s, msg){
+  s.fieldLog.unshift({t:Date.now(), msg:msg});
+  if(s.fieldLog.length>10) s.fieldLog.length = 10;
+}
+
+function readingRecordingDate(now){
+  var y = todayStr(new Date(now));
+  var yesterday = addDaysStr(y, -1);
+  var recDate = state.lastLoggedDate ? addDaysStr(state.lastLoggedDate, 1) : yesterday;
+  if(recDate > yesterday) return null; // already up to date
+  return recDate;
+}
+
+function submitReading(minutes){
+  var now = Date.now();
+  var recDate = readingRecordingDate(now);
+  if(recDate===null) return {ok:false, msg:'Reading time already logged. Try again tomorrow.'};
+  minutes = Math.max(0, Math.min(960, Math.round(minutes)));
+  var gained = Math.round(CURRENCY_K * Math.sqrt(minutes));
+  state.currency += gained;
+  state.readingLog.unshift({date:recDate, minutes:minutes, gained:gained});
+  if(state.readingLog.length>60) state.readingLog.length=60;
+  state.lastLoggedDate = recDate;
+  addLog('Logged '+minutes+' min of reading for '+recDate+'. Earned '+gained+' RC.');
+  return {ok:true, msg:'Recorded. +'+gained+' RC.'};
+}
+
+function feedCreature(shopSourceIndexOrInvId, fromInventory){
+  var c = state.creature;
+  if(!c || !c.alive) return {ok:false,msg:'No active specimen.'};
+  if(c.frozen) return {ok:false,msg:'Specimen is frozen in stasis and cannot be fed.'};
+  var foodId = fromInventory ? shopSourceIndexOrInvId : null;
+  if(!foodId) return {ok:false,msg:'Invalid food item.'};
+  if(!state.inventory[foodId] || state.inventory[foodId]<=0) return {ok:false,msg:'None of that food in inventory.'};
+  var item = FOOD_BY_ID[foodId];
+  state.inventory[foodId]--;
+  var before = c.hunger;
+  var after = clamp(before + item.restore, 0, 100);
+  var wasted = Math.max(0, (before+item.restore) - 100);
+  c.hunger = after;
+  c.stageFoodTally[item.category] = (c.stageFoodTally[item.category]||0) + 1;
+  if(wasted>0){
+    addLog('Fed '+item.name+' to '+c.designation+'. Some was wasted (already near full).');
+  } else {
+    addLog('Fed '+item.name+' to '+c.designation+'. Hunger restored.');
+  }
+  if(rand() < item.mut){
+    var partOrTrait = rand()<0.5;
+    var gained = growCreature(c, partOrTrait?1:0, partOrTrait?0:1, item.category);
+    gained.forEach(function(g){
+      addLog('Unexpected mutation! New '+g.type+': '+g.name+'.');
+    });
+    showStamp('Mutation Detected');
+  }
+  return {ok:true, msg:'Fed successfully.'};
+}
+
+function buyFood(shopIndex){
+  var entry = state.shop.items[shopIndex];
+  if(!entry) return {ok:false,msg:'Invalid item.'};
+  if(entry.stock<=0) return {ok:false,msg:'Sold out for today.'};
+  var item = FOOD_BY_ID[entry.foodId];
+  if(state.currency < item.price) return {ok:false,msg:'Insufficient Ration Credits.'};
+  state.currency -= item.price;
+  entry.stock--;
+  state.inventory[item.id] = (state.inventory[item.id]||0)+1;
+  addLog('Purchased '+item.name+' for '+item.price+' RC.');
+  return {ok:true,msg:'Purchased.'};
+}
+
+function rerollShop(){
+  var cost = REROLL_BASE + state.shop.rerollsUsed*REROLL_STEP;
+  if(state.currency < cost) return {ok:false,msg:'Insufficient Ration Credits ('+cost+' RC needed).'};
+  state.currency -= cost;
+  state.shop.rerollsUsed++;
+  state.shop.items = generateShopItems();
+  addLog('Rerolled the day\'s market stock for '+cost+' RC.');
+  return {ok:true,msg:'Market rerolled.'};
+}
+
+function toggleFreeze(){
+  var c = state.creature;
+  if(!c || !c.alive) return;
+  if(!c.frozen){
+    flushCreature(c, Date.now());
+    c.frozen = true;
+    addLog(c.designation+' has been placed into cryogenic stasis. Evolution and hunger paused.');
+  } else {
+    c.frozen = false;
+    c.lastUpdate = Date.now();
+    addLog(c.designation+' has been released from stasis.');
+  }
+}
+
+function acquireNewSpecimen(){
+  if(state.creature && state.creature.alive) return;
+  state.creature = generateCreature();
+  addLog('A new specimen has entered containment. Designation: '+state.creature.designation+'.');
+  showStamp('New Specimen Acquired');
+}
+
+function generateBiography(c, causeOverride){
+  var stageName = STAGE_NAMES[c.stage];
+  var intro = choice(BIO_INTROS).replace('{des}', c.designation).replace('{stage}', 'Stage '+c.stage+' — '+stageName);
+  var partsText = c.bodyParts.length ? c.bodyParts.map(function(p){return p.name.toLowerCase();}).join(', ') : 'no notable external features';
+  var traitsText = c.traits.length ? c.traits.map(function(t){return t.name.toLowerCase();}).join(', ') : 'no notable behavioral traits';
+  var cls = classificationOf(c);
+  var closing = causeOverride ? choice(BIO_CLOSINGS_DEAD) : choice(BIO_CLOSINGS_ALIVE);
+  var lines = [];
+  lines.push(intro);
+  lines.push('Physically, the specimen presents the following: ' + partsText + '.');
+  lines.push('Behaviorally, it exhibits: ' + traitsText + '.');
+  lines.push('Preliminary object class: ' + cls + '.');
+  if(causeOverride) lines.push('Status: DECEASED. Cause: ' + causeOverride + '.');
+  lines.push(closing);
+  return lines.join(' ');
+}
+
+/* =========================================================================
+   SAVE / LOAD
+   ========================================================================= */
+function saveToLocalStorage(){
+  try{
+    state.lastSaveTime = Date.now();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    return true;
+  } catch(e){
+    addLog('Auto-save failed: browser storage unavailable.');
+    return false;
+  }
+}
+function loadFromLocalStorage(){
+  try{
+    var raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  } catch(e){
+    return null;
+  }
+}
+function exportBase64(){
+  var json = JSON.stringify(state);
+  return btoa(unescape(encodeURIComponent(json)));
+}
+function importBase64(b64){
+  var json = decodeURIComponent(escape(atob(b64.trim())));
+  var parsed = JSON.parse(json);
+  if(typeof parsed !== 'object' || !parsed.hasOwnProperty('currency')) throw new Error('Not a valid save.');
+  return parsed;
+}
+
+/* =========================================================================
+   TICKING
+   ========================================================================= */
+var autosaveIntervalId = null;
+function restartAutosave(){
+  if(autosaveIntervalId) clearInterval(autosaveIntervalId);
+  var mins = Math.max(1, state.settings.autosaveMinutes || 5);
+  autosaveIntervalId = setInterval(function(){
+    saveToLocalStorage();
+    updateFooter();
+  }, mins*60000);
+}
+
+function tick(){
+  var now = Date.now();
+  var structuralChange = false;
+  if(state.creature && state.creature.alive){
+    flushCreature(state.creature, now);
+    if(checkEvolution(state.creature)) structuralChange = true;
+    if(checkDeath(state.creature)) structuralChange = true;
+  }
+  var prevShopDate = state.shop.dateGenerated;
+  refreshShopIfNeeded(now);
+  if(state.shop.dateGenerated !== prevShopDate) structuralChange = true;
+
+  if(structuralChange){
+    render();
+  } else {
+    liveUpdate();
+  }
+  updateFooter();
+}
+
+/* =========================================================================
+   RENDERING
+   ========================================================================= */
+var TABS = [
+  {id:'report', label:'Field Report'},
+  {id:'reading', label:'Reading Log'},
+  {id:'shop', label:'Market'},
+  {id:'inventory', label:'Provisions'},
+  {id:'archive', label:'Case Archive'},
+  {id:'settings', label:'Settings'}
+];
+
+function el(tag, attrs, children){
+  var e = document.createElement(tag);
+  if(attrs) Object.keys(attrs).forEach(function(k){
+    if(k==='html') e.innerHTML = attrs[k];
+    else if(k==='text') e.textContent = attrs[k];
+    else if(k.indexOf('on')===0 && typeof attrs[k]==='function') e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  });
+  (children||[]).forEach(function(c){ if(c) e.appendChild(c); });
+  return e;
+}
+
+function renderTabbar(){
+  var bar = document.getElementById('tabbar');
+  bar.innerHTML = '';
+  TABS.forEach(function(t){
+    var b = el('button', {
+      'class':'tabbtn' + (activeTab===t.id ? ' active':''),
+      onclick:function(){ activeTab=t.id; render(); }
+    });
+    b.textContent = t.label;
+    bar.appendChild(b);
+  });
+}
+
+function hungerClass(h){
+  if(h>50) return '';
+  if(h>20) return 'warn';
+  return 'danger';
+}
+function hungerStatusText(h){
+  if(h>=80) return 'Well Fed';
+  if(h>=50) return 'Content';
+  if(h>=25) return 'Peckish';
+  if(h>=10) return 'Hungry';
+  if(h>0) return 'Ravenous';
+  return 'STARVING';
+}
+
+function render(){
+  document.getElementById('hdrCredits').textContent = state.currency + ' RC';
+  renderTabbar();
+  var page = document.getElementById('page');
+  page.innerHTML = '';
+  if(activeTab==='report') page.appendChild(renderReport());
+  else if(activeTab==='reading') page.appendChild(renderReading());
+  else if(activeTab==='shop') page.appendChild(renderShop());
+  else if(activeTab==='inventory') page.appendChild(renderInventory());
+  else if(activeTab==='archive') page.appendChild(renderArchive());
+  else if(activeTab==='settings') page.appendChild(renderSettings());
+  updateFooter();
+}
+
+function renderReport(){
+  var frag = document.createDocumentFragment();
+  frag.appendChild(el('h2',{'class':'section-title', text:'Field Report'}));
+
+  var c = state.creature;
+  if(!c || !c.alive){
+    var box = el('div',{'class':'empty-state'});
+    box.innerHTML = 'No active specimen is currently under containment.<br><br>';
+    var btn = el('button',{'class':'primary', onclick:function(){ acquireNewSpecimen(); render(); }});
+    btn.textContent = 'Acquire New Specimen';
+    box.appendChild(btn);
+    frag.appendChild(box);
+    frag.appendChild(renderFieldLog());
+    return frag;
+  }
+
+  var card = el('div',{'class':'card'});
+  var head = el('div',{style:'display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;'});
+  var left = el('div');
+  left.appendChild(el('div',{html:'<strong style="font-family:\'Special Elite\';font-size:1.05rem;">'+c.designation+'</strong>'}));
+  left.appendChild(el('div',{'class':'small-note', text:'Stage '+c.stage+' — '+STAGE_NAMES[c.stage]}));
+  head.appendChild(left);
+  var right = el('div');
+  right.appendChild(el('span',{'class':'stamp', text:classificationOf(c)}));
+  if(c.frozen) right.appendChild(el('span',{'class':'badge frozen', text:' FROZEN ', style:'margin-left:6px;'}));
+  head.appendChild(right);
+  card.appendChild(head);
+
+  card.appendChild(el('hr',{'class':'hr'}));
+
+  // hunger
+  var hRow = el('div');
+  hRow.appendChild(el('div',{'class':'meter-label', html:'<span>Hunger: '+hungerStatusText(c.hunger)+'</span><span id="hungerPct">'+Math.round(c.hunger)+'%</span>'}));
+  var meter = el('div',{'class':'meter'});
+  var fill = el('div',{'class':'meter-fill '+hungerClass(c.hunger), id:'hungerFill', style:'width:'+c.hunger+'%;'});
+  meter.appendChild(fill);
+  hRow.appendChild(meter);
+  card.appendChild(hRow);
+  if(c.hunger<=0){
+    card.appendChild(el('div',{'class':'danger-text small-note', id:'starveWarn', text:'CRITICAL: Specimen is starving. Time until neglect termination: '+fmtDur(STARVE_GRACE_MS-c.starvingMs)}));
+  }
+
+  // age / evolution countdown
+  var ageRow = el('div',{style:'margin-top:10px;'});
+  ageRow.appendChild(el('div',{'class':'small-note', id:'ageLine', text:'Active age: '+fmtDur(c.ageMs)}));
+  if(c.stage<5){
+    var remain = STAGE_THRESH_MS[c.stage]-c.ageMs;
+    ageRow.appendChild(el('div',{'class':'small-note', id:'evoLine', text:(c.frozen?'Evolution paused (frozen). ':'Next evolution in: ')+(c.frozen?'':fmtDur(remain))}));
+  } else {
+    ageRow.appendChild(el('div',{'class':'small-note good-text', text:'Full maturity reached. No further growth stages.'}));
+  }
+  card.appendChild(ageRow);
+
+  // actions
+  var actions = el('div',{'class':'inline-actions'});
+  var freezeBtn = el('button',{onclick:function(){ toggleFreeze(); render(); }});
+  freezeBtn.textContent = c.frozen ? 'Release from Stasis' : 'Freeze (Halt Time)';
+  actions.appendChild(freezeBtn);
+  card.appendChild(actions);
+
+  frag.appendChild(card);
+
+  // body parts & traits
+  var grid = el('div',{'class':'grid'});
+  var partsCard = el('div',{'class':'card'});
+  partsCard.appendChild(el('h3',{'class':'sub-title', text:'Physical Development ('+c.bodyParts.length+')'}));
+  var partsList = el('div',{'class':'taglist'});
+  c.bodyParts.forEach(function(p){
+    partsList.appendChild(el('span',{'class':'tag', text:p.slot+': '+p.name}));
+  });
+  if(c.bodyParts.length===0) partsList.appendChild(el('span',{'class':'small-note', text:'None yet.'}));
+  partsCard.appendChild(partsList);
+  grid.appendChild(partsCard);
+
+  var traitsCard = el('div',{'class':'card'});
+  traitsCard.appendChild(el('h3',{'class':'sub-title', text:'Behavioral Traits ('+c.traits.length+')'}));
+  var traitsList = el('div',{'class':'taglist'});
+  c.traits.forEach(function(t){
+    traitsList.appendChild(el('span',{'class':'tag', text:t.name}));
+  });
+  if(c.traits.length===0) traitsList.appendChild(el('span',{'class':'small-note', text:'None yet.'}));
+  traitsCard.appendChild(traitsList);
+  grid.appendChild(traitsCard);
+  frag.appendChild(grid);
+
+  // biography
+  var bioCard = el('div',{'class':'card'});
+  bioCard.appendChild(el('h3',{'class':'sub-title', text:'Generated Biography'}));
+  var bioText = el('textarea',{readonly:'readonly', rows:'5'});
+  bioText.value = generateBiography(c, null);
+  bioCard.appendChild(bioText);
+  var bioNote = el('div',{'class':'small-note', text:'Select the text above and copy to share this specimen with others.'});
+  bioCard.appendChild(bioNote);
+  frag.appendChild(bioCard);
+
+  frag.appendChild(renderFieldLog());
+  return frag;
+}
+
+function renderFieldLog(){
+  var card = el('div',{'class':'card'});
+  card.appendChild(el('h3',{'class':'sub-title', text:'Field Log (Last 10 Entries)'}));
+  if(state.fieldLog.length===0){
+    card.appendChild(el('div',{'class':'small-note', text:'No activity recorded yet.'}));
+  } else {
+    state.fieldLog.forEach(function(entry){
+      var line = el('div',{'class':'logline'});
+      line.appendChild(el('span',{'class':'ts', text:fmtTime(entry.t)}));
+      line.appendChild(document.createTextNode(entry.msg));
+      card.appendChild(line);
+    });
+  }
+  return card;
+}
+
+function renderReading(){
+  var frag = document.createDocumentFragment();
+  frag.appendChild(el('h2',{'class':'section-title', text:'Reading Log'}));
+  frag.appendChild(el('p',{'class':'small-note', text:'Record exactly one entry per day for the previous day\'s total reading time. Reading time converts to Ration Credits with diminishing returns — long marathon sessions earn proportionally less per minute.'}));
+
+  var recDate = readingRecordingDate(Date.now());
+  var card = el('div',{'class':'card'});
+  if(recDate===null){
+    card.appendChild(el('div',{'class':'good-text', text:'Reading time already logged for '+state.lastLoggedDate+'.'}));
+    card.appendChild(el('div',{'class':'small-note', text:'Entry will unlock again tomorrow.'}));
+  } else {
+    card.appendChild(el('label',{text:'Total minutes read on ' + recDate}));
+    var row = el('div',{style:'display:flex;gap:8px;flex-wrap:wrap;align-items:center;'});
+    var input = el('input',{type:'number', min:'0', max:'960', step:'1', id:'readingInput', placeholder:'e.g. 45'});
+    row.appendChild(input);
+    var msgSpan = el('span',{'class':'small-note', id:'readingMsg'});
+    var btn = el('button',{'class':'primary', onclick:function(){
+      var v = parseFloat(input.value);
+      if(isNaN(v) || v<0){ msgSpan.textContent = 'Enter a valid number of minutes.'; return; }
+      var res = submitReading(v);
+      msgSpan.textContent = res.msg;
+      if(res.ok) render();
+    }});
+    btn.textContent = 'Submit';
+    row.appendChild(btn);
+    card.appendChild(row);
+    card.appendChild(msgSpan);
+  }
+  frag.appendChild(card);
+
+  frag.appendChild(el('h3',{'class':'sub-title', text:'History'}));
+  if(state.readingLog.length===0){
+    frag.appendChild(el('div',{'class':'empty-state', text:'No reading time logged yet.'}));
+  } else {
+    var table = el('table',{'class':'simple'});
+    var thead = el('thead',{}, [el('tr',{},[el('th',{text:'Date'}),el('th',{text:'Minutes'}),el('th',{text:'RC Earned'})])]);
+    table.appendChild(thead);
+    var tbody = el('tbody');
+    state.readingLog.slice(0,20).forEach(function(r){
+      tbody.appendChild(el('tr',{},[el('td',{text:r.date}),el('td',{text:r.minutes}),el('td',{text:'+'+r.gained})]));
+    });
+    table.appendChild(tbody);
+    frag.appendChild(table);
+  }
+  return frag;
+}
+
+function renderShop(){
+  var frag = document.createDocumentFragment();
+  frag.appendChild(el('h2',{'class':'section-title', text:'Provisions Market'}));
+  var cost = REROLL_BASE + state.shop.rerollsUsed*REROLL_STEP;
+  var topRow = el('div',{style:'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;'});
+  topRow.appendChild(el('div',{'class':'small-note', text:'Stock refreshes daily. Reroll for a new random selection at increasing cost.'}));
+  var rerollBtn = el('button',{onclick:function(){
+    var res = rerollShop();
+    render();
+  }});
+  rerollBtn.textContent = 'Reroll Stock ('+cost+' RC)';
+  if(state.currency<cost) rerollBtn.disabled = true;
+  topRow.appendChild(rerollBtn);
+  frag.appendChild(topRow);
+  frag.appendChild(el('hr',{'class':'hr'}));
+
+  if(state.shop.items.length===0){
+    frag.appendChild(el('div',{'class':'empty-state', text:'The market is empty today.'}));
+  }
+  state.shop.items.forEach(function(entry, idx){
+    var item = FOOD_BY_ID[entry.foodId];
+    var row = el('div',{'class':'foodrow' + (entry.stock<=0 ? ' soldout':'')});
+    var left = el('div');
+    left.appendChild(el('div',{'class':'fname', text:item.name}));
+    left.appendChild(el('div',{'class':'fmeta', text:CAT_LABEL[item.category]+' · Restores '+item.restore+' hunger · Mutation chance '+Math.round(item.mut*100)+'% · Stock: '+entry.stock}));
+    row.appendChild(left);
+    var right = el('div',{style:'display:flex;gap:8px;align-items:center;'});
+    right.appendChild(el('span',{'class':'badge', text:item.price+' RC'}));
+    var buyBtn = el('button',{'class':'primary', onclick:function(){
+      var res = buyFood(idx);
+      render();
+    }});
+    buyBtn.textContent = entry.stock<=0 ? 'Sold Out' : 'Buy';
+    if(entry.stock<=0 || state.currency<item.price) buyBtn.disabled = true;
+    right.appendChild(buyBtn);
+    row.appendChild(right);
+    frag.appendChild(row);
+  });
+  return frag;
+}
+
+function renderInventory(){
+  var frag = document.createDocumentFragment();
+  frag.appendChild(el('h2',{'class':'section-title', text:'Provisions Inventory'}));
+  var keys = Object.keys(state.inventory).filter(function(k){ return state.inventory[k]>0; });
+  var c = state.creature;
+  if(keys.length===0){
+    frag.appendChild(el('div',{'class':'empty-state', text:'No food items in storage. Visit the Market to purchase provisions.'}));
+    return frag;
+  }
+  if(!c || !c.alive){
+    frag.appendChild(el('div',{'class':'small-note danger-text', text:'No active specimen to feed.'}));
+  } else if(c.frozen){
+    frag.appendChild(el('div',{'class':'small-note', text:'Specimen is frozen in stasis and cannot be fed until released.'}));
+  }
+  keys.forEach(function(fid){
+    var item = FOOD_BY_ID[fid];
+    var row = el('div',{'class':'foodrow'});
+    var left = el('div');
+    left.appendChild(el('div',{'class':'fname', text:item.name+' × '+state.inventory[fid]}));
+    left.appendChild(el('div',{'class':'fmeta', text:CAT_LABEL[item.category]+' · Restores '+item.restore+' hunger · Mutation chance '+Math.round(item.mut*100)+'%'}));
+    row.appendChild(left);
+    var feedBtn = el('button',{'class':'primary', onclick:function(){
+      var res = feedCreature(fid, true);
+      render();
+    }});
+    feedBtn.textContent = 'Feed';
+    if(!c || !c.alive || c.frozen) feedBtn.disabled = true;
+    row.appendChild(feedBtn);
+    frag.appendChild(row);
+  });
+  return frag;
+}
+
+function renderArchive(){
+  var frag = document.createDocumentFragment();
+  frag.appendChild(el('h2',{'class':'section-title', text:'Case Archive'}));
+  frag.appendChild(el('p',{'class':'small-note', text:'A permanent record of every specimen ever raised under this account.'}));
+  if(state.archive.length===0){
+    frag.appendChild(el('div',{'class':'empty-state', text:'No concluded cases yet.'}));
+    return frag;
+  }
+  state.archive.forEach(function(a){
+    var details = el('details',{'class':'archive-item'});
+    var summary = el('summary');
+    summary.textContent = a.designation + ' — Stage '+a.stageReached+' ('+STAGE_NAMES[a.stageReached]+') — '+a.cause;
+    details.appendChild(summary);
+    var body = el('div',{style:'margin-top:8px;'});
+    body.appendChild(el('div',{'class':'small-note', text:'Born: '+fmtTime(a.bornAt)+'  ·  Died: '+fmtTime(a.diedAt)}));
+    var pl = el('div',{'class':'taglist'});
+    a.bodyParts.forEach(function(p){ pl.appendChild(el('span',{'class':'tag', text:p.name})); });
+    body.appendChild(pl);
+    var tl = el('div',{'class':'taglist', style:'margin-top:4px;'});
+    a.traits.forEach(function(t){ tl.appendChild(el('span',{'class':'tag', text:t.name})); });
+    body.appendChild(tl);
+    var bioBox = el('textarea',{readonly:'readonly', rows:'4', style:'margin-top:8px;'});
+    bioBox.value = a.biography;
+    body.appendChild(bioBox);
+    details.appendChild(body);
+    frag.appendChild(details);
+  });
+  return frag;
+}
+
+function renderSettings(){
+  var frag = document.createDocumentFragment();
+  frag.appendChild(el('h2',{'class':'section-title', text:'Settings'}));
+
+  var autoCard = el('div',{'class':'card'});
+  autoCard.appendChild(el('h3',{'class':'sub-title', text:'Auto-Save'}));
+  var row = el('div',{style:'display:flex;gap:8px;align-items:center;flex-wrap:wrap;'});
+  row.appendChild(el('label',{text:'Interval (minutes)', style:'margin:0;'}));
+  var mins = el('input',{type:'number', min:'1', max:'120', value:state.settings.autosaveMinutes});
+  row.appendChild(mins);
+  var applyBtn = el('button',{onclick:function(){
+    var v = parseInt(mins.value,10);
+    if(isNaN(v)||v<1) v=1;
+    state.settings.autosaveMinutes = v;
+    restartAutosave();
+    saveToLocalStorage();
+    render();
+  }});
+  applyBtn.textContent = 'Apply';
+  row.appendChild(applyBtn);
+  autoCard.appendChild(row);
+  var saveNowBtn = el('button',{style:'margin-top:8px;', onclick:function(){ saveToLocalStorage(); updateFooter(); }});
+  saveNowBtn.textContent = 'Save Now';
+  autoCard.appendChild(saveNowBtn);
+  frag.appendChild(autoCard);
+
+  var exCard = el('div',{'class':'card'});
+  exCard.appendChild(el('h3',{'class':'sub-title', text:'Export Save (Base-64)'}));
+  var exArea = el('textarea',{readonly:'readonly', rows:'4'});
+  exArea.value = exportBase64();
+  exCard.appendChild(exArea);
+  var exBtn = el('button',{style:'margin-top:6px;', onclick:function(){
+    exArea.select();
+    try{ document.execCommand('copy'); }catch(e){}
+  }});
+  exBtn.textContent = 'Select All (then copy)';
+  exCard.appendChild(exBtn);
+  frag.appendChild(exCard);
+
+  var imCard = el('div',{'class':'card'});
+  imCard.appendChild(el('h3',{'class':'sub-title', text:'Import Save (Base-64)'}));
+  var imArea = el('textarea',{rows:'4', placeholder:'Paste a base-64 save string here...'});
+  imCard.appendChild(imArea);
+  var imMsg = el('div',{'class':'small-note'});
+  var imBtn = el('button',{'class':'primary', style:'margin-top:6px;', onclick:function(){
+    try{
+      var parsed = importBase64(imArea.value);
+      state = parsed;
+      normalizeStateAfterImport();
+      saveToLocalStorage();
+      restartAutosave();
+      imMsg.textContent = 'Import successful.';
+      render();
+    } catch(e){
+      imMsg.textContent = 'Import failed: invalid save string.';
+    }
+  }});
+  imBtn.textContent = 'Import';
+  imCard.appendChild(imBtn);
+  imCard.appendChild(imMsg);
+  frag.appendChild(imCard);
+
+  var resetCard = el('div',{'class':'card'});
+  resetCard.appendChild(el('h3',{'class':'sub-title', text:'Full Reset'}));
+  resetCard.appendChild(el('div',{'class':'danger-text', text:'Warning: this permanently deletes your current specimen, currency, inventory, and case archive. This cannot be undone.'}));
+  var confirmRow = el('div',{style:'margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;'});
+  confirmRow.appendChild(el('label',{text:'Type RESET to confirm', style:'margin:0;'}));
+  var confirmInput = el('input',{type:'text', id:'resetConfirmInput'});
+  confirmRow.appendChild(confirmInput);
+  var resetBtn = el('button',{'class':'danger-btn', onclick:function(){
+    if(confirmInput.value.trim()==='RESET'){
+      state = defaultState();
+      saveToLocalStorage();
+      restartAutosave();
+      activeTab='report';
+      render();
+    }
+  }});
+  resetBtn.textContent = 'Erase Everything';
+  confirmRow.appendChild(resetBtn);
+  resetCard.appendChild(confirmRow);
+  frag.appendChild(resetCard);
+
+  return frag;
+}
+
+function normalizeStateAfterImport(){
+  if(!state.settings) state.settings = {autosaveMinutes:5};
+  if(!state.inventory) state.inventory = {};
+  if(!state.shop) state.shop = {dateGenerated:null, items:[], rerollsUsed:0};
+  if(!state.fieldLog) state.fieldLog = [];
+  if(!state.archive) state.archive = [];
+  if(!state.readingLog) state.readingLog = [];
+  if(state.creature){
+    var now = Date.now();
+    flushCreature(state.creature, now);
+    checkEvolution(state.creature);
+    checkDeath(state.creature);
+  }
+  refreshShopIfNeeded(Date.now());
+}
+
+/* Cheap per-second updates for the report tab without a full rebuild */
+function liveUpdate(){
+  if(activeTab!=='report') return;
+  var c = state.creature;
+  if(!c || !c.alive) return;
+  var pct = document.getElementById('hungerPct');
+  var fill = document.getElementById('hungerFill');
+  if(pct) pct.textContent = Math.round(c.hunger)+'%';
+  if(fill){ fill.style.width = c.hunger+'%'; fill.className = 'meter-fill '+hungerClass(c.hunger); }
+  var ageLine = document.getElementById('ageLine');
+  if(ageLine) ageLine.textContent = 'Active age: '+fmtDur(c.ageMs);
+  var evoLine = document.getElementById('evoLine');
+  if(evoLine && c.stage<5){
+    var remain = STAGE_THRESH_MS[c.stage]-c.ageMs;
+    evoLine.textContent = (c.frozen?'Evolution paused (frozen).':'Next evolution in: '+fmtDur(remain));
+  }
+  var starveWarn = document.getElementById('starveWarn');
+  if(c.hunger<=0){
+    var txt = 'CRITICAL: Specimen is starving. Time until neglect termination: '+fmtDur(Math.max(0,STARVE_GRACE_MS-c.starvingMs));
+    if(starveWarn) starveWarn.textContent = txt;
+  }
+  document.getElementById('hdrCredits').textContent = state.currency + ' RC';
+}
+
+function updateFooter(){
+  var status = document.getElementById('footStatus');
+  var clock = document.getElementById('footClock');
+  if(status){
+    var savedAgo = state.lastSaveTime ? fmtDur(Date.now()-state.lastSaveTime)+' ago' : 'never';
+    status.textContent = 'Last saved: '+savedAgo+' · Auto-save every '+state.settings.autosaveMinutes+' min';
+  }
+  if(clock){
+    clock.textContent = new Date().toLocaleString();
+  }
+}
+
+function showStamp(text){
+  var layer = document.getElementById('stampLayer');
+  var d = document.createElement('div');
+  d.className = 'stamp-pop';
+  d.textContent = text;
+  layer.appendChild(d);
+  setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 2600);
+}
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+function init(){
+  var loaded = loadFromLocalStorage();
+  state = loaded || defaultState();
+  normalizeStateAfterImport();
+  refreshShopIfNeeded(Date.now());
+  render();
+  restartAutosave();
+  setInterval(tick, 1000);
+  window.addEventListener('beforeunload', function(){ saveToLocalStorage(); });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
