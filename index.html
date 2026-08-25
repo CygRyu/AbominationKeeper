@@ -189,6 +189,17 @@
   .rarity-tag.rare{color:var(--stamp-gold);}
   .rarity-tag.legendary{color:var(--blood); opacity:1; animation:pulseKeter 2.8s infinite;}
   .idx-undiscovered{opacity:0.55; border-left-style:dashed; font-style:italic;}
+
+  .commend-list{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px;}
+  .commend-item{
+    padding:10px 12px; background:rgba(44,36,22,0.06); border-left:3px solid var(--rule);
+    border-radius:2px;
+  }
+  .commend-item.unlocked{border-left-color:var(--stamp-green);}
+  .commend-item.locked{opacity:0.6; border-left-style:dashed; font-style:italic;}
+  .commend-name{font-family:'Special Elite',monospace; font-size:1rem; margin-bottom:4px;}
+  .commend-desc{font-size:0.95rem; color:var(--ink-soft); font-style:normal; line-height:1.4;}
+  .commend-reward{font-family:'Courier Prime',monospace; font-size:0.85rem; color:var(--stamp-green); white-space:nowrap;}
   .idx-fam-grid{display:flex; flex-wrap:wrap; gap:6px 10px; margin:6px 0 4px;}
   .idx-fam-chip{
     font-family:'Courier Prime',monospace; font-size:0.78rem; color:var(--ink-soft);
@@ -285,6 +296,7 @@
       <button data-tab="provisions">Provisions</button>
       <button data-tab="archive">Archive</button>
       <button data-tab="index">Field Index</button>
+      <button data-tab="achievements">Commendations</button>
       <button data-tab="settings">Settings</button>
     </nav>
   </header>
@@ -296,6 +308,7 @@
     <section class="panel" id="panel-provisions"></section>
     <section class="panel" id="panel-archive"></section>
     <section class="panel" id="panel-index"></section>
+    <section class="panel" id="panel-achievements"></section>
     <section class="panel" id="panel-settings"></section>
   </main>
 
@@ -658,6 +671,105 @@ const RAMPAGE_LOGS = [
   "An automated lockdown was triggered after specimen unrest."
 ];
 
+/* Commendations (achievements). Conditions read from already-tracked state
+   (stats counters, archive, discovered index, current creature) so unlocking
+   never requires new gameplay systems -- just noticing what already happened.
+   hint is shown before unlock, desc after -- keep hints a little coy. */
+const ACHIEVEMENTS = [
+  {id:"a_first_feed", name:"First Contact", reward:5,
+    hint:"Do the one thing a keeper is supposed to do.",
+    desc:"You fed a specimen for the first time.",
+    condition: s => s.stats.feeds>=1},
+  {id:"a_feed_25", name:"Creature Comforts", reward:15,
+    hint:"Keep at it. Routine matters here.",
+    desc:"You've fed your specimens 25 times.",
+    condition: s => s.stats.feeds>=25},
+  {id:"a_read_7", name:"Bookworm", reward:20,
+    hint:"The Reading tab isn't just for show.",
+    desc:"You've logged reading on 7 separate days.",
+    condition: s => s.stats.daysRead>=7},
+  {id:"a_read_30", name:"Deep Reader", reward:40,
+    hint:"A month's worth of dedication, roughly speaking.",
+    desc:"You've logged reading on 30 separate days.",
+    condition: s => s.stats.daysRead>=30},
+  {id:"a_first_mutation", name:"Mutation Watch", reward:10,
+    hint:"Feeding doesn't always go as planned.",
+    desc:"Your specimen developed its first mutation from feeding.",
+    condition: s => s.stats.mutations>=1},
+  {id:"a_mutation_15", name:"Cabinet of Curiosities", reward:25,
+    hint:"Some specimens just keep changing.",
+    desc:"Your specimens have developed 15 mutations from feeding.",
+    condition: s => s.stats.mutations>=15},
+  {id:"a_stage_choice", name:"Keeper's Discretion", reward:10,
+    hint:"Growth isn't always automatic.",
+    desc:"You made your first call on how a specimen develops.",
+    condition: s => s.stats.stageChoicesResolved>=1},
+  {id:"a_keter", name:"Containment Breach Risk", reward:20,
+    hint:"Some specimens outgrow their classification.",
+    desc:"A specimen of yours reached Containment Class KETER.",
+    condition: s => (s.creature && containmentClass(s.creature)==="KETER") || s.archive.some(a=>a.containment==="KETER")},
+  {id:"a_legendary", name:"One in a Million", reward:30,
+    hint:"Rarity has a way of finding patient keepers.",
+    desc:"One of your specimens manifested a legendary mutation.",
+    condition: s => {
+      const has=(ids,pool)=>ids.some(id=>{const m=pool.find(x=>x.id===id);return m&&m.rarity==="legendary";});
+      if(s.creature && (has(s.creature.parts,BODY_PARTS)||has(s.creature.traits,TRAITS))) return true;
+      return s.archive.some(a=>has(a.parts||[],BODY_PARTS)||has(a.traits||[],TRAITS));
+    }},
+  {id:"a_matured", name:"Full Bloom", reward:25,
+    hint:"Every specimen has a ceiling. Some reach it.",
+    desc:"A specimen of yours reached full maturity (Stage 5).",
+    condition: s => (s.creature && isMatured(s.creature)) || s.archive.some(a=>a.stageReached>=5)},
+  {id:"a_rampage_3", name:"Rampage Survivor", reward:15,
+    hint:"Hunger left unchecked has consequences.",
+    desc:"Your specimens have rampaged 3 times.",
+    condition: s => s.stats.rampages>=3},
+  {id:"a_first_loss", name:"Case Closed", reward:10,
+    hint:"Not every specimen makes it.",
+    desc:"You lost your first specimen.",
+    condition: s => s.stats.specimensLost>=1},
+  {id:"a_full_index", name:"Complete Case File", reward:50,
+    hint:"Somewhere out there, every deviation has already been catalogued.",
+    desc:"You've discovered every body part and trait in the Field Index.",
+    condition: s => (s.discovered.parts.length+s.discovered.traits.length) >= (BODY_PARTS.length+TRAITS.length)},
+  {id:"a_wealthy", name:"Well-Funded", reward:10,
+    hint:"A healthy reserve of Reading Credits opens doors.",
+    desc:"You banked 200 RC at once.",
+    condition: s => s.currency>=200},
+  {id:"a_nickname", name:"Given a Name", reward:5,
+    hint:"Some keepers can't help but get attached.",
+    desc:"You gave a specimen a nickname.",
+    condition: s => (s.creature && s.creature.nickname) || s.archive.some(a=>a.nickname)},
+  {id:"a_purchases_10", name:"Market Regular", reward:15,
+    hint:"The stalls have started to recognize you.",
+    desc:"You've purchased provisions from the Market 10 times.",
+    condition: s => s.stats.purchases>=10},
+  {id:"a_freeze_1", name:"Cold Storage", reward:5,
+    hint:"Sometimes the safest move is to do nothing at all.",
+    desc:"You placed a specimen into cryogenic stasis.",
+    condition: s => s.stats.freezes>=1},
+  {id:"a_marathon_read", name:"Marathon Session", reward:20,
+    hint:"Some days call for more than a chapter.",
+    desc:"You logged a single day of 120+ minutes reading.",
+    condition: s => Object.values(s.readingLog||{}).some(m=>m>=120)},
+  {id:"a_archive_5", name:"Veteran Keeper", reward:30,
+    hint:"Loss becomes familiar, eventually.",
+    desc:"You've archived 5 specimens over your career.",
+    condition: s => s.archive.length>=5},
+  {id:"a_specialist", name:"Specialist", reward:20,
+    hint:"Some specimens develop a distinct theme.",
+    desc:"A specimen of yours developed 4+ mutations from the same family.",
+    condition: s => s.creature && Object.values(familyCounts(s.creature)).some(n=>n>=4)},
+  {id:"a_danger_15", name:"Handle With Extreme Care", reward:25,
+    hint:"Some specimens should not be underestimated.",
+    desc:"A specimen of yours reached a danger score of 15 or higher.",
+    condition: s => s.creature && dangerScore(s.creature)>=15},
+  {id:"a_old_guard", name:"Old Guard", reward:30,
+    hint:"Longevity is its own kind of achievement.",
+    desc:"A specimen of yours accumulated 200+ active hours.",
+    condition: s => (s.creature && s.creature.activeMs/HOUR>=200) || s.archive.some(a=>(a.survivalMs/HOUR)>=200)}
+];
+
 /* ============================= UTIL ============================= */
 function now(){return Date.now();}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
@@ -736,7 +848,8 @@ function freshCreature(){
     alive: true,
     causeOfDeath: null,
     diedAt: null,
-    rampageCount: 0
+    rampageCount: 0,
+    pendingStageChoices: [] // [{stage, options:[partId, partId?]}] awaiting keeper decision
   };
 }
 
@@ -756,6 +869,8 @@ function defaultState(){
     archive: [],
     log: [],
     discovered: {parts:[], traits:[]}, // ids ever seen on any specimen, current or archived
+    stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0},
+    achievements: {}, // id -> {at: timestamp}
     settings: {autosaveMin:5, lastAckAway:0},
     meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now()}
   };
@@ -787,7 +902,25 @@ function addLog(text, cls){
   if(state.log.length>10) state.log.length=10;
 }
 
+/* Checks all not-yet-unlocked commendations against current state, granting
+   RC and a log/toast for any newly met. Cheap and idempotent -- safe to call
+   on every save. */
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(state.achievements[a.id]) return;
+    let met = false;
+    try{ met = !!a.condition(state); }catch(e){ met = false; }
+    if(met){
+      state.achievements[a.id] = {at: now()};
+      state.currency += a.reward;
+      addLog("Commendation earned: "+a.name+" (+"+a.reward+" RC).", "evt-evolve");
+      toast("Commendation: "+a.name+" (+"+a.reward+" RC)", "evolve");
+    }
+  });
+}
+
 function save(){
+  checkAchievements();
   state.meta.lastSaveAt = now();
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){ console.warn("save failed",e); }
 }
@@ -901,15 +1034,39 @@ function pickMutation(c, foodCat){
   return {isPart: wantPart, item: weightedPick(candidates, famCounts)};
 }
 
-function grantStageUpPart(c){
-  if(c.parts.length>=c.partCap) return null; // specimen has reached its natural anatomical limit
-  const owned = c.parts;
-  let candidates = BODY_PARTS.filter(x=>!owned.includes(x.id));
-  if(candidates.length===0) return null;
-  const pick = weightedPick(candidates, familyCounts(c));
-  c.parts.push(pick.id);
-  markDiscovered(true, pick.id);
-  return pick;
+/* Instead of granting a stage-up body part automatically, queue a choice
+   between (up to) two candidates for the keeper to resolve. reservedIds
+   tracks ids already spoken for by earlier queued-but-unresolved choices
+   in the same batch, so a single offline gap crossing multiple stages
+   never offers the same part twice. Returns true if a choice was queued. */
+function queueStageUpChoice(c, stageNum, reservedIds){
+  const usedSlots = c.parts.length + c.pendingStageChoices.length;
+  if(usedSlots>=c.partCap) return false; // specimen has reached its natural anatomical limit
+  const famCounts = familyCounts(c);
+  const candidates = BODY_PARTS.filter(x=>!c.parts.includes(x.id) && !reservedIds.has(x.id));
+  if(candidates.length===0) return false;
+  const a = weightedPick(candidates, famCounts);
+  reservedIds.add(a.id);
+  const remaining = candidates.filter(x=>x.id!==a.id);
+  let b = null;
+  if(remaining.length){ b = weightedPick(remaining, famCounts); reservedIds.add(b.id); }
+  c.pendingStageChoices.push({stage: stageNum, options: b ? [a.id, b.id] : [a.id]});
+  return true;
+}
+
+/* Resolves the oldest pending stage-up choice with the keeper's pick
+   (index into that entry's options array). Returns the granted part. */
+function resolveStageChoice(idx){
+  const c = state.creature;
+  if(!c || !c.pendingStageChoices.length) return null;
+  const pending = c.pendingStageChoices.shift();
+  const chosenId = pending.options[idx]!=null ? pending.options[idx] : pending.options[0];
+  const part = BODY_PARTS.find(x=>x.id===chosenId);
+  c.parts.push(chosenId);
+  markDiscovered(true, chosenId);
+  addLog("New development (Stage "+pending.stage+"): "+part.text+".", "evt-mutation");
+  state.stats.stageChoicesResolved++;
+  return part;
 }
 
 /* Core time-advance: applies hunger decay, stage progression, rampage & death.
@@ -918,7 +1075,7 @@ function advanceTime(ms){
   const c = state.creature;
   const summary = {elapsedMs: ms, hungerBefore: c ? c.hunger : null, hungerAfter: c ? c.hunger : null,
                     stageBefore: c ? stageFromHours(c.activeMs/HOUR) : null, stageAfter: null,
-                    died:false, cause:null, ambient:0, rampage:false, rampageLoss:0, newParts:[]};
+                    died:false, cause:null, ambient:0, rampage:false, rampageLoss:0, stageChoicesQueued:0};
   if(!c || !c.alive || ms<=0) return summary;
 
   if(c.frozen){
@@ -968,11 +1125,11 @@ function advanceTime(ms){
   c.activeMs += activeAdd;
   const newStage = stageFromHours(c.activeMs/HOUR);
   if(newStage>prevStage && c.alive){
+    const reserved = new Set(c.parts);
+    c.pendingStageChoices.forEach(pc=>pc.options.forEach(id=>reserved.add(id)));
     for(let s=prevStage+1; s<=newStage; s++){
-      const part = grantStageUpPart(c);
-      if(part) summary.newParts.push(part.text);
       addLog("Specimen advanced to Stage "+s+" ("+STAGE_NAMES[s-1]+").", "evt-evolve");
-      if(part) addLog("New development: "+part.text+".", "evt-mutation");
+      if(queueStageUpChoice(c, s, reserved)) summary.stageChoicesQueued++;
     }
   }
 
@@ -985,6 +1142,7 @@ function advanceTime(ms){
         const loss = Math.max(5, Math.round(state.currency * (0.15+rnd()*0.20)));
         state.currency = Math.max(0, state.currency - loss);
         c.rampageCount++;
+        state.stats.rampages++;
         summary.rampage = true; summary.rampageLoss = loss;
         addLog(choice(RAMPAGE_LOGS)+" (-"+loss+" RC)", "evt-rampage");
       }
@@ -1009,6 +1167,7 @@ function advanceTime(ms){
 }
 
 function archiveCreature(c){
+  state.stats.specimensLost++;
   state.archive.unshift({
     designation: designation(c),
     nickname: c.nickname,
@@ -1049,6 +1208,7 @@ function submitReading(dateKey, minutes){
   state.readingLog[dateKey] = minutes;
   state.lastEnteredDate = dateKey;
   state.currency += rc;
+  state.stats.daysRead++;
   addLog("Logged "+minutes+"m reading for "+dateKey+" → +"+rc+" RC.", "");
 }
 
@@ -1093,6 +1253,7 @@ function buyFood(foodId){
   if(state.currency<food.cost) return false;
   state.currency -= food.cost;
   state.inventory[foodId] = (state.inventory[foodId]||0)+1;
+  state.stats.purchases++;
   addLog("Purchased "+food.name+" for "+food.cost+" RC.", "");
   return true;
 }
@@ -1104,6 +1265,7 @@ function feedCreature(foodId){
   if(!state.inventory[foodId]) return null;
   const food = FOOD_CATALOG.find(f=>f.id===foodId);
   state.inventory[foodId]--;
+  state.stats.feeds++;
   const before = c.hunger;
   c.hunger = clamp(c.hunger + food.hunger, 0, 100);
   if(c.hunger>0) c.hungerZeroAt=null;
@@ -1118,6 +1280,7 @@ function feedCreature(foodId){
       markDiscovered(m.isPart, m.item.id);
       mutation = m.item.text;
       addLog("Mutation observed: "+m.item.text+".", "evt-mutation");
+      state.stats.mutations++;
     } else {
       stabilized = true;
       addLog("Specimen's biology has stabilized — no further mutations possible.", "");
@@ -1172,6 +1335,7 @@ function renderPanel(tab){
   else if(tab==="provisions") renderProvisions();
   else if(tab==="archive") renderArchive();
   else if(tab==="index") renderIndex();
+  else if(tab==="achievements") renderAchievements();
   else if(tab==="settings") renderSettings();
 }
 
@@ -1281,6 +1445,11 @@ function renderField(){
       <div class="hbar"><div class="hbar-fill" style="width:${c.hunger}%; background:${c.hunger>50?"#3f5a3a":c.hunger>25?"#a9720f":"#9c2b1f"}"></div></div>
       ${warn?`<div class="warn-banner ${warn.level==='starving'?'starving':warn.level==='critical'?'critical':''}">${esc(warn.text)}</div>`:""}
       <p class="muted small">${esc(timeToHungerEstimates(c))}</p>
+      ${c.pendingStageChoices.length?`
+        <div class="warn-banner" style="border-left-color:var(--stamp-gold); background:rgba(138,106,31,0.14);">
+          ${c.pendingStageChoices.length} anatomical development${c.pendingStageChoices.length>1?"s":""} awaiting your decision.
+          <button class="btn small" id="btnResolveStage" style="margin-left:8px;">Review</button>
+        </div>`:""}
       <div class="row" style="margin-top:8px;">
         <button class="btn" id="btnFeed">Feed</button>
         <button class="btn secondary" id="btnFreeze">${c.frozen?"Unfreeze":"Freeze"}</button>
@@ -1290,7 +1459,7 @@ function renderField(){
 
     <div class="sheet">
       <h2>Specimen Traits</h2>
-      <h3>Body parts (${c.parts.length}/${c.partCap})${c.parts.length>=c.partCap?' <span class="muted small">— at capacity</span>':""}</h3>
+      <h3>Body parts (${c.parts.length}/${c.partCap})${c.parts.length>=c.partCap?' <span class="muted small">— at capacity</span>':""}${c.pendingStageChoices.length?' <span class="muted small">(+'+c.pendingStageChoices.length+' pending)</span>':""}</h3>
       <ul class="trait-list">${c.parts.length? c.parts.map(id=>{const p=BODY_PARTS.find(x=>x.id===id); return '<li class="part">'+rarityTagHtml(p.rarity)+esc(p.text)+'</li>';}).join(""): '<li class="muted">None recorded yet.</li>'}</ul>
       <h3>Traits (${c.traits.length}/${c.traitCap})${c.traits.length>=c.traitCap?' <span class="muted small">— at capacity</span>':""}</h3>
       <ul class="trait-list">${c.traits.length? c.traits.map(id=>{const t=TRAITS.find(x=>x.id===id); return '<li class="trait">'+rarityTagHtml(t.rarity)+esc(t.text)+'</li>';}).join(""): '<li class="muted">None recorded yet.</li>'}</ul>
@@ -1304,9 +1473,11 @@ function renderField(){
   `;
 
   $("#btnFeed").onclick = openFeedModal;
+  if($("#btnResolveStage")) $("#btnResolveStage").onclick = openStageChoiceModal;
   $("#btnFreeze").onclick = ()=>{
     c.frozen = !c.frozen;
     c.lastTickAt = now();
+    if(c.frozen) state.stats.freezes++;
     addLog(c.frozen?"Specimen placed in cryogenic stasis.":"Specimen released from stasis.", "");
     save(); renderAll();
   };
@@ -1644,6 +1815,36 @@ function renderIndex(){
   `;
 }
 
+function renderAchievements(){
+  const el = $("#panel-achievements");
+  const unlockedCount = Object.keys(state.achievements).length;
+  const total = ACHIEVEMENTS.length;
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Commendations</h2>
+      <p class="muted small">${unlockedCount}/${total} earned. Recognitions granted over the course of your keepership — some are only revealed once earned.</p>
+      <ul class="commend-list">
+        ${ACHIEVEMENTS.map(a=>{
+          const unlocked = state.achievements[a.id];
+          if(unlocked){
+            return `<li class="commend-item unlocked">
+              <div class="row" style="justify-content:space-between; align-items:baseline;">
+                <div class="commend-name">${esc(a.name)}</div>
+                <div class="commend-reward">+${a.reward} RC</div>
+              </div>
+              <div class="commend-desc">${esc(a.desc)}</div>
+            </li>`;
+          }
+          return `<li class="commend-item locked">
+            <div class="commend-name">???</div>
+            <div class="commend-desc">${esc(a.hint)}</div>
+          </li>`;
+        }).join("")}
+      </ul>
+    </div>
+  `;
+}
+
 function renderSettings(){
   const el = $("#panel-settings");
   el.innerHTML = `
@@ -1670,6 +1871,7 @@ function renderSettings(){
       <details class="faq"><summary>How does feeding work?</summary><p>Open Feed from the Field Report to see a few suggested provisions from your inventory, sorted to minimize waste. Different foods restore different amounts of hunger and carry different mutation odds.</p></details>
       <details class="faq"><summary>What happens if hunger reaches 0%?</summary><p>Your specimen enters a starvation countdown. Feed it before time runs out or it will not survive. Warnings escalate well before that point.</p></details>
       <details class="faq"><summary>What does Freeze do?</summary><p>Freezing halts hunger decay and growth entirely — useful if you'll be away for a while — but progress toward the next life stage also pauses.</p></details>
+      <details class="faq"><summary>What happens when my specimen advances a life stage?</summary><p>Growth isn't entirely out of your hands. When a specimen reaches a new stage, containment staff will sometimes ask you to weigh in on what develops — keep an eye on the Field Report.</p></details>
       <details class="faq"><summary>Can my specimen die from something other than hunger?</summary><p>Neglected, agitated specimens have been known to lash out. Keep an eye on your funds.</p></details>
       <details class="faq"><summary>What are containment classes?</summary><p>As your specimen accumulates traits and body parts, it may be reclassified from Safe to Euclid to Keter. This is cosmetic flavor reflecting how unusual your specimen has become.</p></details>
       <details class="faq"><summary>Is there a limit to how many body parts or traits a specimen can have?</summary><p>Yes — each specimen is born with its own randomized ceiling for body parts and for traits, shown on the Field Report. That's part of what makes every specimen distinct: some have room to grow into sprawling anomalies, others stabilize early.</p></details>
@@ -1737,6 +1939,51 @@ function fallbackCopy(text){
   document.body.removeChild(ta);
 }
 
+/* ============================= STAGE-UP CHOICE ============================= */
+function openStageChoiceModal(){
+  const c = state.creature;
+  if(!c || !c.pendingStageChoices.length) return;
+  const pending = c.pendingStageChoices[0];
+  const opts = pending.options.map(id=>BODY_PARTS.find(x=>x.id===id));
+  const single = opts.length===1;
+  const html = `
+    <div class="modal">
+      <h2>Stage ${pending.stage} Development</h2>
+      <p class="muted small">${single
+        ? "Containment staff observed a new anatomical development:"
+        : "Containment staff observed two possible anatomical developments. Select which one manifests:"}</p>
+      ${opts.map((p,i)=>`
+        <div class="food-opt">
+          <div><div class="fname">${rarityTagHtml(p.rarity)}${esc(p.text)}</div></div>
+          <button class="btn small" data-choice="${i}">${single?"Accept":"Choose"}</button>
+        </div>
+      `).join("")}
+      ${c.pendingStageChoices.length>1?`<p class="muted small">${c.pendingStageChoices.length-1} more development(s) will follow.</p>`:""}
+      <div class="row" style="justify-content:flex-end; margin-top:10px;">
+        <button class="btn secondary" id="modalClose">Decide later</button>
+      </div>
+    </div>
+  `;
+  showModal(html);
+  $$("[data-choice]").forEach(btn=>{
+    btn.onclick=()=>{
+      const idx = parseInt(btn.dataset.choice,10);
+      const part = resolveStageChoice(idx);
+      closeModal();
+      if(part) toast("New development: "+part.text, "evolve");
+      save();
+      renderAll();
+      if(state.creature.pendingStageChoices.length) setTimeout(openStageChoiceModal, 250);
+    };
+  });
+  $("#modalClose").onclick = closeModal;
+}
+function maybeOpenStageChoiceModal(){
+  if(state.creature && state.creature.alive && state.creature.pendingStageChoices && state.creature.pendingStageChoices.length){
+    openStageChoiceModal();
+  }
+}
+
 /* ============================= AWAY REPORT ============================= */
 function showAwayReport(summary, wasAlive, diedNow){
   let html;
@@ -1763,7 +2010,7 @@ function showAwayReport(summary, wasAlive, diedNow){
           <li>${fmtHM(summary.elapsedMs)} elapsed</li>
           <li>Hunger fell from ${Math.round(summary.hungerBefore)}% → ${Math.round(summary.hungerAfter)}%</li>
           ${summary.stageAfter>summary.stageBefore?`<li>Specimen reached Stage ${summary.stageAfter}</li>`:""}
-          ${summary.newParts.length?`<li>New development: ${summary.newParts.map(esc).join(", ")}</li>`:""}
+          ${summary.stageChoicesQueued?`<li>${summary.stageChoicesQueued} new anatomical development(s) awaiting your decision</li>`:""}
           ${summary.ambient?`<li>${summary.ambient} ambient observation(s) recorded</li>`:""}
           ${summary.rampage?`<li>Specimen went into a rampage, losing ${summary.rampageLoss} RC</li>`:""}
         </ul>
@@ -1773,7 +2020,7 @@ function showAwayReport(summary, wasAlive, diedNow){
       </div>`;
   }
   showModal(html);
-  $("#ackAway").onclick = ()=>{ closeModal(); switchTab(diedNow?"archive":"field"); };
+  $("#ackAway").onclick = ()=>{ closeModal(); switchTab(diedNow?"archive":"field"); maybeOpenStageChoiceModal(); };
 }
 
 /* ============================= MAIN LOOP ============================= */
@@ -1805,8 +2052,8 @@ function liveTick(){
       }
     });
   }
-  if(summary.newParts.length){
-    summary.newParts.forEach(p=>toast("Evolved! New development: "+p, "evolve"));
+  if(summary.stageChoicesQueued){
+    toast("Specimen evolved! New development awaiting your decision.", "evolve");
   }
   if(summary.rampage){
     toast("Specimen rampaged! Lost "+summary.rampageLoss+" RC.", "danger");
@@ -1814,9 +2061,10 @@ function liveTick(){
   if(wasAlive && !c.alive){
     toast("Your specimen has died.", "danger");
   }
+  save();
   renderHeader();
   if(activeTab==="field") renderField();
-  save();
+  if(summary.stageChoicesQueued) maybeOpenStageChoiceModal();
 }
 
 function renderAll(){
@@ -1838,9 +2086,16 @@ function init(){
   const hadDiscovered = !!state.discovered;
   state.discovered = state.discovered || {parts:[], traits:[]};
   if(!hadDiscovered) backfillDiscovered(); // one-time catch-up for saves predating the Field Index
+  state.stats = state.stats || {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0};
+  if(state.stats.purchases==null) state.stats.purchases = 0;
+  if(state.stats.freezes==null) state.stats.freezes = 0;
+  state.achievements = state.achievements || {};
   if(state.creature && (state.creature.partCap==null || state.creature.traitCap==null)){
     state.creature.partCap = state.creature.partCap!=null ? state.creature.partCap : Math.max(randInt(5,11), state.creature.parts.length);
     state.creature.traitCap = state.creature.traitCap!=null ? state.creature.traitCap : Math.max(randInt(4,10), state.creature.traits.length);
+  }
+  if(state.creature && !Array.isArray(state.creature.pendingStageChoices)){
+    state.creature.pendingStageChoices = []; // older saves predate the stage-up choice system
   }
 
   if(!isNew && state.creature){
@@ -1851,6 +2106,8 @@ function init(){
       save();
       if(elapsed > 4*60000 || summary.died){
         setTimeout(()=>showAwayReport(summary, wasAlive, wasAlive && !state.creature.alive), 50);
+      } else if(summary.stageChoicesQueued){
+        setTimeout(maybeOpenStageChoiceModal, 300);
       }
     }
   } else if(isNew){
