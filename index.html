@@ -188,6 +188,16 @@
   .rarity-tag.uncommon{color:var(--stamp-green);}
   .rarity-tag.rare{color:var(--stamp-gold);}
   .rarity-tag.legendary{color:var(--blood); opacity:1; animation:pulseKeter 2.8s infinite;}
+  .idx-undiscovered{opacity:0.55; border-left-style:dashed; font-style:italic;}
+  .idx-fam-grid{display:flex; flex-wrap:wrap; gap:6px 10px; margin:6px 0 4px;}
+  .idx-fam-chip{
+    font-family:'Courier Prime',monospace; font-size:0.78rem; color:var(--ink-soft);
+    background:rgba(44,36,22,0.06); border:1px solid var(--rule); border-radius:2px; padding:2px 7px;
+  }
+  .idx-rarity-summary{display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; font-family:'Courier Prime',monospace; font-size:0.85rem;}
+  .idx-stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; font-size:0.9rem;}
+  .idx-stat-grid dt{color:var(--ink-soft); font-family:'Courier Prime',monospace; font-size:0.78rem;}
+  .idx-stat-grid dd{margin:0 0 6px;}
 
   .log-list{list-style:none; margin:0; padding:0; font-family:'Courier Prime',monospace; font-size:0.78rem;}
   .log-list li{padding:4px 0; border-bottom:1px dotted var(--rule); color:var(--ink-soft);}
@@ -274,6 +284,7 @@
       <button data-tab="market">Market</button>
       <button data-tab="provisions">Provisions</button>
       <button data-tab="archive">Archive</button>
+      <button data-tab="index">Field Index</button>
       <button data-tab="settings">Settings</button>
     </nav>
   </header>
@@ -284,11 +295,11 @@
     <section class="panel" id="panel-market"></section>
     <section class="panel" id="panel-provisions"></section>
     <section class="panel" id="panel-archive"></section>
+    <section class="panel" id="panel-index"></section>
     <section class="panel" id="panel-settings"></section>
   </main>
 
-  <footer class="note">Abomination Keeper — a text-based containment simulator by CygRyu. 
-    All data stored locally in your browser.</footer>
+  <footer class="note">Abomination Keeper — a text-based containment simulator by CygRyu</footer>
 </div>
 
 <div id="modalRoot"></div>
@@ -615,6 +626,31 @@ const AMBIENT_LOGS = [
   "Containment humidity adjusted automatically.",
   "Specimen emits a low sound of unknown origin."
 ];
+/* Themed ambient logs. If a specimen owns mutations in a given family, its
+   ambient logs occasionally draw from here instead of the generic pool
+   above -- purely flavor text, no gameplay effect. Families without an
+   entry here simply fall back to the generic pool. */
+const FAMILY_AMBIENT_LOGS = {
+  ocular: ["Specimen's extra eyes track movement independently of its head.", "Observers report a brief sense of being watched from an unexpected angle."],
+  void: ["Specimen's shadow briefly failed to match its posture.", "A section of the enclosure felt colder for no measurable reason."],
+  psychic: ["Specimen grew alert moments before the observation door was touched.", "Specimen seems to react to conversations held outside its hearing range."],
+  temporal: ["A clock near the enclosure briefly ran fast, then corrected itself.", "Specimen's motions appeared to skip, as though a frame were missing."],
+  luminous: ["A faint glow was visible beneath the enclosure door overnight.", "Specimen's bioluminescence pulsed in an unusually steady rhythm."],
+  fungal: ["A light dusting of spores was found on nearby equipment.", "Specimen's fungal growths shifted color slightly overnight."],
+  electric: ["Nearby monitoring equipment recorded a brief, unexplained interference spike.", "Specimen's presence caused a handheld device to lose charge rapidly."],
+  thermal: ["A thin layer of frost formed near the enclosure overnight.", "Specimen's resting area registered several degrees below ambient."],
+  combustion: ["A faint smell of ash lingered near the enclosure this morning.", "Specimen left a warm imprint on its resting surface."],
+  aquatic: ["Condensation pooled unusually thick near the enclosure glass.", "Specimen pressed itself against the humidifier vents for an extended period."],
+  crystalline: ["A faint chiming sound was traced back to the specimen's enclosure.", "Light passing near the specimen fractured into unusual patterns."],
+  mechanical: ["A nearby keypad briefly failed to register input.", "Specimen's proximity caused a security badge reader to misfire."],
+  parasitic: ["Specimen groomed a smaller growth on its body with apparent care.", "Staff noted the specimen sharing its ration with an attached organism."],
+  vocal: ["A brief, unfamiliar sound was recorded near the enclosure overnight.", "Specimen appeared to hum along with the ventilation system."],
+  gravitic: ["A loose object near the enclosure was found slightly out of place.", "Specimen appeared lighter than expected during a routine handling check."],
+  defensive: ["Specimen adopted a defensive stance without any apparent trigger.", "Specimen's chitin visibly stiffened during a routine inspection."],
+  feeding: ["Specimen was found rearranging its remaining provisions.", "Specimen showed unusual interest in an empty food container."],
+  respiratory: ["Specimen's breathing pattern was noted as unusually slow overnight.", "A faint hissing sound was traced to the specimen's respiratory structures."]
+};
+const FAMILY_AMBIENT_CHANCE = 0.4; // odds a themed line is used instead of a generic one, when eligible
 const RAMPAGE_LOGS = [
   "Specimen thrashed violently, damaging nearby equipment.",
   "Specimen breached minor containment protocol during a feeding delay.",
@@ -719,9 +755,31 @@ function defaultState(){
     shop: {date:null, offerings:[], rerolls:0},
     archive: [],
     log: [],
+    discovered: {parts:[], traits:[]}, // ids ever seen on any specimen, current or archived
     settings: {autosaveMin:5, lastAckAway:0},
     meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now()}
   };
+}
+
+/* Records a mutation id as catalogued in the Field Index. Safe to call
+   repeatedly -- it's a no-op once an id has already been discovered. */
+function markDiscovered(isPart, id){
+  const bucket = isPart ? state.discovered.parts : state.discovered.traits;
+  if(!bucket.includes(id)) bucket.push(id);
+}
+
+/* Backfills the discovery catalog from the current specimen and the full
+   archive. Used once on load for saves created before the Field Index
+   existed, and is harmless to re-run. */
+function backfillDiscovered(){
+  if(state.creature){
+    state.creature.parts.forEach(id=>markDiscovered(true,id));
+    state.creature.traits.forEach(id=>markDiscovered(false,id));
+  }
+  state.archive.forEach(a=>{
+    (a.parts||[]).forEach(id=>markDiscovered(true,id));
+    (a.traits||[]).forEach(id=>markDiscovered(false,id));
+  });
 }
 
 function addLog(text, cls){
@@ -787,6 +845,18 @@ function familyCounts(c){
   return counts;
 }
 
+/* Occasionally surfaces a themed ambient log if the specimen owns
+   mutations from a family with flavor text defined; otherwise falls
+   back to the generic ambient pool. Purely cosmetic. */
+function pickAmbientLog(c){
+  const fc = familyCounts(c);
+  const eligible = Object.keys(fc).filter(f=>FAMILY_AMBIENT_LOGS[f]);
+  if(eligible.length && rnd() < FAMILY_AMBIENT_CHANCE){
+    return choice(FAMILY_AMBIENT_LOGS[choice(eligible)]);
+  }
+  return choice(AMBIENT_LOGS);
+}
+
 function weightedPick(candidates, famCounts){
   famCounts = famCounts || {};
   const weights = candidates.map(m=>{
@@ -838,6 +908,7 @@ function grantStageUpPart(c){
   if(candidates.length===0) return null;
   const pick = weightedPick(candidates, familyCounts(c));
   c.parts.push(pick.id);
+  markDiscovered(true, pick.id);
   return pick;
 }
 
@@ -923,7 +994,7 @@ function advanceTime(ms){
   // ambient flavor logs (light touch, capped)
   if(c.alive){
     const n = Math.min(3, Math.floor(hours/5));
-    for(let i=0;i<n;i++){ addLog(choice(AMBIENT_LOGS), ""); summary.ambient++; }
+    for(let i=0;i<n;i++){ addLog(pickAmbientLog(c), ""); summary.ambient++; }
   }
 
   if(summary.died){
@@ -1044,6 +1115,7 @@ function feedCreature(foodId){
     const m = pickMutation(c, food.cat);
     if(m){
       if(m.isPart) c.parts.push(m.item.id); else c.traits.push(m.item.id);
+      markDiscovered(m.isPart, m.item.id);
       mutation = m.item.text;
       addLog("Mutation observed: "+m.item.text+".", "evt-mutation");
     } else {
@@ -1070,6 +1142,10 @@ function generateBiography(c){
   lines.push("");
   lines.push("Physical deviations: "+partTxt+".");
   lines.push("Behavioral/anomalous traits: "+traitTxt+".");
+  const fc = familyCounts(c);
+  let topFam = null, topCount = 0;
+  Object.keys(fc).forEach(f=>{ if(fc[f]>topCount){ topCount=fc[f]; topFam=f; } });
+  if(topFam && topCount>=3) lines.push("Specimen exhibits a pronounced "+topFam+" deviation ("+topCount+" related observations).");
   lines.push("");
   if(c.rampageCount>0) lines.push("Incident history: "+c.rampageCount+" recorded rampage event(s).");
   lines.push(cls==="KETER" ? "Recommend elevated containment protocols." : cls==="EUCLID" ? "Standard monitoring sufficient at this time." : "Specimen remains stable and low-risk.");
@@ -1095,6 +1171,7 @@ function renderPanel(tab){
   else if(tab==="market") renderMarket();
   else if(tab==="provisions") renderProvisions();
   else if(tab==="archive") renderArchive();
+  else if(tab==="index") renderIndex();
   else if(tab==="settings") renderSettings();
 }
 
@@ -1435,6 +1512,138 @@ function renderArchive(){
   $("#archFilter").onchange = (e)=>{ el.dataset.filterClass = e.target.value; renderArchive(); };
 }
 
+const RARITY_ORDER = ["common","uncommon","rare","legendary"];
+const RARITY_RANK = {common:0, uncommon:1, rare:2, legendary:3};
+
+function rarityBreakdown(pool, discoveredIds){
+  const out = {};
+  RARITY_ORDER.forEach(r=>{ out[r] = {total:0, found:0}; });
+  pool.forEach(m=>{
+    const r = out[m.rarity] ? m.rarity : "common";
+    out[r].total++;
+    if(discoveredIds.includes(m.id)) out[r].found++;
+  });
+  return out;
+}
+
+function familyBreakdown(pool, discoveredIds){
+  const out = {};
+  pool.forEach(m=>{
+    const f = m.family || "unthemed";
+    out[f] = out[f] || {total:0, found:0};
+    out[f].total++;
+    if(discoveredIds.includes(m.id)) out[f].found++;
+  });
+  return out;
+}
+
+function renderMutList(pool, discoveredIds, cls){
+  // grouped by family, alphabetically, for a browsable "wanted poster" feel
+  const byFam = {};
+  pool.forEach(m=>{
+    const f = m.family || "unthemed";
+    byFam[f] = byFam[f] || [];
+    byFam[f].push(m);
+  });
+  const fams = Object.keys(byFam).sort();
+  return fams.map(f=>{
+    const items = byFam[f];
+    const rows = items.map(m=>{
+      const found = discoveredIds.includes(m.id);
+      if(found){
+        return `<li class="${cls}">${rarityTagHtml(m.rarity)}${esc(m.text)}</li>`;
+      }
+      return `<li class="${cls} idx-undiscovered">???</li>`;
+    }).join("");
+    return `<h4 style="margin:10px 0 4px;text-transform:capitalize;">${esc(f)}</h4><ul class="trait-list">${rows}</ul>`;
+  }).join("");
+}
+
+function archiveWideStats(){
+  const allDone = state.archive;
+  // a terminated specimen is already archived, so only count the current
+  // creature separately while it's still alive to avoid double-counting it
+  const curAlive = state.creature && state.creature.alive;
+  const totalSpecimens = allDone.length + (curAlive ? 1 : 0);
+  let longestMs = 0, longestName = null;
+  allDone.forEach(a=>{ if(a.survivalMs>longestMs){ longestMs=a.survivalMs; longestName=a.designation; } });
+  if(curAlive){
+    const curMs = now() - state.creature.bornAt;
+    if(curMs>longestMs){ longestMs=curMs; longestName=designation(state.creature)+" (active)"; }
+  }
+  const classCounts = {SAFE:0, EUCLID:0, KETER:0};
+  allDone.forEach(a=>{ if(classCounts[a.containment]!=null) classCounts[a.containment]++; });
+  if(curAlive){ const cc=containmentClass(state.creature); if(classCounts[cc]!=null) classCounts[cc]++; }
+
+  const famTally = {};
+  const tallyFam=(ids,pool)=>ids.forEach(id=>{const m=pool.find(x=>x.id===id); if(m&&m.family) famTally[m.family]=(famTally[m.family]||0)+1;});
+  allDone.forEach(a=>{ tallyFam(a.parts,BODY_PARTS); tallyFam(a.traits,TRAITS); });
+  if(curAlive){ tallyFam(state.creature.parts,BODY_PARTS); tallyFam(state.creature.traits,TRAITS); }
+  let topFamily = null, topFamilyCount = 0;
+  Object.keys(famTally).forEach(f=>{ if(famTally[f]>topFamilyCount){ topFamilyCount=famTally[f]; topFamily=f; } });
+
+  let rarest = null;
+  const scan = (ids, pool) => ids.forEach(id=>{
+    const m = pool.find(x=>x.id===id);
+    if(m && (!rarest || RARITY_RANK[m.rarity] > RARITY_RANK[rarest.rarity])) rarest = m;
+  });
+  scan(state.discovered.parts, BODY_PARTS);
+  scan(state.discovered.traits, TRAITS);
+
+  return {totalSpecimens, longestMs, longestName, classCounts, topFamily, topFamilyCount, rarest};
+}
+
+function renderIndex(){
+  const el = $("#panel-index");
+  const disc = state.discovered;
+  const allPool = BODY_PARTS.concat(TRAITS);
+  const allDiscovered = disc.parts.concat(disc.traits);
+  const totalCatalogued = allDiscovered.length;
+  const totalPossible = allPool.length;
+
+  const rarityBP = rarityBreakdown(allPool, allDiscovered);
+  const famBP = familyBreakdown(allPool, allDiscovered);
+  const fams = Object.keys(famBP).sort();
+
+  const stats = archiveWideStats();
+
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Field Index</h2>
+      <p class="muted small">A running catalog of every mutation observed across all specimens, past and present. Undiscovered entries are logged as unknowns until a specimen exhibits them.</p>
+      <h3>Catalogued: ${totalCatalogued} / ${totalPossible}</h3>
+      <div class="idx-rarity-summary">
+        ${RARITY_ORDER.map(r=>`<span class="rarity-tag ${r}">${r.toUpperCase()}</span> ${rarityBP[r].found}/${rarityBP[r].total}`).join(" &nbsp; ")}
+      </div>
+      <h3 style="margin-top:14px;">By Family</h3>
+      <div class="idx-fam-grid">
+        ${fams.map(f=>`<span class="idx-fam-chip">${esc(f)}: ${famBP[f].found}/${famBP[f].total}</span>`).join("")}
+      </div>
+    </div>
+
+    <div class="sheet">
+      <h2>Research Overview</h2>
+      <dl class="idx-stat-grid">
+        <dt>Specimens observed</dt><dd>${stats.totalSpecimens}</dd>
+        <dt>Longest survival</dt><dd>${stats.longestMs? fmtHM(stats.longestMs)+(stats.longestName?" — "+esc(stats.longestName):"") : "—"}</dd>
+        <dt>Containment record</dt><dd>Safe ${stats.classCounts.SAFE} · Euclid ${stats.classCounts.EUCLID} · Keter ${stats.classCounts.KETER}</dd>
+        <dt>Dominant tendency</dt><dd>${stats.topFamily? esc(stats.topFamily)+" ("+stats.topFamilyCount+" observed)" : "—"}</dd>
+        <dt>Rarest catalogued</dt><dd>${stats.rarest? rarityTagHtml(stats.rarest.rarity)+esc(stats.rarest.text) : "None yet"}</dd>
+      </dl>
+    </div>
+
+    <div class="sheet">
+      <h2>Body Parts</h2>
+      ${renderMutList(BODY_PARTS, disc.parts, "part")}
+    </div>
+
+    <div class="sheet">
+      <h2>Traits</h2>
+      ${renderMutList(TRAITS, disc.traits, "trait")}
+    </div>
+  `;
+}
+
 function renderSettings(){
   const el = $("#panel-settings");
   el.innerHTML = `
@@ -1626,6 +1835,9 @@ function init(){
   state.archive = state.archive || [];
   state.inventory = state.inventory || {};
   state.shop = state.shop || {date:null, offerings:[], rerolls:0};
+  const hadDiscovered = !!state.discovered;
+  state.discovered = state.discovered || {parts:[], traits:[]};
+  if(!hadDiscovered) backfillDiscovered(); // one-time catch-up for saves predating the Field Index
   if(state.creature && (state.creature.partCap==null || state.creature.traitCap==null)){
     state.creature.partCap = state.creature.partCap!=null ? state.creature.partCap : Math.max(randInt(5,11), state.creature.parts.length);
     state.creature.traitCap = state.creature.traitCap!=null ? state.creature.traitCap : Math.max(randInt(4,10), state.creature.traits.length);
