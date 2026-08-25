@@ -2,1439 +2,1666 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FIELD SPECIMEN LOG — Anomalous Husbandry Division</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Abomination Keeper — Field Archive</title>
 <style>
-:root{
-  --parchment: #e6dab8;
-  --parchment-dark: #d7c69a;
-  --panel: #f1e7c9;
-  --panel-shadow: #b9a06a;
-  --ink: #2a2015;
-  --ink-soft: #4d3f2a;
-  --rule: #a9925f;
-  --stamp-red: #7a2020;
-  --stamp-olive: #4f5b34;
-  --danger: #7a2020;
-  --warn: #8a5a12;
-  --good: #3f5c2e;
-  --paper-hole: #00000022;
-}
-*{box-sizing:border-box;}
-html,body{margin:0;padding:0;}
-body{
-  background:
-    radial-gradient(ellipse at top left, rgba(0,0,0,0.06), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(0,0,0,0.08), transparent 60%),
-    var(--parchment);
-  color:var(--ink);
-  font-family:'Courier Prime', monospace;
-  min-height:100vh;
-  padding:18px;
-  line-height:1.45;
-}
-.wrap{max-width:920px;margin:0 auto;}
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Courier+Prime:wght@400;700&display=swap');
 
-/* ===== Header ===== */
-.masthead{
-  border:3px double var(--ink);
-  background:var(--panel);
-  padding:14px 18px;
-  position:relative;
-  box-shadow:0 3px 0 var(--panel-shadow), 0 4px 10px rgba(0,0,0,0.25);
-}
-.masthead-top{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;}
-.masthead h1{
-  font-family:'IM Fell English SC','Special Elite',serif;
-  font-size:1.5rem;
-  letter-spacing:2px;
-  margin:0 0 2px 0;
-  text-transform:uppercase;
-}
-.masthead .sub{font-size:0.72rem;letter-spacing:1px;color:var(--ink-soft);text-transform:uppercase;}
-.credits-box{
-  font-family:'Special Elite',monospace;
-  border:2px solid var(--ink);
-  padding:6px 12px;
-  background:var(--parchment-dark);
-  text-align:right;
-  min-width:150px;
-}
-.credits-box .amt{font-size:1.3rem;font-weight:bold;}
-.credits-box .lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--ink-soft);}
+  :root{
+    --paper:#e9dfc4;
+    --paper-dark:#ddd0aa;
+    --paper-shadow:#c9b98a;
+    --ink:#2c2416;
+    --ink-soft:#5a4d34;
+    --rule:#a99a6f;
+    --blood:#7a2e22;
+    --stamp-green:#3f5a3a;
+    --stamp-gold:#8a6a1f;
+    --stamp-black:#241f16;
+    --danger:#9c2b1f;
+    --warn:#a9720f;
+    --safe:#3f5a3a;
+    --keter:#7a2e22;
+    --euclid:#8a6a1f;
+    --shadow: 0 2px 6px rgba(40,30,10,0.25);
+  }
 
-/* ===== Tabs ===== */
-.tabbar{
-  display:flex;
-  flex-wrap:wrap;
-  gap:2px;
-  margin-top:10px;
-}
-.tabbtn{
-  font-family:'Special Elite',monospace;
-  background:var(--parchment-dark);
-  border:2px solid var(--ink);
-  border-bottom:none;
-  padding:8px 14px 7px 14px;
-  cursor:pointer;
-  font-size:0.78rem;
-  letter-spacing:1px;
-  text-transform:uppercase;
-  color:var(--ink-soft);
-  border-radius:6px 6px 0 0;
-  position:relative;
-  top:2px;
-}
-.tabbtn.active{
-  background:var(--panel);
-  color:var(--ink);
-  font-weight:bold;
-  top:0;
-  border-bottom:2px solid var(--panel);
-  z-index:2;
-}
-.tabbtn:hover{color:var(--ink);}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.08), transparent 60%),
+      var(--paper);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.15  0 0 0 0 0.12  0 0 0 0 0.07  0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"),
+      linear-gradient(var(--paper), var(--paper));
+    color:var(--ink);
+    font-family:'IM Fell English', Georgia, serif;
+    font-size:16px;
+    line-height:1.45;
+    min-height:100vh;
+  }
+  ::selection{background:var(--rule);color:var(--paper);}
 
-/* ===== Panel / Page ===== */
-.page{
-  border:3px double var(--ink);
-  border-top:2px solid var(--ink);
-  background:var(--panel);
-  padding:20px;
-  min-height:420px;
-  box-shadow:0 3px 0 var(--panel-shadow), 0 5px 14px rgba(0,0,0,0.25);
-  position:relative;
-}
-.page::before{
-  content:"";
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  pointer-events:none;
-  background-image:
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
-  opacity:0.5;
-}
-h2.section-title{
-  font-family:'IM Fell English SC','Special Elite',serif;
-  text-transform:uppercase;
-  letter-spacing:1.5px;
-  border-bottom:2px solid var(--rule);
-  padding-bottom:6px;
-  margin-top:0;
-  font-size:1.15rem;
-}
-h3.sub-title{
-  font-family:'Special Elite',monospace;
-  font-size:0.9rem;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  color:var(--ink-soft);
-  border-bottom:1px dashed var(--rule);
-  padding-bottom:4px;
-  margin:18px 0 8px 0;
-}
-.hr{border:none;border-top:1px dashed var(--rule);margin:14px 0;}
+  .mono{font-family:'Courier Prime', monospace;}
+  .stamp-font{font-family:'Special Elite', 'Courier Prime', monospace;}
 
-/* ===== Common bits ===== */
-.stamp{
-  display:inline-block;
-  font-family:'Special Elite',monospace;
-  border:3px solid var(--stamp-red);
-  color:var(--stamp-red);
-  padding:3px 10px;
-  transform:rotate(-4deg);
-  text-transform:uppercase;
-  letter-spacing:2px;
-  font-weight:bold;
-  font-size:0.75rem;
-  border-radius:4px;
-  opacity:0.88;
-}
-.stamp.olive{border-color:var(--stamp-olive);color:var(--stamp-olive);}
-.badge{
-  display:inline-block;
-  border:1px solid var(--ink);
-  padding:2px 8px;
-  font-size:0.68rem;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  background:var(--parchment-dark);
-}
-.badge.frozen{background:#cfe0e8;border-color:#2c4a5a;color:#2c4a5a;}
-.badge.danger{background:#ecd2d2;border-color:var(--danger);color:var(--danger);}
+  a{color:var(--blood);}
+  button{font-family:'Special Elite','Courier Prime',monospace;}
 
-.meter{
-  width:100%;
-  height:16px;
-  border:1px solid var(--ink);
-  background:repeating-linear-gradient(45deg, #d8cba3, #d8cba3 4px, #cabb8c 4px, #cabb8c 8px);
-  position:relative;
-  margin:4px 0;
-}
-.meter-fill{height:100%;background:var(--good);transition:width 0.4s ease;}
-.meter-fill.warn{background:var(--warn);}
-.meter-fill.danger{background:var(--danger);}
-.meter-label{font-size:0.72rem;color:var(--ink-soft);display:flex;justify-content:space-between;}
+  /* ===== Layout shell ===== */
+  #app{max-width:900px;margin:0 auto;padding:0 12px 40px;}
 
-button, .btnlike{
-  font-family:'Special Elite',monospace;
-  background:var(--parchment-dark);
-  border:1.5px solid var(--ink);
-  padding:7px 12px;
-  cursor:pointer;
-  font-size:0.76rem;
-  letter-spacing:0.5px;
-  text-transform:uppercase;
-  color:var(--ink);
-  border-radius:3px;
-}
-button:hover:not(:disabled){background:#c9b57f;}
-button:disabled{opacity:0.42;cursor:not-allowed;}
-button.primary{background:var(--stamp-olive);color:#f1e7c9;border-color:var(--stamp-olive);}
-button.primary:hover:not(:disabled){background:#3f4a29;}
-button.danger-btn{background:var(--danger);color:#f1e7c9;border-color:var(--danger);}
-button.danger-btn:hover:not(:disabled){background:#5c1717;}
-input[type=number], input[type=text], textarea{
-  font-family:'Courier Prime',monospace;
-  border:1.5px solid var(--ink);
-  background:#fbf5e2;
-  padding:7px 9px;
-  font-size:0.85rem;
-  color:var(--ink);
-  border-radius:2px;
-}
-textarea{width:100%;resize:vertical;}
-label{font-size:0.78rem;color:var(--ink-soft);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;}
+  header#hdr{
+    position:sticky; top:0; z-index:50;
+    background:var(--paper-dark);
+    border-bottom:3px double var(--ink);
+    box-shadow:var(--shadow);
+    padding:10px 14px 8px;
+  }
+  .hdr-row1{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;}
+  .hdr-title{
+    font-family:'Special Elite',monospace;
+    font-size:1.15rem; letter-spacing:1px;
+    color:var(--ink);
+  }
+  .hdr-rc{
+    font-family:'Courier Prime',monospace; font-weight:700;
+    background:var(--paper); border:1.5px solid var(--ink);
+    padding:2px 8px; border-radius:3px; white-space:nowrap;
+  }
+  .hdr-row2{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    font-family:'Courier Prime',monospace; font-size:0.85rem; color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .badge{
+    display:inline-block; padding:1px 7px; border-radius:2px;
+    font-size:0.75rem; font-weight:700; letter-spacing:0.5px;
+    border:1px solid currentColor;
+  }
+  .badge.SAFE{color:var(--safe);}
+  .badge.EUCLID{color:var(--euclid);}
+  .badge.KETER{color:var(--keter); animation:pulseKeter 2.2s infinite;}
+  @keyframes pulseKeter{0%,100%{box-shadow:0 0 0 rgba(122,46,34,0);}50%{box-shadow:0 0 6px rgba(122,46,34,0.6);}}
 
-.card{
-  border:1.5px solid var(--ink);
-  background:var(--parchment);
-  padding:12px 14px;
-  margin-bottom:10px;
-}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:640px){.grid{grid-template-columns:1fr;}}
+  .hdr-hunger-wrap{display:flex;align-items:center;gap:6px;}
+  .hdr-hunger-bar{
+    width:70px; height:8px; background:var(--paper); border:1px solid var(--ink);
+    border-radius:2px; overflow:hidden;
+  }
+  .hdr-hunger-fill{height:100%; background:var(--stamp-green); transition:width .4s ease, background .4s ease;}
+  .hdr-frozen{color:#2a5a7a;}
 
-.taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.tag{
-  font-size:0.7rem;
-  border:1px solid var(--rule);
-  padding:2px 7px;
-  background:#efe3c0;
-  color:var(--ink-soft);
-}
-.tag.new{border-color:var(--stamp-red);color:var(--stamp-red);font-weight:bold;}
+  /* ===== Tab bar ===== */
+  nav#tabs{
+    display:flex; gap:2px; overflow-x:auto; margin-top:8px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:thin;
+    border-bottom:2px solid var(--ink);
+  }
+  nav#tabs::-webkit-scrollbar{height:5px;}
+  nav#tabs::-webkit-scrollbar-thumb{background:var(--rule);}
+  nav#tabs button{
+    flex:0 0 auto;
+    background:var(--paper-shadow); color:var(--ink-soft);
+    border:1px solid var(--ink); border-bottom:none;
+    padding:7px 12px; font-size:0.78rem; letter-spacing:0.5px;
+    cursor:pointer; border-radius:4px 4px 0 0; white-space:nowrap;
+    text-transform:uppercase;
+  }
+  nav#tabs button.active{background:var(--paper); color:var(--ink); font-weight:700; box-shadow:0 -2px 0 var(--blood) inset;}
 
-.logline{
-  font-size:0.78rem;
-  border-bottom:1px dotted var(--rule);
-  padding:5px 0;
-}
-.logline .ts{color:var(--ink-soft);font-size:0.68rem;display:block;}
+  main{padding-top:14px;}
+  .panel{display:none; animation:fadeIn .25s ease;}
+  .panel.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
 
-.empty-state{
-  border:2px dashed var(--rule);
-  padding:22px;
-  text-align:center;
-  color:var(--ink-soft);
-  font-style:italic;
-}
+  .sheet{
+    background:var(--paper); border:1px solid var(--ink);
+    box-shadow:var(--shadow); border-radius:2px;
+    padding:14px 16px; margin-bottom:14px;
+    position:relative;
+  }
+  .sheet::before{
+    content:""; position:absolute; inset:4px; border:1px solid rgba(44,36,22,0.25);
+    pointer-events:none;
+  }
+  .sheet h2{
+    font-family:'Special Elite',monospace; font-size:1rem; margin:0 0 10px;
+    text-transform:uppercase; letter-spacing:1px; border-bottom:1.5px solid var(--rule);
+    padding-bottom:6px;
+  }
+  .sheet h3{font-family:'Special Elite',monospace;font-size:0.85rem;margin:14px 0 6px;letter-spacing:0.5px;}
+  hr.rule{border:none;border-top:1px dashed var(--rule); margin:10px 0;}
 
-.foodrow{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border:1px solid var(--ink);
-  background:var(--parchment);
-  padding:9px 12px;
-  margin-bottom:8px;
-  gap:10px;
-  flex-wrap:wrap;
-}
-.foodrow .fname{font-weight:bold;}
-.foodrow .fmeta{font-size:0.7rem;color:var(--ink-soft);}
-.foodrow.soldout{opacity:0.5;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  .col{display:flex; flex-direction:column; gap:4px;}
+  .muted{color:var(--ink-soft); font-size:0.88rem;}
+  .small{font-size:0.8rem;}
 
-.footerbar{
-  margin-top:10px;
-  display:flex;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:6px;
-  font-size:0.68rem;
-  color:var(--ink-soft);
-  padding:0 4px;
-}
+  button.btn{
+    background:var(--ink); color:var(--paper);
+    border:none; padding:8px 14px; border-radius:3px; cursor:pointer;
+    font-size:0.82rem; letter-spacing:0.5px; text-transform:uppercase;
+    box-shadow:1px 1px 0 var(--ink-soft);
+  }
+  button.btn:hover{filter:brightness(1.15);}
+  button.btn:disabled{background:#948a6f; cursor:not-allowed; box-shadow:none;}
+  button.btn.secondary{background:transparent; color:var(--ink); border:1.5px solid var(--ink); box-shadow:none;}
+  button.btn.danger{background:var(--danger); color:var(--paper);}
+  button.btn.small{padding:4px 9px; font-size:0.72rem;}
 
-/* stamp pop animation */
-#stampLayer{position:fixed;top:0;left:0;right:0;pointer-events:none;display:flex;justify-content:center;z-index:999;}
-.stamp-pop{
-  margin-top:40px;
-  font-family:'Special Elite',monospace;
-  background:rgba(241,231,201,0.97);
-  border:4px solid var(--stamp-red);
-  color:var(--stamp-red);
-  padding:14px 26px;
-  font-size:1.1rem;
-  text-transform:uppercase;
-  letter-spacing:2px;
-  font-weight:bold;
-  border-radius:6px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.35);
-  animation:stampAnim 2.6s ease forwards;
-}
-@keyframes stampAnim{
-  0%{transform:scale(2.2) rotate(-8deg);opacity:0;}
-  12%{transform:scale(1) rotate(-4deg);opacity:1;}
-  80%{transform:scale(1) rotate(-4deg);opacity:1;}
-  100%{transform:scale(1) rotate(-4deg);opacity:0;}
-}
+  input[type=number], input[type=text]{
+    font-family:'Courier Prime',monospace; padding:6px 8px; border:1.5px solid var(--ink);
+    background:#f4ecd6; border-radius:2px; font-size:0.9rem;
+  }
+  textarea{
+    font-family:'Courier Prime',monospace; font-size:0.75rem; width:100%; min-height:80px;
+    border:1.5px solid var(--ink); background:#f4ecd6; padding:6px; border-radius:2px;
+  }
 
-.warn-text{color:var(--warn);font-weight:bold;}
-.danger-text{color:var(--danger);font-weight:bold;}
-.good-text{color:var(--good);font-weight:bold;}
+  /* hunger bar big */
+  .hbar{height:16px; background:#d9cba4; border:1.5px solid var(--ink); border-radius:3px; overflow:hidden; position:relative;}
+  .hbar-fill{height:100%; transition:width .5s ease, background .5s ease;}
+  .hbar-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-family:'Courier Prime',monospace; font-weight:700; mix-blend-mode:difference; color:#fff;}
 
-table.simple{width:100%;border-collapse:collapse;font-size:0.78rem;}
-table.simple th, table.simple td{border:1px solid var(--rule);padding:6px 8px;text-align:left;}
-table.simple th{background:var(--parchment-dark);text-transform:uppercase;font-size:0.68rem;letter-spacing:0.5px;}
+  .warn-banner{
+    padding:8px 10px; border-radius:3px; font-size:0.85rem; margin:8px 0;
+    border-left:5px solid var(--warn); background:rgba(169,114,15,0.12);
+  }
+  .warn-banner.critical{border-left-color:var(--danger); background:rgba(156,43,31,0.14); font-weight:700;}
+  .warn-banner.starving{border-left-color:var(--danger); background:rgba(156,43,31,0.22); font-weight:700; animation:blink 1.4s infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.55;}}
 
-.archive-item{border:1.5px solid var(--ink);background:var(--parchment);padding:10px 14px;margin-bottom:10px;cursor:pointer;}
-.archive-item summary{cursor:pointer;font-weight:bold;}
-.archive-item[open]{background:var(--panel);}
+  .trait-list{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px;}
+  .trait-list li{
+    padding:6px 9px; background:rgba(44,36,22,0.06); border-left:3px solid var(--rule); border-radius:2px; font-size:0.88rem;
+  }
+  .trait-list li.part{border-left-color:var(--stamp-gold);}
+  .trait-list li.trait{border-left-color:var(--stamp-green);}
+  .rarity-tag{
+    font-family:'Courier Prime',monospace; font-size:0.68rem; font-weight:700;
+    letter-spacing:0.5px; margin-right:6px; padding:0 4px; border:1px solid currentColor;
+    border-radius:2px; white-space:nowrap; opacity:0.85;
+  }
+  .rarity-tag.common{color:var(--ink-soft);}
+  .rarity-tag.uncommon{color:var(--stamp-green);}
+  .rarity-tag.rare{color:var(--stamp-gold);}
+  .rarity-tag.legendary{color:var(--blood); opacity:1; animation:pulseKeter 2.8s infinite;}
 
-.inline-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
-.small-note{font-size:0.7rem;color:var(--ink-soft);margin-top:4px;}
+  .log-list{list-style:none; margin:0; padding:0; font-family:'Courier Prime',monospace; font-size:0.78rem;}
+  .log-list li{padding:4px 0; border-bottom:1px dotted var(--rule); color:var(--ink-soft);}
+  .log-list li .t{color:var(--ink); opacity:0.6; margin-right:6px;}
+  .log-list li.evt-death{color:var(--danger); font-weight:700;}
+  .log-list li.evt-evolve{color:var(--stamp-green); font-weight:700;}
+  .log-list li.evt-mutation{color:var(--stamp-gold); font-weight:700;}
+  .log-list li.evt-rampage{color:var(--danger);}
+
+  /* Modal */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(20,16,8,0.55); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal{
+    background:var(--paper); border:2px solid var(--ink); box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    max-width:460px; width:100%; padding:18px 20px; border-radius:3px; max-height:88vh; overflow-y:auto;
+  }
+  .modal h2{margin-top:0;}
+
+  .food-opt{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:8px 10px; border:1px solid var(--ink); border-radius:3px; margin-bottom:8px; background:#f4ecd6;
+  }
+  .food-opt.disabled{opacity:0.45;}
+  .food-opt .fname{font-weight:700; font-size:0.88rem;}
+  .food-opt .fmeta{font-size:0.72rem; color:var(--ink-soft); font-family:'Courier Prime',monospace;}
+
+  .shop-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:520px){.shop-grid{grid-template-columns:1fr;}}
+  .shop-card{border:1px solid var(--ink); background:#f4ecd6; border-radius:3px; padding:10px;}
+  .shop-card h4{margin:0 0 4px; font-size:0.9rem; font-family:'Special Elite',monospace;}
+
+  table.rlog{width:100%; border-collapse:collapse; font-family:'Courier Prime',monospace; font-size:0.8rem;}
+  table.rlog th, table.rlog td{border-bottom:1px solid var(--rule); padding:5px 4px; text-align:left;}
+
+  details.faq summary{cursor:pointer; font-weight:700; padding:6px 0;}
+  details.faq{border-bottom:1px dotted var(--rule); padding:2px 0;}
+
+  .stampbox{
+    display:inline-block; border:3px double currentColor; padding:4px 10px; transform:rotate(-2deg);
+    font-family:'Special Elite',monospace; font-size:0.85rem; letter-spacing:1px; border-radius:4px;
+  }
+
+  .toast-wrap{position:fixed; bottom:14px; right:14px; z-index:300; display:flex; flex-direction:column; gap:8px; max-width:280px;}
+  .toast{
+    background:var(--ink); color:var(--paper); padding:10px 14px; border-radius:4px; box-shadow:var(--shadow);
+    font-size:0.82rem; animation:toastIn .3s ease;
+  }
+  @keyframes toastIn{from{opacity:0; transform:translateX(20px);}to{opacity:1;transform:none;}}
+  .toast.evolve{border-left:4px solid var(--stamp-green);}
+  .toast.mutation{border-left:4px solid var(--stamp-gold);}
+  .toast.danger{border-left:4px solid var(--danger);}
+
+  .archive-card{border:1px solid var(--ink); background:#f4ecd6; border-radius:3px; padding:10px; margin-bottom:10px;}
+  .archive-card h4{margin:0 0 4px;}
+
+  .pending-entry{border:1px dashed var(--rule); padding:10px; border-radius:3px; margin-bottom:8px;}
+
+  footer.note{text-align:center; color:var(--ink-soft); font-size:0.75rem; margin-top:20px;}
 </style>
 </head>
 <body>
-<div id="stampLayer"></div>
-<div class="wrap">
 
-  <div class="masthead">
-    <div class="masthead-top">
-      <div>
-        <h1>Field Specimen Log</h1>
-        <div class="sub">Division of Anomalous Husbandry &amp; Reading-Linked Provisioning</div>
-      </div>
-      <div class="credits-box">
-        <div class="amt" id="hdrCredits">0 RC</div>
-        <div class="lbl">Ration Credits</div>
-      </div>
+<div id="app">
+
+  <header id="hdr">
+    <div class="hdr-row1">
+      <div class="hdr-title" id="hdrName">SCP-000-Alpha</div>
+      <div class="hdr-rc mono" id="hdrRC">0 RC</div>
     </div>
-    <div class="tabbar" id="tabbar"></div>
-  </div>
+    <div class="hdr-row2">
+      <span id="hdrStage">Stage 1</span>
+      <span class="badge SAFE" id="hdrClass">SAFE</span>
+      <span class="hdr-hunger-wrap">Hunger
+        <span class="hdr-hunger-bar"><span class="hdr-hunger-fill" id="hdrHungerFill" style="width:100%"></span></span>
+        <span id="hdrHungerPct">100%</span>
+      </span>
+      <span id="hdrFrozenTag" class="hdr-frozen" style="display:none;">❄ FROZEN</span>
+    </div>
+    <nav id="tabs">
+      <button data-tab="field" class="active">Field Report</button>
+      <button data-tab="reading">Reading</button>
+      <button data-tab="market">Market</button>
+      <button data-tab="provisions">Provisions</button>
+      <button data-tab="archive">Archive</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+  </header>
 
-  <div class="page" id="page"></div>
+  <main>
+    <section class="panel active" id="panel-field"></section>
+    <section class="panel" id="panel-reading"></section>
+    <section class="panel" id="panel-market"></section>
+    <section class="panel" id="panel-provisions"></section>
+    <section class="panel" id="panel-archive"></section>
+    <section class="panel" id="panel-settings"></section>
+  </main>
 
-  <div class="footerbar">
-    <span id="footStatus">—</span>
-    <span id="footClock">—</span>
-  </div>
-
+  <footer class="note">Abomination Keeper — a text-based containment simulator. All data stored locally in your browser.</footer>
 </div>
 
+<div id="modalRoot"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
 <script>
-'use strict';
-/* =========================================================================
-   CONSTANTS
-   ========================================================================= */
-var SAVE_KEY = 'abomination_husbandry_save_v1';
-var HOUR = 3600000, DAY = 86400000;
-var STAGE_NAMES = ['', 'Larval Anomaly', 'Juvenile Specimen', 'Subadult Specimen', 'Mature Specimen', 'Fully Matured Specimen'];
-var STAGE_THRESH_H = [0, 24, 60, 108, 168]; // hours of ACTIVE age at which stage (index+1) begins
-var STAGE_THRESH_MS = STAGE_THRESH_H.map(function(h){ return h*HOUR; });
-var HUNGER_DECAY_PER_MS = 100 / (24*HOUR); // full->empty in 24 active hours
-var STARVE_GRACE_MS = 8*HOUR; // time at 0 hunger before death
-var AMBIENT_CHECK_MS = HOUR;
-var AMBIENT_CHANCE = 0.15;
-var CURRENCY_K = 9;
-var REROLL_BASE = 8, REROLL_STEP = 6;
-var GREEK = ['Alpha','Beta','Gamma','Delta','Epsilon','Zeta','Eta','Theta','Iota','Kappa','Lambda','Mu','Nu','Xi','Omicron','Sigma','Tau','Omega'];
-var CATS = ['meat','flora','mineral','liquid','anomalous'];
-var CAT_LABEL = {meat:'Carnivorous', flora:'Floral/Fungal', mineral:'Mineral', liquid:'Liquid/Chemical', anomalous:'Anomalous', neutral:'Baseline'};
+(function(){
+"use strict";
 
-var BODY_PARTS = {
-  'Head': [
-    {id:'h_neu', name:'Featureless Smooth Head', category:'neutral'},
-    {id:'h_ano', name:'Fused Twin Skull', category:'anomalous'},
-    {id:'h_mea', name:'Elongated Canine Snout', category:'meat'},
-    {id:'h_flo', name:'Bulbous Fungal Cap', category:'flora'},
-    {id:'h_min', name:'Crystalline Cranial Ridge', category:'mineral'},
-    {id:'h_liq', name:'Skinless Weeping Head', category:'liquid'}
-  ],
-  'Eyes': [
-    {id:'e_neu', name:'Ordinary Dull Eyes', category:'neutral'},
-    {id:'e_ano', name:'Cluster of Seven Eyes', category:'anomalous'},
-    {id:'e_mea', name:'Predatory Slit Pupils', category:'meat'},
-    {id:'e_flo', name:'Photosynthetic Eye-Spots', category:'flora'},
-    {id:'e_min', name:'Faceted Gem-Like Eyes', category:'mineral'},
-    {id:'e_liq', name:'Eyes That Weep Dark Fluid', category:'liquid'}
-  ],
-  'Limbs': [
-    {id:'l_neu', name:'Standard Four Limbs', category:'neutral'},
-    {id:'l_ano', name:'Extra Pair of Jointed Legs', category:'anomalous'},
-    {id:'l_mea', name:'Muscular Clawed Forelimbs', category:'meat'},
-    {id:'l_flo', name:'Vine-Like Prehensile Limbs', category:'flora'},
-    {id:'l_min', name:'Stone-Plated Stumps', category:'mineral'},
-    {id:'l_liq', name:'Boneless Tentacular Limbs', category:'liquid'}
-  ],
-  'Tail': [
-    {id:'t_neu', name:'Short Stub Tail', category:'neutral'},
-    {id:'t_ano', name:'Second, Vestigial Tail', category:'anomalous'},
-    {id:'t_mea', name:'Barbed Whip-Tail', category:'meat'},
-    {id:'t_flo', name:'Thorned Vine Tail', category:'flora'},
-    {id:'t_min', name:'Segmented Armored Tail', category:'mineral'},
-    {id:'t_liq', name:'Constantly Dripping Tail', category:'liquid'}
-  ],
-  'Skin/Hide': [
-    {id:'s_neu', name:'Smooth Grey Skin', category:'neutral'},
-    {id:'s_ano', name:'Skin That Phases Translucent', category:'anomalous'},
-    {id:'s_mea', name:'Thick, Scarred Hide', category:'meat'},
-    {id:'s_flo', name:'Moss-Covered Bark-Like Skin', category:'flora'},
-    {id:'s_min', name:'Rock-Plated Carapace', category:'mineral'},
-    {id:'s_liq', name:'Perpetually Slick, Wet Skin', category:'liquid'}
-  ],
-  'Mouth': [
-    {id:'m_neu', name:'Small Simple Mouth', category:'neutral'},
-    {id:'m_ano', name:'Mouth Lined with Concentric Teeth Rings', category:'anomalous'},
-    {id:'m_mea', name:'Wide, Fanged Maw', category:'meat'},
-    {id:'m_flo', name:'Toothless Filtering Maw', category:'flora'},
-    {id:'m_min', name:'Grinding Stone Jaw', category:'mineral'},
-    {id:'m_liq', name:'Mouth That Drools Corrosive Fluid', category:'liquid'}
-  ],
-  'Appendage': [
-    {id:'a_neu', name:'Small Fleshy Nub', category:'neutral'},
-    {id:'a_ano', name:'Pair of Reality-Flickering Wings', category:'anomalous'},
-    {id:'a_mea', name:'Curved Ivory Horns', category:'meat'},
-    {id:'a_flo', name:'Blooming Flower Cluster', category:'flora'},
-    {id:'a_min', name:'Protruding Quartz Spikes', category:'mineral'},
-    {id:'a_liq', name:'Pulsating Bio-Sac', category:'liquid'}
-  ],
-  'Internal Organ': [
-    {id:'o_neu', name:'Unremarkable Organ Cluster', category:'neutral'},
-    {id:'o_ano', name:'A Second, Silent Heart', category:'anomalous'},
-    {id:'o_mea', name:'Overdeveloped Digestive Tract', category:'meat'},
-    {id:'o_flo', name:'Chlorophyll-Rich Bloodstream', category:'flora'},
-    {id:'o_min', name:'Mineral-Dense Bone Marrow', category:'mineral'},
-    {id:'o_liq', name:'Internal Bioluminescent Bladder', category:'liquid'}
-  ]
-};
+/* ============================= CONSTANTS ============================= */
+const SAVE_KEY = "abomination_keeper_save_v1";
+const HOUR = 3600000, DAY = 86400000;
+const STAGE_HOURS = [12,36,72,120,168]; // cumulative active hours thresholds
+const STAGE_NAMES = ["Nascent","Juvenile","Subadult","Mature","Fully Matured"];
+const GREEK = ["Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Eta","Theta","Iota","Kappa","Lambda","Mu","Nu","Xi","Omicron","Pi","Rho","Sigma","Tau","Upsilon","Phi","Chi","Psi","Omega"];
+const RC_K = 6; // currency = round(RC_K * sqrt(minutes))
+const HUNGER_ZERO_GRACE_HOURS = 8; // time from hunger=0 to death
+const RAMPAGE_HOURLY_CHANCE = 0.08; // when hunger <=10
+const WARN_THRESHOLDS = [50,25,10,0];
 
-var TRAITS = [
-  {id:'tr_carn', name:'Carnivorous Instinct', category:'meat'},
-  {id:'tr_terr', name:'Territorial Aggression', category:'meat'},
-  {id:'tr_pack', name:'Pack-Hunting Urge', category:'meat'},
-  {id:'tr_stalk', name:'Predatory Stalking Gait', category:'meat'},
-  {id:'tr_blood', name:'Heightened Blood-Scent Sensitivity', category:'meat'},
-  {id:'tr_photo', name:'Photosynthetic Dependency', category:'flora'},
-  {id:'tr_docile', name:'Unusually Docile Temperament', category:'flora'},
-  {id:'tr_root', name:'Root-Bound Stillness', category:'flora'},
-  {id:'tr_pollen', name:'Pollen-Release Reflex', category:'flora'},
-  {id:'tr_dorm', name:'Seasonal Dormancy Urge', category:'flora'},
-  {id:'tr_calc', name:'Calcified Reflexes', category:'mineral'},
-  {id:'tr_mag', name:'Magnetic Field Sensitivity', category:'mineral'},
-  {id:'tr_slow', name:'Abnormally Slow Metabolic Rate', category:'mineral'},
-  {id:'tr_weight', name:'Weight Far Exceeding Appearance', category:'mineral'},
-  {id:'tr_static', name:'Static Charge Buildup', category:'mineral'},
-  {id:'tr_corr', name:'Corrosive Secretion', category:'liquid'},
-  {id:'tr_biolum', name:'Bioluminescent Pulse', category:'liquid'},
-  {id:'tr_leak', name:'Constant Low-Level Leaking', category:'liquid'},
-  {id:'tr_mood', name:'Chemical Mood Signaling', category:'liquid'},
-  {id:'tr_osmo', name:'Osmotic Skin Absorption', category:'liquid'},
-  {id:'tr_flick', name:'Intermittent Reality Flicker', category:'anomalous'},
-  {id:'tr_euclid', name:'Non-Euclidean Geometry', category:'anomalous'},
-  {id:'tr_echo', name:'Temporal Echo (Lags Behind Itself)', category:'anomalous'},
-  {id:'tr_perm', name:'Object Permanence Failure', category:'anomalous'},
-  {id:'tr_cog', name:'Mild Cognitohazardous Presence', category:'anomalous'},
-  {id:'tr_tele', name:'Spontaneous Minor Teleportation', category:'anomalous'},
-  {id:'tr_noct', name:'Nocturnal Restlessness', category:'neutral'},
-  {id:'tr_voc', name:'Unusual Vocalization Pattern', category:'neutral'},
-  {id:'tr_hum', name:'Persistent Faint Humming', category:'neutral'},
-  {id:'tr_circ', name:'Habitual Circling Behavior', category:'neutral'}
-];
-
-var FOOD_ITEMS = [
-  {id:'fd_ration', name:'Stale Ration Bar', category:'neutral', price:12, restore:30, mut:0.02},
-  {id:'fd_paste', name:'Lab-Grade Nutrient Paste', category:'neutral', price:18, restore:40, mut:0.03},
-  {id:'fd_fruit', name:'Bruised Mixed Fruit', category:'neutral', price:10, restore:25, mut:0.02},
-  {id:'fd_grain', name:'Dried Grain Mash', category:'neutral', price:14, restore:32, mut:0.02},
-  {id:'fd_meat1', name:'Unidentified Raw Meat', category:'meat', price:28, restore:28, mut:0.10},
-  {id:'fd_meat2', name:'Cultured Muscle Tissue', category:'meat', price:34, restore:24, mut:0.12},
-  {id:'fd_meat3', name:'Frozen Game Offcuts', category:'meat', price:22, restore:26, mut:0.08},
-  {id:'fd_flo1', name:'Luminous Moss Clump', category:'flora', price:24, restore:24, mut:0.10},
-  {id:'fd_flo2', name:'Root Vegetable Bundle', category:'flora', price:20, restore:26, mut:0.08},
-  {id:'fd_flo3', name:'Spore-Laden Bark', category:'flora', price:30, restore:22, mut:0.12},
-  {id:'fd_min1', name:'Iron Filings', category:'mineral', price:26, restore:20, mut:0.10},
-  {id:'fd_min2', name:'Quartz Shard Cluster', category:'mineral', price:32, restore:20, mut:0.12},
-  {id:'fd_min3', name:'Powdered Limestone', category:'mineral', price:20, restore:22, mut:0.08},
-  {id:'fd_liq1', name:'Vial of Unknown Solvent', category:'liquid', price:30, restore:22, mut:0.11},
-  {id:'fd_liq2', name:'Bioluminescent Sludge', category:'liquid', price:36, restore:20, mut:0.13},
-  {id:'fd_liq3', name:'Condensed Mucus Sample', category:'liquid', price:24, restore:24, mut:0.09},
-  {id:'fd_ano1', name:'Reality-Adjacent Residue', category:'anomalous', price:85, restore:16, mut:0.28},
-  {id:'fd_ano2', name:'Temporally Confused Egg', category:'anomalous', price:95, restore:14, mut:0.30},
-  {id:'fd_ano3', name:'Unstable Anomalous Compound', category:'anomalous', price:110, restore:12, mut:0.32}
-];
-var FOOD_BY_ID = {};
-FOOD_ITEMS.forEach(function(f){ FOOD_BY_ID[f.id]=f; });
-
-var AMBIENT_LOGS = [
-  'Specimen remained motionless for an extended period.',
-  'A faint, unidentifiable sound was recorded near the enclosure.',
-  'Specimen appears to be observing its surroundings with unusual intensity.',
-  'Routine check: no anomalous activity to report.',
-  'Specimen exhibited a brief, untraceable shudder.',
-  'Enclosure temperature fluctuated by less than one degree; noted for the record.',
-  'Specimen pressed itself against the enclosure wall for several minutes.',
-  'A researcher noted the specimen "seemed to be waiting for something."',
-  'Specimen behavior during this period was, notably, entirely unremarkable.',
-  'Faint bioluminescent flickering observed near the specimen; cause unknown.'
-];
-
-var BIO_INTROS = [
-  'Field notes on {des}, presently classified {stage}:',
-  'Observation summary for specimen {des} ({stage}):',
-  'Case file excerpt — {des}, currently designated {stage}:',
-  'Handler log, {des}: subject remains under {stage} classification.'
-];
-var BIO_CLOSINGS_ALIVE = [
-  'Containment remains nominal. Further observation recommended.',
-  'No breach attempts recorded. Feeding schedule to be maintained.',
-  'Subject continues to defy easy taxonomic classification.',
-  'Handlers are advised to document any further deviation immediately.'
-];
-var BIO_CLOSINGS_DEAD = [
-  'Subject is no longer viable. File closed pending review.',
-  'Cause of termination has been logged. Case archived.',
-  'Specimen expired under handler supervision. Post-mortem notes filed.',
-  'End of active observation. Remains catalogued for the record.'
-];
-
-/* =========================================================================
-   UTILITIES
-   ========================================================================= */
-function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
-function rand(){ return Math.random(); }
-function choice(arr){ return arr[Math.floor(rand()*arr.length)]; }
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function todayStr(d){
-  d = d || new Date();
-  var y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
-  return y+'-'+m+'-'+day;
+/* Normalizes a mutation entry so partial/older entries get safe defaults.
+   Adding a future mutation only requires id, text, and cat -- slot, family,
+   and rarity are optional and will default sensibly if omitted. */
+function normMut(m){
+  return Object.assign({slot:"misc", family:null, rarity:"common"}, m);
 }
-function addDaysStr(dateStr, n){
-  var parts = dateStr.split('-').map(Number);
-  var d = new Date(parts[0], parts[1]-1, parts[2]);
-  d.setDate(d.getDate()+n);
-  return todayStr(d);
+
+const RAW_BODY_PARTS = [
+  {id:"p1",text:"a secondary jaw lined with inward-facing teeth",cat:["chitin"],slot:"mouth",family:"feeding",rarity:"uncommon"},
+  {id:"p2",text:"a pair of vestigial wings that twitch rhythmically",cat:["basic"],slot:"wing",family:"locomotion",rarity:"common"},
+  {id:"p3",text:"a cluster of extra eyes along its flank",cat:["anomaly"],slot:"eye",family:"ocular",rarity:"uncommon"},
+  {id:"p4",text:"a barbed tail ending in a bony hook",cat:["chitin"],slot:"tail",family:"defensive",rarity:"common"},
+  {id:"p5",text:"translucent membranous fins that shimmer faintly",cat:["bio"],slot:"torso",family:"aquatic",rarity:"common"},
+  {id:"p6",text:"a crown of calcified spines",cat:["chitin"],slot:"head",family:"defensive",rarity:"common"},
+  {id:"p7",text:"an additional pair of jointed limbs",cat:["basic"],slot:"arm",family:"limb",rarity:"uncommon"},
+  {id:"p8",text:"a pulsating dorsal sac that glows dimly",cat:["bio"],slot:"torso",family:"luminous",rarity:"common"},
+  {id:"p9",text:"tendrils that taste the air",cat:["fungal"],slot:"sensory",family:"fungal",rarity:"common"},
+  {id:"p10",text:"a thick chitinous exoskeletal plate",cat:["chitin"],slot:"skin",family:"defensive",rarity:"common"},
+  {id:"p11",text:"a mouth that opens sideways with unsettling ease",cat:["anomaly"],slot:"mouth",family:"feeding",rarity:"uncommon"},
+  {id:"p12",text:"clawed forelimbs disproportionate to its body",cat:["chitin"],slot:"arm",family:"limb",rarity:"common"},
+  {id:"p13",text:"a segmented, worm-like lower body",cat:["fungal"],slot:"torso",family:"fungal",rarity:"uncommon"},
+  {id:"p14",text:"a patch of feathered appendages of unknown use",cat:["basic"],slot:"skin",family:"misc",rarity:"common"},
+  {id:"p15",text:"a second, smaller head fused at the shoulder",cat:["anomaly","void"],slot:"head",family:"cephalic",rarity:"legendary"},
+  {id:"p16",text:"a lattice of exposed crystalline veins",cat:["energy"],slot:"skin",family:"crystalline",rarity:"uncommon"},
+  {id:"p17",text:"a charred, blackened stump where a limb should be",cat:["char"],slot:"arm",family:"combustion",rarity:"common"},
+  {id:"p18",text:"a cluster of fungal fruiting bodies along its spine",cat:["fungal"],slot:"torso",family:"fungal",rarity:"common"},
+  {id:"p19",text:"a faint static halo that crackles around its head",cat:["energy"],slot:"head",family:"electric",rarity:"uncommon"},
+  {id:"p20",text:"a pair of smoke-wreathed vestigial horns",cat:["char","void"],slot:"head",family:"combustion",rarity:"uncommon"},
+  {id:"p21",text:"a whip-like proboscis that probes blindly at the air",cat:["basic"],slot:"mouth",family:"feeding",rarity:"common"},
+  {id:"p22",text:"a ring of retractable spines around its neck",cat:["chitin"],slot:"torso",family:"defensive",rarity:"common"},
+  {id:"p23",text:"a bundle of luminous cilia along its underside",cat:["bio"],slot:"torso",family:"luminous",rarity:"common"},
+  {id:"p24",text:"a rubbery, boneless third arm",cat:["basic"],slot:"arm",family:"limb",rarity:"common"},
+  {id:"p25",text:"a set of gills that open along its ribs",cat:["basic"],slot:"torso",family:"respiratory",rarity:"common"},
+  {id:"p26",text:"a mass of writhing root-like tendrils for a lower half",cat:["fungal"],slot:"torso",family:"fungal",rarity:"uncommon"},
+  {id:"p27",text:"a mirrored carapace that fractures light strangely",cat:["anomaly"],slot:"skin",family:"crystalline",rarity:"rare"},
+  {id:"p28",text:"a cluster of vestigial mouths that never fully close",cat:["anomaly"],slot:"mouth",family:"feeding",rarity:"rare"},
+  {id:"p29",text:"a spiraled horn weeping a dark resin",cat:["void"],slot:"head",family:"void",rarity:"uncommon"},
+  {id:"p30",text:"a pair of moth-like antennae dusted with spores",cat:["fungal"],slot:"sensory",family:"fungal",rarity:"common"},
+  {id:"p31",text:"an exposed ribcage lined with faintly glowing veins",cat:["energy"],slot:"torso",family:"electric",rarity:"uncommon"},
+  {id:"p32",text:"a stubby tail tipped in obsidian-black bone",cat:["chitin"],slot:"tail",family:"defensive",rarity:"common"},
+  {id:"p33",text:"a hood of leathery skin that flares when startled",cat:["basic"],slot:"skin",family:"defensive",rarity:"common"},
+  {id:"p34",text:"a cluster of bioluminescent pustules along its back",cat:["bio"],slot:"skin",family:"luminous",rarity:"common"},
+  {id:"p35",text:"a jagged crystal fin running down its spine",cat:["energy"],slot:"torso",family:"crystalline",rarity:"uncommon"},
+  {id:"p36",text:"a pair of skeletal wings wrapped in ash-grey membrane",cat:["char"],slot:"wing",family:"combustion",rarity:"uncommon"},
+  {id:"p37",text:"an extra set of clawed feet, always slightly out of sync",cat:["chitin"],slot:"leg",family:"limb",rarity:"uncommon"},
+  {id:"p38",text:"a coiled, prehensile tongue longer than its body",cat:["basic"],slot:"mouth",family:"feeding",rarity:"common"},
+  {id:"p39",text:"a patchwork of scar tissue that never fully heals",cat:["void"],slot:"skin",family:"void",rarity:"uncommon"},
+  {id:"p40",text:"a halo of drifting spores that never seem to land",cat:["fungal"],slot:"sensory",family:"fungal",rarity:"common"},
+  {id:"p41",text:"a translucent underbelly revealing shifting internal organs",cat:["anomaly"],slot:"torso",family:"void",rarity:"legendary"},
+  {id:"p42",text:"a set of smoldering, ember-like eyes",cat:["char"],slot:"eye",family:"combustion",rarity:"uncommon"},
+  {id:"p43",text:"a third eye beneath its left eye",cat:["anomaly"],slot:"eye",family:"ocular",rarity:"uncommon"},
+  {id:"p44",text:"a cluster of five eyes arranged in a spiral",cat:["anomaly"],slot:"eye",family:"ocular",rarity:"rare"},
+  {id:"p45",text:"eyes that occasionally blink independently of each other",cat:["anomaly"],slot:"eye",family:"ocular",rarity:"common"},
+  {id:"p46",text:"an eye embedded in the palm of one hand",cat:["anomaly"],slot:"hand",family:"ocular",rarity:"rare"},
+  {id:"p47",text:"a lidless eye recessed into the back of its skull",cat:["anomaly"],slot:"head",family:"ocular",rarity:"uncommon"},
+  {id:"p48",text:"a vestigial third arm folded against its ribs",cat:["basic"],slot:"arm",family:"limb",rarity:"common"},
+  {id:"p49",text:"an extra pair of double-jointed knees",cat:["basic"],slot:"leg",family:"limb",rarity:"common"},
+  {id:"p50",text:"fingers that number seven on each hand",cat:["anomaly"],slot:"hand",family:"limb",rarity:"uncommon"},
+  {id:"p51",text:"a limb that ends in a second, smaller limb",cat:["anomaly"],slot:"arm",family:"limb",rarity:"rare"},
+  {id:"p52",text:"unusually elongated forearms that drag slightly when it walks",cat:["basic"],slot:"arm",family:"limb",rarity:"common"},
+  {id:"p53",text:"a retractable proboscis coiled beneath its tongue",cat:["basic"],slot:"mouth",family:"feeding",rarity:"common"},
+  {id:"p54",text:"rows of replacement teeth visible beneath the current set",cat:["chitin"],slot:"mouth",family:"feeding",rarity:"common"},
+  {id:"p55",text:"a second stomach lining its throat",cat:["bio"],slot:"internal",family:"feeding",rarity:"uncommon"},
+  {id:"p56",text:"a mouth positioned on the back of its neck",cat:["anomaly"],slot:"mouth",family:"feeding",rarity:"rare"},
+  {id:"p57",text:"mandibles that click rhythmically even at rest",cat:["chitin"],slot:"mouth",family:"feeding",rarity:"common"},
+  {id:"p58",text:"an armored ridge running the length of its spine",cat:["chitin"],slot:"torso",family:"defensive",rarity:"common"},
+  {id:"p59",text:"retractable claws sheathed along its forearms",cat:["chitin"],slot:"arm",family:"defensive",rarity:"common"},
+  {id:"p60",text:"a bony carapace fused across its shoulders",cat:["chitin"],slot:"torso",family:"defensive",rarity:"common"},
+  {id:"p61",text:"a tail that ends in a mace-like cluster of bone",cat:["chitin"],slot:"tail",family:"defensive",rarity:"uncommon"},
+  {id:"p62",text:"quills that lie flat until the specimen is startled",cat:["chitin"],slot:"skin",family:"defensive",rarity:"common"},
+  {id:"p63",text:"webbing between each finger and toe",cat:["bio"],slot:"hand",family:"aquatic",rarity:"common"},
+  {id:"p64",text:"a set of gill slits along its neck that flutter faintly",cat:["aquatic"],slot:"torso",family:"aquatic",rarity:"uncommon"},
+  {id:"p65",text:"a paddle-like tail fin replacing its original tail",cat:["aquatic"],slot:"tail",family:"aquatic",rarity:"uncommon"},
+  {id:"p66",text:"skin that remains faintly damp regardless of humidity",cat:["aquatic"],slot:"skin",family:"aquatic",rarity:"common"},
+  {id:"p67",text:"a bioluminescent lure dangling from its brow",cat:["aquatic","bio"],slot:"head",family:"aquatic",rarity:"rare"},
+  {id:"p68",text:"veins that glow faintly along its limbs when active",cat:["bio"],slot:"skin",family:"luminous",rarity:"common"},
+  {id:"p69",text:"a chest cavity that pulses with soft internal light",cat:["bio"],slot:"torso",family:"luminous",rarity:"uncommon"},
+  {id:"p70",text:"eyes that emit a dim glow in darkness",cat:["bio"],slot:"eye",family:"luminous",rarity:"uncommon"},
+  {id:"p71",text:"patches of skin that shimmer faintly under low light",cat:["bio"],slot:"skin",family:"luminous",rarity:"common"},
+  {id:"p72",text:"a cluster of pale mushroom caps along one shoulder",cat:["fungal"],slot:"skin",family:"fungal",rarity:"common"},
+  {id:"p73",text:"root-like filaments spreading from its heels",cat:["fungal"],slot:"leg",family:"fungal",rarity:"common"},
+  {id:"p74",text:"a lattice of mycelial threads visible beneath translucent skin",cat:["fungal"],slot:"skin",family:"fungal",rarity:"uncommon"},
+  {id:"p75",text:"a mass of spore pods nestled along its ribs",cat:["fungal"],slot:"torso",family:"fungal",rarity:"common"},
+  {id:"p76",text:"faceted crystal growths along its knuckles",cat:["crystalline","energy"],slot:"hand",family:"crystalline",rarity:"uncommon"},
+  {id:"p77",text:"a spine of translucent quartz-like plates",cat:["crystalline"],slot:"torso",family:"crystalline",rarity:"uncommon"},
+  {id:"p78",text:"eyes that have hardened into faceted gemstone",cat:["crystalline"],slot:"eye",family:"crystalline",rarity:"rare"},
+  {id:"p79",text:"a shard of embedded crystal protruding from one shoulder",cat:["crystalline"],slot:"torso",family:"crystalline",rarity:"common"},
+  {id:"p80",text:"skin permanently dusted with fine frost",cat:["energy"],slot:"skin",family:"thermal",rarity:"common"},
+  {id:"p81",text:"a ridge of heat-blistered scales down its back",cat:["char"],slot:"torso",family:"thermal",rarity:"common"},
+  {id:"p82",text:"fingertips that leave faint frost when they touch anything",cat:["energy"],slot:"hand",family:"thermal",rarity:"uncommon"},
+  {id:"p83",text:"a tail that smolders faintly at the tip",cat:["char"],slot:"tail",family:"combustion",rarity:"common"},
+  {id:"p84",text:"an ashen crust covering one side of its face",cat:["char"],slot:"head",family:"combustion",rarity:"common"},
+  {id:"p85",text:"cracked, ember-lit fissures along its forearms",cat:["char"],slot:"arm",family:"combustion",rarity:"uncommon"},
+  {id:"p86",text:"a crown of fine copper-like filaments along its scalp",cat:["energy","mechanical"],slot:"head",family:"electric",rarity:"uncommon"},
+  {id:"p87",text:"exposed nodes along its spine that spark faintly",cat:["energy"],slot:"torso",family:"electric",rarity:"uncommon"},
+  {id:"p88",text:"a faint corona of static that clings to its fur",cat:["energy"],slot:"skin",family:"electric",rarity:"common"},
+  {id:"p89",text:"a patch of skin that shows no reflection in mirrors",cat:["void"],slot:"skin",family:"void",rarity:"rare"},
+  {id:"p90",text:"a hand that occasionally passes through solid matter",cat:["void"],slot:"hand",family:"void",rarity:"legendary"},
+  {id:"p91",text:"a section of torso that appears permanently out of focus",cat:["void"],slot:"torso",family:"void",rarity:"uncommon"},
+  {id:"p92",text:"a shadow-dark cavity where an organ should be, visible through a translucent patch of skin",cat:["void","anomaly"],slot:"internal",family:"void",rarity:"rare"},
+  {id:"p93",text:"a second, dormant face beneath the first",cat:["anomaly"],slot:"head",family:"cephalic",rarity:"legendary"},
+  {id:"p94",text:"a skull faintly visible through translucent scalp",cat:["anomaly"],slot:"head",family:"cephalic",rarity:"rare"},
+  {id:"p95",text:"a small vestigial horn budding from its forehead",cat:["chitin"],slot:"head",family:"cephalic",rarity:"common"},
+  {id:"p96",text:"a set of secondary nostrils along its jawline",cat:["basic"],slot:"head",family:"respiratory",rarity:"common"},
+  {id:"p97",text:"gill-like slats along its ribs that open when it exerts itself",cat:["bio"],slot:"torso",family:"respiratory",rarity:"uncommon"},
+  {id:"p98",text:"a third leg that drags slightly out of step with the others",cat:["basic"],slot:"leg",family:"locomotion",rarity:"common"},
+  {id:"p99",text:"digitigrade hind legs ending in blunt claws",cat:["chitin"],slot:"leg",family:"locomotion",rarity:"common"},
+  {id:"p100",text:"a prehensile tail used for balance rather than grip",cat:["basic"],slot:"tail",family:"locomotion",rarity:"common"},
+  {id:"p101",text:"a patch of skin fused with fine metallic filaments",cat:["mechanical"],slot:"skin",family:"mechanical",rarity:"rare"},
+  {id:"p102",text:"a joint that clicks with an audible mechanical precision",cat:["mechanical"],slot:"arm",family:"mechanical",rarity:"uncommon"},
+  {id:"p103",text:"a faint seam along one arm resembling a jointed casing",cat:["mechanical"],slot:"arm",family:"mechanical",rarity:"rare"},
+  {id:"p104",text:"a smaller secondary organism fused to its back",cat:["parasitic","fungal"],slot:"torso",family:"parasitic",rarity:"rare"},
+  {id:"p105",text:"a cluster of small barnacle-like growths along one arm",cat:["parasitic"],slot:"arm",family:"parasitic",rarity:"common"},
+  {id:"p106",text:"a second, vestigial mouth that feeds only when the host does",cat:["parasitic"],slot:"mouth",family:"parasitic",rarity:"uncommon"},
+  {id:"p107",text:"skin that sheds in translucent sheets on a regular cycle",cat:["bio"],slot:"skin",family:"dermal",rarity:"common"},
+  {id:"p108",text:"a mottled patch of scale-like plates across one shoulder",cat:["chitin"],slot:"skin",family:"dermal",rarity:"common"},
+  {id:"p109",text:"skin with a faint iridescent sheen under direct light",cat:["bio"],slot:"skin",family:"dermal",rarity:"uncommon"},
+  {id:"p110",text:"a visible extra rib protruding slightly beneath the skin",cat:["basic"],slot:"torso",family:"skeletal",rarity:"common"},
+  {id:"p111",text:"knuckles that have calcified into small bony knobs",cat:["chitin"],slot:"hand",family:"skeletal",rarity:"common"},
+  {id:"p112",text:"a patch of fine whiskers along its jaw that twitch at faint sounds",cat:["basic"],slot:"sensory",family:"sensory",rarity:"common"},
+  {id:"p113",text:"a cluster of pressure-sensitive barbs along its spine",cat:["chitin"],slot:"sensory",family:"sensory",rarity:"uncommon"},
+  {id:"p114",text:"small pit-like organs along its cheeks that detect heat",cat:["bio"],slot:"sensory",family:"sensory",rarity:"uncommon"},
+  {id:"p115",text:"a patch of fur that stands on end regardless of static or wind",cat:["anomaly"],slot:"skin",family:"gravitic",rarity:"rare"},
+  {id:"p116",text:"a small tuft of prehensile fur at the tip of its tail",cat:["basic"],slot:"tail",family:"locomotion",rarity:"common"},
+  {id:"p117",text:"a faint ring of vestigial teeth embedded in its gumline",cat:["chitin"],slot:"mouth",family:"feeding",rarity:"common"},
+  {id:"p118",text:"a patch of hardened bark-like skin across its back",cat:["fungal"],slot:"skin",family:"fungal",rarity:"common"},
+  {id:"p119",text:"a set of retractable membranes over its ears",cat:["basic"],slot:"sensory",family:"sensory",rarity:"common"},
+  {id:"p120",text:"small vestigial fins along its forearms",cat:["aquatic"],slot:"arm",family:"aquatic",rarity:"common"},
+  {id:"p121",text:"a faint tattoo-like pattern of veins that shifts position over weeks",cat:["anomaly"],slot:"skin",family:"camouflage",rarity:"common"},
+  {id:"p122",text:"a patch of skin that mimics the texture of whatever it last touched",cat:["anomaly"],slot:"skin",family:"camouflage",rarity:"common"},
+  {id:"p128",text:"a heart that is faintly visible and beats in an irregular, syncopated rhythm",cat:["anomaly"],slot:"internal",family:"misc",rarity:"common"},
+  {id:"p123",text:"a coiled tail spike that drips a faintly luminous fluid",cat:["bio"],slot:"tail",family:"luminous",rarity:"rare"},
+  {id:"p124",text:"a mouth lined with teeth that are each subtly different from one another",cat:["chitin","anomaly"],slot:"mouth",family:"feeding",rarity:"rare"},
+  {id:"p125",text:"an eye socket that holds no eye, yet reacts to light",cat:["void","anomaly"],slot:"eye",family:"ocular",rarity:"rare"},
+  {id:"p126",text:"a hand with an extra, fully articulated thumb on each side",cat:["anomaly"],slot:"hand",family:"limb",rarity:"rare"},
+  {id:"p127",text:"a rib cage that occasionally rearranges itself overnight",cat:["anomaly","void"],slot:"internal",family:"skeletal",rarity:"rare"},
+  {id:"p129",text:"a mouth that occasionally forms on one palm, serving no apparent purpose",cat:["anomaly","void"],slot:"hand",family:"feeding",rarity:"legendary"},
+  {id:"p130",text:"a body that seems faintly out of alignment with its own shadow",cat:["void"],slot:"torso",family:"void",rarity:"legendary"}
+];
+const BODY_PARTS = RAW_BODY_PARTS.map(normMut);
+
+const RAW_TRAITS = [
+  {id:"t1",text:"emits a faint bioluminescent glow",cat:["bio"],family:"luminous",rarity:"common"},
+  {id:"t2",text:"secretes a mildly corrosive mucus",cat:["chitin"],family:"defensive",rarity:"common"},
+  {id:"t3",text:"displays brief moments of levitation",cat:["anomaly"],family:"psychic",rarity:"rare"},
+  {id:"t4",text:"hums at a frequency inaudible to most listeners",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t5",text:"exhibits localized gravity distortion",cat:["anomaly","void"],family:"gravitic",rarity:"legendary"},
+  {id:"t6",text:"occasionally phases partially out of view",cat:["void","anomaly"],family:"void",rarity:"uncommon"},
+  {id:"t7",text:"reacts violently to sudden loud noises",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t8",text:"appears to age in reverse for short intervals",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t9",text:"leaves frost in its wake when agitated",cat:["energy"],family:"thermal",rarity:"uncommon"},
+  {id:"t10",text:"shows unsettling awareness of being observed",cat:["void"],family:"psychic",rarity:"uncommon"},
+  {id:"t11",text:"regenerates minor injuries within seconds",cat:["fungal"],family:"fungal",rarity:"uncommon"},
+  {id:"t12",text:"radiates low levels of thermal energy",cat:["char","energy"],family:"thermal",rarity:"common"},
+  {id:"t13",text:"attracts small electronic malfunctions nearby",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t14",text:"occasionally speaks in fragmented, unintelligible phrases",cat:["void","anomaly"],family:"psychic",rarity:"uncommon"},
+  {id:"t15",text:"casts no shadow under direct light",cat:["void"],family:"void",rarity:"uncommon"},
+  {id:"t16",text:"sheds a fine bioluminescent dust when startled",cat:["bio"],family:"luminous",rarity:"common"},
+  {id:"t17",text:"skin blisters and reforms in fungal patterns",cat:["fungal"],family:"fungal",rarity:"common"},
+  {id:"t18",text:"leaves faint scorch marks on surfaces it rests on",cat:["char"],family:"combustion",rarity:"common"},
+  {id:"t19",text:"chitin visibly hardens under stress",cat:["chitin"],family:"defensive",rarity:"common"},
+  {id:"t20",text:"hums with a low electric charge when threatened",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t21",text:"leaves faint footprints that seem to fade in reverse",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t22",text:"seems to flinch moments before anything actually happens",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t23",text:"hardens its skin into a stone-like crust when threatened",cat:["chitin"],family:"defensive",rarity:"common"},
+  {id:"t24",text:"occasionally glitches out of sync with its own shadow",cat:["void"],family:"void",rarity:"uncommon"},
+  {id:"t25",text:"grows noticeably warm to the touch right before a mutation",cat:["bio"],family:"misc",rarity:"common"},
+  {id:"t26",text:"exudes a faint smell of ozone after feeding",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t27",text:"briefly duplicates its own voice when startled",cat:["anomaly"],family:"vocal",rarity:"uncommon"},
+  {id:"t28",text:"sheds fine spores that sprout small fungal patches nearby",cat:["fungal"],family:"fungal",rarity:"common"},
+  {id:"t29",text:"its eyes occasionally reflect a place that isn't there",cat:["void"],family:"ocular",rarity:"rare"},
+  {id:"t30",text:"leaves scorch-shaped condensation on cold surfaces",cat:["char"],family:"combustion",rarity:"uncommon"},
+  {id:"t31",text:"hums in unsettling harmony with nearby electronics",cat:["energy"],family:"electric",rarity:"uncommon"},
+  {id:"t32",text:"appears slightly blurred in photographs",cat:["anomaly"],family:"void",rarity:"uncommon"},
+  {id:"t33",text:"develops faint frost patterns on its skin when calm",cat:["energy"],family:"thermal",rarity:"common"},
+  {id:"t34",text:"occasionally molts patches of skin that dissolve on contact",cat:["chitin"],family:"defensive",rarity:"uncommon"},
+  {id:"t35",text:"seems to age at an inconsistent rate",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t36",text:"draws small insects that never seem to leave",cat:["fungal"],family:"fungal",rarity:"common"},
+  {id:"t37",text:"casts two shadows under a single light source",cat:["void"],family:"void",rarity:"uncommon"},
+  {id:"t38",text:"its heartbeat is faintly audible from several feet away",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t39",text:"briefly flickers translucent while sleeping",cat:["bio"],family:"void",rarity:"uncommon"},
+  {id:"t40",text:"leaves faint burn marks on anything it touches for too long",cat:["char"],family:"combustion",rarity:"common"},
+  {id:"t41",text:"emits a low static charge that interferes with nearby devices",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t42",text:"occasionally appears to be standing somewhere it isn't",cat:["void"],family:"void",rarity:"legendary"},
+  {id:"t43",text:"appears to anticipate feeding time before any cue is given",cat:["anomaly"],family:"psychic",rarity:"uncommon"},
+  {id:"t44",text:"seems to know when it is being discussed nearby",cat:["anomaly"],family:"psychic",rarity:"rare"},
+  {id:"t45",text:"occasionally reacts to visitors before they enter the room",cat:["anomaly"],family:"psychic",rarity:"rare"},
+  {id:"t46",text:"grows notably calmer around specific individuals for no discernible reason",cat:["basic"],family:"psychic",rarity:"common"},
+  {id:"t47",text:"appears to dream in a way that affects nearby electronics",cat:["energy","anomaly"],family:"psychic",rarity:"legendary"},
+  {id:"t48",text:"occasionally reacts to sounds several seconds before they occur",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t49",text:"sheds its skin at an inconsistent rate that defies normal biology",cat:["anomaly"],family:"temporal",rarity:"uncommon"},
+  {id:"t50",text:"appears momentarily younger in photographs taken seconds apart",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t51",text:"its wounds occasionally heal in reverse order, oldest first",cat:["anomaly"],family:"temporal",rarity:"legendary"},
+  {id:"t52",text:"makes a clicking sound before any sudden movement",cat:["basic"],family:"vocal",rarity:"common"},
+  {id:"t53",text:"hums a simple, repeating melody when undisturbed",cat:["bio"],family:"vocal",rarity:"common"},
+  {id:"t54",text:"occasionally mimics sounds it has heard only once",cat:["anomaly"],family:"vocal",rarity:"uncommon"},
+  {id:"t55",text:"its voice occasionally overlaps with a second, unheard voice",cat:["void","anomaly"],family:"vocal",rarity:"rare"},
+  {id:"t56",text:"briefly vanishes from peripheral vision under bright light",cat:["void"],family:"void",rarity:"rare"},
+  {id:"t57",text:"its reflection lags a fraction of a second behind its movements",cat:["void"],family:"void",rarity:"rare"},
+  {id:"t58",text:"leaves no trace of body heat on thermal imaging",cat:["void"],family:"void",rarity:"uncommon"},
+  {id:"t59",text:"occupies noticeably less space in photographs than in person",cat:["void"],family:"void",rarity:"legendary"},
+  {id:"t60",text:"causes nearby lights to flicker when agitated",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t61",text:"leaves a faint magnetic residue on metal surfaces it touches",cat:["energy"],family:"electric",rarity:"uncommon"},
+  {id:"t62",text:"its fur stands on end whenever a storm approaches",cat:["energy"],family:"electric",rarity:"common"},
+  {id:"t63",text:"runs consistently cooler than expected for its size",cat:["energy"],family:"thermal",rarity:"common"},
+  {id:"t64",text:"condensation forms on nearby surfaces whenever it sleeps",cat:["energy"],family:"thermal",rarity:"common"},
+  {id:"t65",text:"its body temperature spikes briefly before every mutation",cat:["bio"],family:"thermal",rarity:"uncommon"},
+  {id:"t66",text:"leaves a faint trail of spores wherever it walks",cat:["fungal"],family:"fungal",rarity:"common"},
+  {id:"t67",text:"grows noticeably calmer in humid environments",cat:["fungal"],family:"fungal",rarity:"common"},
+  {id:"t68",text:"its wounds occasionally sprout small fungal growths before healing",cat:["fungal"],family:"fungal",rarity:"uncommon"},
+  {id:"t69",text:"glows faintly brighter in complete darkness",cat:["bio"],family:"luminous",rarity:"common"},
+  {id:"t70",text:"its glow intensifies noticeably when fed",cat:["bio"],family:"luminous",rarity:"common"},
+  {id:"t71",text:"flickers rhythmically in its sleep, like a heartbeat made visible",cat:["bio"],family:"luminous",rarity:"uncommon"},
+  {id:"t72",text:"becomes visibly more alert near unfamiliar visitors",cat:["basic"],family:"defensive",rarity:"common"},
+  {id:"t73",text:"adopts a defensive posture whenever the enclosure is opened",cat:["basic"],family:"defensive",rarity:"common"},
+  {id:"t74",text:"its chitin audibly stiffens moments before any perceived threat",cat:["chitin"],family:"defensive",rarity:"uncommon"},
+  {id:"t75",text:"shows a strong preference for food eaten by hand rather than left in a dish",cat:["basic"],family:"feeding",rarity:"common"},
+  {id:"t76",text:"refuses food that has gone untouched for more than an hour",cat:["basic"],family:"feeding",rarity:"common"},
+  {id:"t77",text:"occasionally hoards uneaten food beneath its bedding",cat:["basic"],family:"feeding",rarity:"common"},
+  {id:"t78",text:"eats in a fixed, ritualistic order regardless of what is offered",cat:["basic"],family:"feeding",rarity:"uncommon"},
+  {id:"t79",text:"reacts strongly to the smell of ink and old paper",cat:["basic"],family:"olfactory",rarity:"common"},
+  {id:"t80",text:"shows an unexplained preference for handwritten text over printed",cat:["anomaly"],family:"olfactory",rarity:"uncommon"},
+  {id:"t81",text:"can apparently smell an approaching storm hours in advance",cat:["basic"],family:"olfactory",rarity:"common"},
+  {id:"t82",text:"skin tone shifts subtly to match its immediate surroundings",cat:["anomaly"],family:"camouflage",rarity:"uncommon"},
+  {id:"t83",text:"becomes strikingly difficult to photograph clearly in low light",cat:["anomaly"],family:"camouflage",rarity:"uncommon"},
+  {id:"t84",text:"occasionally appears to weigh less than expected when lifted",cat:["anomaly","void"],family:"gravitic",rarity:"rare"},
+  {id:"t85",text:"small objects placed nearby drift slightly toward it over time",cat:["anomaly"],family:"gravitic",rarity:"legendary"},
+  {id:"t86",text:"digests food far more slowly than its size would suggest",cat:["basic"],family:"digestive",rarity:"common"},
+  {id:"t87",text:"produces a faint chemical odor after feeding on anomalous food",cat:["anomaly"],family:"digestive",rarity:"uncommon"},
+  {id:"t88",text:"breathes in a slow, irregular pattern that unsettles observers",cat:["basic"],family:"respiratory",rarity:"common"},
+  {id:"t89",text:"holds its breath for unnervingly long periods without apparent distress",cat:["basic"],family:"respiratory",rarity:"uncommon"},
+  {id:"t90",text:"causes nearby electronic locks to misread their input",cat:["energy","mechanical"],family:"mechanical",rarity:"uncommon"},
+  {id:"t91",text:"interferes with wireless signals within a short radius",cat:["energy"],family:"mechanical",rarity:"rare"},
+  {id:"t92",text:"grows agitated when separated from small attached growths on its body",cat:["parasitic"],family:"parasitic",rarity:"uncommon"},
+  {id:"t93",text:"shares food unprompted with any smaller organisms nearby",cat:["parasitic"],family:"parasitic",rarity:"common"},
+  {id:"t94",text:"tracks movement in a room even with its eyes closed",cat:["anomaly"],family:"ocular",rarity:"rare"},
+  {id:"t95",text:"appears to recognize individual observers",cat:["basic"],family:"ocular",rarity:"uncommon"},
+  {id:"t96",text:"solves simple physical puzzles with no apparent trial and error",cat:["anomaly"],family:"psychic",rarity:"rare"},
+  {id:"t97",text:"occasionally answers questions that have not yet been asked",cat:["anomaly"],family:"psychic",rarity:"legendary"},
+  {id:"t98",text:"becomes agitated when the enclosure lights are turned off",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t99",text:"prefers to sleep in the same corner regardless of enclosure changes",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t100",text:"grows restless on the anniversary of its arrival each month",cat:["anomaly"],family:"misc",rarity:"uncommon"},
+  {id:"t101",text:"shows visible distress when its designation number is spoken aloud",cat:["anomaly"],family:"misc",rarity:"rare"},
+  {id:"t102",text:"seems to count repeated sounds, growing agitated past a certain number",cat:["anomaly"],family:"misc",rarity:"uncommon"},
+  {id:"t103",text:"displays a marked preference for silence over any form of noise",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t104",text:"grows calmer when read to, regardless of subject matter",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t105",text:"reacts to its own reflection as though greeting a familiar presence",cat:["anomaly"],family:"ocular",rarity:"uncommon"},
+  {id:"t106",text:"appears to track the passage of time without any external cue",cat:["anomaly"],family:"temporal",rarity:"uncommon"},
+  {id:"t107",text:"grooms itself in a precise, repeated pattern after every feeding",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t108",text:"becomes unusually still during electrical storms",cat:["basic"],family:"electric",rarity:"common"},
+  {id:"t109",text:"shows no reaction to its own injuries until several minutes later",cat:["anomaly"],family:"neural",rarity:"uncommon"},
+  {id:"t110",text:"startles at sounds that have not yet been made audible to observers",cat:["anomaly"],family:"temporal",rarity:"rare"},
+  {id:"t111",text:"keeps meticulously still whenever measured or examined",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t112",text:"shows a mild fascination with reflective surfaces",cat:["basic"],family:"ocular",rarity:"common"},
+  {id:"t113",text:"prefers to feed only after the enclosure has gone quiet",cat:["basic"],family:"feeding",rarity:"common"},
+  {id:"t114",text:"reacts with visible curiosity to unfamiliar scents",cat:["basic"],family:"olfactory",rarity:"common"},
+  {id:"t115",text:"grows noticeably more active during storms",cat:["basic"],family:"thermal",rarity:"common"},
+  {id:"t116",text:"leaves faint claw marks on surfaces it merely rests against",cat:["chitin"],family:"defensive",rarity:"common"},
+  {id:"t117",text:"shows a preference for corners over open space",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t118",text:"becomes unusually docile in the presence of running water",cat:["aquatic"],family:"aquatic",rarity:"common"},
+  {id:"t119",text:"sheds visibly more during periods of rapid growth",cat:["bio"],family:"dermal",rarity:"common"},
+  {id:"t120",text:"grows noticeably quieter in the hour before feeding time",cat:["basic"],family:"feeding",rarity:"common"},
+  {id:"t121",text:"appears to recognize its own designation number when spoken",cat:["anomaly"],family:"neural",rarity:"uncommon"},
+  {id:"t122",text:"shows heightened alertness during recorded observation sessions",cat:["anomaly"],family:"psychic",rarity:"uncommon"},
+  {id:"t123",text:"prefers cooler temperatures than its containment default",cat:["basic"],family:"thermal",rarity:"common"},
+  {id:"t124",text:"grows restless whenever another specimen's designation is mentioned aloud",cat:["anomaly"],family:"misc",rarity:"common"},
+  {id:"t125",text:"leaves faint condensation rings on surfaces it has recently touched",cat:["energy"],family:"thermal",rarity:"common"},
+  {id:"t126",text:"displays a mild startle response to sudden silence rather than noise",cat:["anomaly"],family:"misc",rarity:"common"},
+  {id:"t127",text:"hums faintly in its sleep, always the same handful of notes",cat:["bio"],family:"vocal",rarity:"common"},
+  {id:"t128",text:"shows a marked preference for one specific handler's presence",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t129",text:"becomes visibly agitated when its enclosure is rearranged",cat:["basic"],family:"misc",rarity:"common"},
+  {id:"t130",text:"grows still and watchful whenever new equipment is installed nearby",cat:["basic"],family:"misc",rarity:"common"}
+];
+const TRAITS = RAW_TRAITS.map(normMut);
+
+const DANGEROUS_CATS = ["anomaly","void"];
+
+const FOOD_CATALOG = [
+  {id:"f1", name:"Stale Cracker", cost:3, hunger:8, mut:0.02, cat:"basic", flavor:"Barely edible. It eats it anyway."},
+  {id:"f2", name:"Preserved Ration Bar", cost:6, hunger:15, mut:0.04, cat:"basic", flavor:"Standard-issue nutrient bar, decades out of date."},
+  {id:"f3", name:"Lab-Grade Nutrient Paste", cost:10, hunger:22, mut:0.06, cat:"basic", flavor:"Bland, efficient, unremarkable."},
+  {id:"f4", name:"Luminous Algae Cake", cost:14, hunger:18, mut:0.15, cat:"bio", flavor:"Faintly warm to the touch. Smells like a tidepool."},
+  {id:"f5", name:"Chitin Meal", cost:12, hunger:16, mut:0.12, cat:"chitin", flavor:"Ground carapace, coarse and gritty."},
+  {id:"f6", name:"Fermented Spore Bread", cost:16, hunger:20, mut:0.18, cat:"fungal", flavor:"Rises on its own if left too long."},
+  {id:"f7", name:"Irradiated Fruit", cost:20, hunger:25, mut:0.22, cat:"anomaly", flavor:"Glows faintly under blacklight. Do not lick the peel."},
+  {id:"f8", name:"Anomalous Jerky", cost:24, hunger:28, mut:0.20, cat:"anomaly", flavor:"Origin unknown. Tastes like static."},
+  {id:"f9", name:"Crystallized Static", cost:30, hunger:15, mut:0.30, cat:"energy", flavor:"Crackles when handled. Low nutrition, high weirdness."},
+  {id:"f10", name:"Void-Touched Meat", cost:35, hunger:30, mut:0.25, cat:"void", flavor:"The plate feels lighter after it's gone."},
+  {id:"f11", name:"Synthetic Slurry", cost:8, hunger:30, mut:0.01, cat:"basic", flavor:"The most calorie-efficient thing ever manufactured."},
+  {id:"f12", name:"Bitter Root Extract", cost:5, hunger:10, mut:0.08, cat:"basic", flavor:"Foul-smelling tonic. Somehow appetizing to it."},
+  {id:"f13", name:"Gilded Larvae", cost:40, hunger:35, mut:0.28, cat:"energy", flavor:"Squirming and faintly metallic. Expensive for a reason."},
+  {id:"f14", name:"Ashen Husk", cost:18, hunger:12, mut:0.20, cat:"char", flavor:"Still warm from a fire nobody remembers lighting."}
+];
+
+const AMBIENT_LOGS = [
+  "Ambient temperature in containment fluctuates briefly.",
+  "Specimen shows mild interest in its surroundings.",
+  "A faint noise was recorded overnight.",
+  "Specimen appears to be resting.",
+  "Routine observation: no significant changes.",
+  "Specimen shifts position without apparent cause.",
+  "A brief anomalous reading was dismissed as sensor noise.",
+  "Specimen appears to be watching the observation window.",
+  "Containment humidity adjusted automatically.",
+  "Specimen emits a low sound of unknown origin."
+];
+const RAMPAGE_LOGS = [
+  "Specimen thrashed violently, damaging nearby equipment.",
+  "Specimen breached minor containment protocol during a feeding delay.",
+  "Specimen's agitation caused a funding shortfall.",
+  "An automated lockdown was triggered after specimen unrest."
+];
+
+/* ============================= UTIL ============================= */
+function now(){return Date.now();}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function pad(n){return n<10?"0"+n:""+n;}
+function dateStr(ts){const d=new Date(ts); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function addDays(ds,n){const [y,m,d]=ds.split("-").map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+n); return dateStr(dt.getTime());}
+function todayStr(){return dateStr(now());}
+function fmtHM(ms){
+  if(ms<=0) return "0h 0m";
+  const totalMin=Math.round(ms/60000);
+  const h=Math.floor(totalMin/60), m=totalMin%60;
+  return h+"h "+m+"m";
 }
-function fmtDur(ms){
-  if(ms<=0) return '0s';
-  var s = Math.floor(ms/1000);
-  var d = Math.floor(s/86400); s-=d*86400;
-  var h = Math.floor(s/3600); s-=h*3600;
-  var m = Math.floor(s/60); s-=m*60;
-  var out=[];
-  if(d>0) out.push(d+'d');
-  if(h>0 || d>0) out.push(h+'h');
-  if(m>0 || h>0 || d>0) out.push(m+'m');
-  out.push(s+'s');
-  return out.join(' ');
+function fmtHMS(ms){
+  if(ms<0) ms=0;
+  const s=Math.floor(ms/1000);
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+  return h+"h "+pad(m)+"m "+pad(sec)+"s";
 }
-function fmtTime(ts){
-  var d = new Date(ts);
-  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+function rnd(){return Math.random();}
+function randInt(min,max){return min+Math.floor(rnd()*(max-min+1));}
+function choice(arr){return arr[Math.floor(rnd()*arr.length)];}
+function pct(n){return Math.round(n*100);}
+function esc(s){return (s+"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function rarityTagHtml(rarity){
+  const r = rarity || "common";
+  return '<span class="rarity-tag '+esc(r)+'">'+esc(r.toUpperCase())+'</span>';
 }
-function weightedPickIndex(weights){
-  var total = weights.reduce(function(a,b){return a+b;},0);
-  var r = rand()*total;
-  for(var i=0;i<weights.length;i++){
-    if(r<weights[i]) return i;
-    r-=weights[i];
+
+function hashStr(s){
+  let h=1779033703 ^ s.length;
+  for(let i=0;i<s.length;i++){
+    h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+    h = h << 13 | h >>> 19;
   }
-  return weights.length-1;
+  return function(){
+    h = Math.imul(h ^ h>>>16, 2246822507);
+    h = Math.imul(h ^ h>>>13, 3266489909);
+    h ^= h>>>16;
+    return (h>>>0)/4294967296;
+  };
+}
+function seededRng(seedStr){
+  const seedFn = hashStr(seedStr);
+  let a = seedFn()*4294967296>>>0;
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a>>>15, 1 | a);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
 }
 
-/* =========================================================================
-   STATE
-   ========================================================================= */
-var state = null;
-var activeTab = 'report';
-var confirmResetArmed = false;
+/* ============================= STATE ============================= */
+let state = null;
+
+function freshCreature(){
+  const parts=[]; // starter has zero extra parts; first appears at stage-up
+  return {
+    uid: "spc-"+Date.now().toString(36)+Math.floor(rnd()*1e4).toString(36),
+    number: 100+Math.floor(rnd()*900),
+    greek: choice(GREEK),
+    nickname: "",
+    bornAt: now(),
+    activeMs: 0,
+    lastTickAt: now(),
+    frozen: false,
+    hunger: 100,
+    hungerZeroAt: null,
+    hungerRatePerHour: +(2.5 + rnd()*3).toFixed(2), // 2.5 - 5.5 %/h
+    warnFlags: {50:false,25:false,10:false,0:false},
+    partCap: randInt(5,11),   // min 5 leaves room above the 4 guaranteed stage-up parts
+    traitCap: randInt(4,10),  // traits come only from feeding, so a lower floor is fine
+    parts: [],
+    traits: [],
+    alive: true,
+    causeOfDeath: null,
+    diedAt: null,
+    rampageCount: 0
+  };
+}
+
+function designation(c){
+  return "SCP-"+c.number+"-"+c.greek;
+}
 
 function defaultState(){
-  var s = {
-    version: 1,
-    currency: 40,
-    lastLoggedDate: null,
-    readingLog: [],
-    creature: null,
-    inventory: {},
-    shop: { dateGenerated: null, items: [], rerollsUsed: 0 },
-    fieldLog: [],
+  return {
+    v:1,
+    currency: 0,
+    readingLog: {}, // date -> minutes
+    lastEnteredDate: null,
+    creature: freshCreature(),
+    inventory: {}, // foodId -> qty
+    shop: {date:null, offerings:[], rerolls:0},
     archive: [],
-    settings: { autosaveMinutes: 5 },
-    lastSaveTime: 0
+    log: [],
+    settings: {autosaveMin:5, lastAckAway:0},
+    meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now()}
   };
-  s.creature = generateCreature();
-  addLogTo(s, 'A new specimen has entered containment. Designation: ' + s.creature.designation + '.');
-  return s;
 }
 
-function generateDesignation(){
-  var n = 100 + Math.floor(rand()*900);
-  return 'SCP-'+n+'-'+choice(GREEK);
+function addLog(text, cls){
+  state.log.unshift({ts:now(), text, cls:cls||""});
+  if(state.log.length>10) state.log.length=10;
 }
 
-function generateCreature(){
-  var c = {
-    id: uid(),
-    designation: generateDesignation(),
-    bornAt: Date.now(),
-    stage: 1,
-    ageMs: 0,
-    hunger: 100,
-    lastUpdate: Date.now(),
-    starvingMs: 0,
-    lowHungerWarned: false,
-    frozen: false,
-    alive: true,
-    traits: [],
-    bodyParts: [],
-    stageFoodTally: {},
-    ambientAccumMs: 0
-  };
-  growCreature(c, 1, 1, null);
-  return c;
+function save(){
+  state.meta.lastSaveAt = now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){ console.warn("save failed",e); }
 }
-
-function dominantCategory(tally){
-  var best=null, bestN=0;
-  CATS.forEach(function(cat){
-    var n = tally[cat]||0;
-    if(n>bestN){ bestN=n; best=cat; }
-  });
-  return best;
-}
-
-function growCreature(c, numParts, numTraits, biasCategory){
-  var gained = [];
-  for(var i=0;i<numParts;i++){
-    var slots = Object.keys(BODY_PARTS);
-    var slot = choice(slots);
-    var pool = BODY_PARTS[slot].filter(function(p){
-      return !c.bodyParts.some(function(bp){ return bp.id===p.id; });
-    });
-    if(pool.length===0) pool = BODY_PARTS[slot].slice();
-    var picked;
-    if(biasCategory && rand()<0.75){
-      var biased = pool.filter(function(p){ return p.category===biasCategory; });
-      picked = biased.length ? choice(biased) : choice(pool);
-    } else {
-      picked = choice(pool);
-    }
-    var part = {id:picked.id, slot:slot, name:picked.name, category:picked.category, acquiredAtStage:c.stage, acquiredAt:Date.now()};
-    c.bodyParts.push(part);
-    gained.push({type:'part', name:part.name});
-  }
-  for(var j=0;j<numTraits;j++){
-    var poolT = TRAITS.filter(function(t){
-      return !c.traits.some(function(tt){ return tt.id===t.id; });
-    });
-    if(poolT.length===0) poolT = TRAITS.slice();
-    var pickedT;
-    if(biasCategory && rand()<0.75){
-      var biasedT = poolT.filter(function(t){ return t.category===biasCategory; });
-      pickedT = biasedT.length ? choice(biasedT) : choice(poolT);
-    } else {
-      pickedT = choice(poolT);
-    }
-    var trait = {id:pickedT.id, name:pickedT.name, category:pickedT.category, acquiredAtStage:c.stage, acquiredAt:Date.now()};
-    c.traits.push(trait);
-    gained.push({type:'trait', name:trait.name});
-  }
-  return gained;
-}
-
-function classificationOf(c){
-  var total = c.traits.length + c.bodyParts.length;
-  if(total<6) return 'SAFE';
-  if(total<11) return 'EUCLID';
-  return 'KETER';
-}
-
-/* =========================================================================
-   CORE TICK LOGIC
-   ========================================================================= */
-function flushCreature(c, now){
-  if(!c || !c.alive || c.frozen) { if(c) c.lastUpdate = now; return; }
-  var elapsed = now - c.lastUpdate;
-  if(elapsed<=0){ c.lastUpdate = now; return; }
-  c.ageMs += elapsed;
-  c.hunger = clamp(c.hunger - elapsed*HUNGER_DECAY_PER_MS, 0, 100);
-  if(c.hunger<=0){ c.starvingMs += elapsed; }
-  else { c.starvingMs = 0; }
-
-  if(c.hunger < 20 && !c.lowHungerWarned){
-    c.lowHungerWarned = true;
-    addLog('Specimen '+c.designation+' is showing signs of distress. Hunger critical.');
-  } else if(c.hunger >= 35 && c.lowHungerWarned){
-    c.lowHungerWarned = false;
-  }
-
-  c.ambientAccumMs += elapsed;
-  while(c.ambientAccumMs >= AMBIENT_CHECK_MS){
-    c.ambientAccumMs -= AMBIENT_CHECK_MS;
-    if(rand() < AMBIENT_CHANCE){
-      addLog(choice(AMBIENT_LOGS));
-    }
-  }
-  c.lastUpdate = now;
-}
-
-function checkEvolution(c){
-  if(!c || !c.alive) return;
-  var evolved = false;
-  while(c.stage < 5 && c.ageMs >= STAGE_THRESH_MS[c.stage]){
-    c.stage++;
-    var bias = dominantCategory(c.stageFoodTally);
-    var gained = growCreature(c, 1, 1, bias);
-    c.stageFoodTally = {};
-    addLog('EVOLUTION: '+c.designation+' has progressed to Stage '+c.stage+' — '+STAGE_NAMES[c.stage]+'.');
-    gained.forEach(function(g){
-      addLog('New '+g.type+' developed: '+g.name+'.');
-    });
-    showStamp('Specimen Evolved — Stage '+c.stage);
-    evolved = true;
-  }
-  return evolved;
-}
-
-function checkDeath(c){
-  if(!c || !c.alive) return false;
-  if(c.starvingMs >= STARVE_GRACE_MS){
-    c.alive = false;
-    var bio = generateBiography(c, 'Neglect (Prolonged Starvation)');
-    state.archive.unshift({
-      id:c.id, designation:c.designation, bornAt:c.bornAt, diedAt:Date.now(),
-      cause:'Neglect (Prolonged Starvation)', stageReached:c.stage,
-      traits:c.traits.slice(), bodyParts:c.bodyParts.slice(), biography:bio
-    });
-    addLog('TERMINATION: '+c.designation+' has died of neglect. Case archived.');
-    showStamp('Specimen Deceased');
-    state.creature = null;
-    return true;
-  }
-  return false;
-}
-
-function refreshShopIfNeeded(now){
-  var t = todayStr(new Date(now));
-  if(state.shop.dateGenerated !== t){
-    var first = state.shop.dateGenerated === null;
-    state.shop.dateGenerated = t;
-    state.shop.items = generateShopItems();
-    state.shop.rerollsUsed = 0;
-    if(!first) addLog('The provisions market has restocked for a new day.');
-  }
-}
-
-function generateShopItems(){
-  var pool = FOOD_ITEMS.map(function(f,i){ return {f:f, w: f.category==='anomalous' ? 0.35 : 1}; });
-  var picks = [];
-  var n = Math.min(5, pool.length);
-  for(var k=0;k<n;k++){
-    var idx = weightedPickIndex(pool.map(function(p){return p.w;}));
-    var chosen = pool.splice(idx,1)[0];
-    picks.push({
-      foodId: chosen.f.id,
-      stock: 2 + Math.floor(rand()*4) // 2-5
-    });
-  }
-  return picks;
-}
-
-/* =========================================================================
-   PLAYER ACTIONS
-   ========================================================================= */
-function addLog(msg){ addLogTo(state, msg); }
-function addLogTo(s, msg){
-  s.fieldLog.unshift({t:Date.now(), msg:msg});
-  if(s.fieldLog.length>10) s.fieldLog.length = 10;
-}
-
-function readingRecordingDate(now){
-  var y = todayStr(new Date(now));
-  var yesterday = addDaysStr(y, -1);
-  var recDate = state.lastLoggedDate ? addDaysStr(state.lastLoggedDate, 1) : yesterday;
-  if(recDate > yesterday) return null; // already up to date
-  return recDate;
-}
-
-function submitReading(minutes){
-  var now = Date.now();
-  var recDate = readingRecordingDate(now);
-  if(recDate===null) return {ok:false, msg:'Reading time already logged. Try again tomorrow.'};
-  minutes = Math.max(0, Math.min(960, Math.round(minutes)));
-  var gained = Math.round(CURRENCY_K * Math.sqrt(minutes));
-  state.currency += gained;
-  state.readingLog.unshift({date:recDate, minutes:minutes, gained:gained});
-  if(state.readingLog.length>60) state.readingLog.length=60;
-  state.lastLoggedDate = recDate;
-  addLog('Logged '+minutes+' min of reading for '+recDate+'. Earned '+gained+' RC.');
-  return {ok:true, msg:'Recorded. +'+gained+' RC.'};
-}
-
-function feedCreature(shopSourceIndexOrInvId, fromInventory){
-  var c = state.creature;
-  if(!c || !c.alive) return {ok:false,msg:'No active specimen.'};
-  if(c.frozen) return {ok:false,msg:'Specimen is frozen in stasis and cannot be fed.'};
-  var foodId = fromInventory ? shopSourceIndexOrInvId : null;
-  if(!foodId) return {ok:false,msg:'Invalid food item.'};
-  if(!state.inventory[foodId] || state.inventory[foodId]<=0) return {ok:false,msg:'None of that food in inventory.'};
-  var item = FOOD_BY_ID[foodId];
-  state.inventory[foodId]--;
-  var before = c.hunger;
-  var after = clamp(before + item.restore, 0, 100);
-  var wasted = Math.max(0, (before+item.restore) - 100);
-  c.hunger = after;
-  c.stageFoodTally[item.category] = (c.stageFoodTally[item.category]||0) + 1;
-  if(wasted>0){
-    addLog('Fed '+item.name+' to '+c.designation+'. Some was wasted (already near full).');
-  } else {
-    addLog('Fed '+item.name+' to '+c.designation+'. Hunger restored.');
-  }
-  if(rand() < item.mut){
-    var partOrTrait = rand()<0.5;
-    var gained = growCreature(c, partOrTrait?1:0, partOrTrait?0:1, item.category);
-    gained.forEach(function(g){
-      addLog('Unexpected mutation! New '+g.type+': '+g.name+'.');
-    });
-    showStamp('Mutation Detected');
-  }
-  return {ok:true, msg:'Fed successfully.'};
-}
-
-function buyFood(shopIndex){
-  var entry = state.shop.items[shopIndex];
-  if(!entry) return {ok:false,msg:'Invalid item.'};
-  if(entry.stock<=0) return {ok:false,msg:'Sold out for today.'};
-  var item = FOOD_BY_ID[entry.foodId];
-  if(state.currency < item.price) return {ok:false,msg:'Insufficient Ration Credits.'};
-  state.currency -= item.price;
-  entry.stock--;
-  state.inventory[item.id] = (state.inventory[item.id]||0)+1;
-  addLog('Purchased '+item.name+' for '+item.price+' RC.');
-  return {ok:true,msg:'Purchased.'};
-}
-
-function rerollShop(){
-  var cost = REROLL_BASE + state.shop.rerollsUsed*REROLL_STEP;
-  if(state.currency < cost) return {ok:false,msg:'Insufficient Ration Credits ('+cost+' RC needed).'};
-  state.currency -= cost;
-  state.shop.rerollsUsed++;
-  state.shop.items = generateShopItems();
-  addLog('Rerolled the day\'s market stock for '+cost+' RC.');
-  return {ok:true,msg:'Market rerolled.'};
-}
-
-function toggleFreeze(){
-  var c = state.creature;
-  if(!c || !c.alive) return;
-  if(!c.frozen){
-    flushCreature(c, Date.now());
-    c.frozen = true;
-    addLog(c.designation+' has been placed into cryogenic stasis. Evolution and hunger paused.');
-  } else {
-    c.frozen = false;
-    c.lastUpdate = Date.now();
-    addLog(c.designation+' has been released from stasis.');
-  }
-}
-
-function acquireNewSpecimen(){
-  if(state.creature && state.creature.alive) return;
-  state.creature = generateCreature();
-  addLog('A new specimen has entered containment. Designation: '+state.creature.designation+'.');
-  showStamp('New Specimen Acquired');
-}
-
-function generateBiography(c, causeOverride){
-  var stageName = STAGE_NAMES[c.stage];
-  var intro = choice(BIO_INTROS).replace('{des}', c.designation).replace('{stage}', 'Stage '+c.stage+' — '+stageName);
-  var partsText = c.bodyParts.length ? c.bodyParts.map(function(p){return p.name.toLowerCase();}).join(', ') : 'no notable external features';
-  var traitsText = c.traits.length ? c.traits.map(function(t){return t.name.toLowerCase();}).join(', ') : 'no notable behavioral traits';
-  var cls = classificationOf(c);
-  var closing = causeOverride ? choice(BIO_CLOSINGS_DEAD) : choice(BIO_CLOSINGS_ALIVE);
-  var lines = [];
-  lines.push(intro);
-  lines.push('Physically, the specimen presents the following: ' + partsText + '.');
-  lines.push('Behaviorally, it exhibits: ' + traitsText + '.');
-  lines.push('Preliminary object class: ' + cls + '.');
-  if(causeOverride) lines.push('Status: DECEASED. Cause: ' + causeOverride + '.');
-  lines.push(closing);
-  return lines.join(' ');
-}
-
-/* =========================================================================
-   SAVE / LOAD
-   ========================================================================= */
-function saveToLocalStorage(){
+function load(){
   try{
-    state.lastSaveTime = Date.now();
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    return true;
-  } catch(e){
-    addLog('Auto-save failed: browser storage unavailable.');
-    return false;
-  }
-}
-function loadFromLocalStorage(){
-  try{
-    var raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(SAVE_KEY);
     if(!raw) return null;
     return JSON.parse(raw);
-  } catch(e){
-    return null;
+  }catch(e){ return null; }
+}
+
+/* ============================= GAME LOGIC ============================= */
+function stageFromHours(h){
+  for(let i=0;i<STAGE_HOURS.length;i++){
+    if(h < STAGE_HOURS[i]) return i+1;
   }
+  return 5;
 }
-function exportBase64(){
-  var json = JSON.stringify(state);
-  return btoa(unescape(encodeURIComponent(json)));
+function isMatured(c){ return (c.activeMs/HOUR) >= STAGE_HOURS[4]; }
+
+function dangerScore(c){
+  let s=0;
+  c.parts.forEach(id=>{const p=BODY_PARTS.find(x=>x.id===id); if(p) s += p.cat.some(x=>DANGEROUS_CATS.includes(x))?2:1;});
+  c.traits.forEach(id=>{const t=TRAITS.find(x=>x.id===id); if(t) s += t.cat.some(x=>DANGEROUS_CATS.includes(x))?2:1;});
+  return s;
 }
-function importBase64(b64){
-  var json = decodeURIComponent(escape(atob(b64.trim())));
-  var parsed = JSON.parse(json);
-  if(typeof parsed !== 'object' || !parsed.hasOwnProperty('currency')) throw new Error('Not a valid save.');
-  return parsed;
+function containmentClass(c){
+  const s = dangerScore(c);
+  if(s<=4) return "SAFE";
+  if(s<=10) return "EUCLID";
+  return "KETER";
 }
 
-/* =========================================================================
-   TICKING
-   ========================================================================= */
-var autosaveIntervalId = null;
-function restartAutosave(){
-  if(autosaveIntervalId) clearInterval(autosaveIntervalId);
-  var mins = Math.max(1, state.settings.autosaveMinutes || 5);
-  autosaveIntervalId = setInterval(function(){
-    saveToLocalStorage();
-    updateFooter();
-  }, mins*60000);
+function atCap(c, isPart){
+  return isPart ? c.parts.length>=c.partCap : c.traits.length>=c.traitCap;
 }
 
-function tick(){
-  var now = Date.now();
-  var structuralChange = false;
-  if(state.creature && state.creature.alive){
-    flushCreature(state.creature, now);
-    if(checkEvolution(state.creature)) structuralChange = true;
-    if(checkDeath(state.creature)) structuralChange = true;
+/* ---- Rarity + family-affinity selection ----
+   Rarity biases how often a mutation type is picked (legendary is rare, but
+   never impossible). Family affinity is a soft nudge toward themes a
+   specimen has already started developing -- it never excludes other
+   families, so chaotic/unrelated mutations remain fully possible. */
+const RARITY_WEIGHT = {common:1.15, uncommon:1.05, rare:0.95, legendary:0.8};
+const FAMILY_BIAS_STEP = 0.35;  // +35% weight per prior mutation in the same family
+const FAMILY_BIAS_CAP = 2.0;    // affinity can at most double-ish a family's odds
+
+function familyCounts(c){
+  const counts = {};
+  const tally = (ids, pool) => ids.forEach(id=>{
+    const m = pool.find(x=>x.id===id);
+    if(m && m.family) counts[m.family] = (counts[m.family]||0)+1;
+  });
+  tally(c.parts, BODY_PARTS);
+  tally(c.traits, TRAITS);
+  return counts;
+}
+
+function weightedPick(candidates, famCounts){
+  famCounts = famCounts || {};
+  const weights = candidates.map(m=>{
+    let w = RARITY_WEIGHT[m.rarity] || RARITY_WEIGHT.common;
+    if(m.family && famCounts[m.family]){
+      w *= Math.min(FAMILY_BIAS_CAP, 1 + FAMILY_BIAS_STEP*famCounts[m.family]);
+    }
+    return w;
+  });
+  const total = weights.reduce((a,b)=>a+b,0);
+  if(total<=0) return choice(candidates); // safety net, should not normally happen
+  let r = rnd()*total;
+  for(let i=0;i<candidates.length;i++){
+    r -= weights[i];
+    if(r<=0) return candidates[i];
   }
-  var prevShopDate = state.shop.dateGenerated;
-  refreshShopIfNeeded(now);
-  if(state.shop.dateGenerated !== prevShopDate) structuralChange = true;
+  return candidates[candidates.length-1];
+}
 
-  if(structuralChange){
-    render();
+function pickMutation(c, foodCat){
+  // 50/50 part vs trait, biased toward matching category if available & unowned,
+  // but never exceed the creature's randomized part/trait capacity.
+  let wantPart = rnd()<0.5;
+  if(atCap(c, wantPart)) wantPart = !wantPart; // try the other pool instead
+  if(atCap(c, wantPart)) return null; // both pools full — specimen has stabilized
+
+  const famCounts = familyCounts(c);
+  const pool = wantPart ? BODY_PARTS : TRAITS;
+  const owned = wantPart ? c.parts : c.traits;
+  let candidates = pool.filter(x=>!owned.includes(x.id) && x.cat.includes(foodCat));
+  if(candidates.length===0) candidates = pool.filter(x=>!owned.includes(x.id));
+  if(candidates.length===0){
+    // this pool is exhausted of unowned entries (but not necessarily at numeric cap) — try the other
+    const wantPart2 = !wantPart;
+    if(atCap(c, wantPart2)) return null;
+    const pool2 = wantPart2 ? BODY_PARTS : TRAITS;
+    const owned2 = wantPart2 ? c.parts : c.traits;
+    candidates = pool2.filter(x=>!owned2.includes(x.id));
+    if(candidates.length===0) return null;
+    return {isPart: wantPart2, item: weightedPick(candidates, famCounts)};
+  }
+  return {isPart: wantPart, item: weightedPick(candidates, famCounts)};
+}
+
+function grantStageUpPart(c){
+  if(c.parts.length>=c.partCap) return null; // specimen has reached its natural anatomical limit
+  const owned = c.parts;
+  let candidates = BODY_PARTS.filter(x=>!owned.includes(x.id));
+  if(candidates.length===0) return null;
+  const pick = weightedPick(candidates, familyCounts(c));
+  c.parts.push(pick.id);
+  return pick;
+}
+
+/* Core time-advance: applies hunger decay, stage progression, rampage & death.
+   Returns a summary object describing what happened (for away-report / toasts). */
+function advanceTime(ms){
+  const c = state.creature;
+  const summary = {elapsedMs: ms, hungerBefore: c ? c.hunger : null, hungerAfter: c ? c.hunger : null,
+                    stageBefore: c ? stageFromHours(c.activeMs/HOUR) : null, stageAfter: null,
+                    died:false, cause:null, ambient:0, rampage:false, rampageLoss:0, newParts:[]};
+  if(!c || !c.alive || ms<=0) return summary;
+
+  if(c.frozen){
+    c.lastTickAt = now();
+    summary.stageAfter = summary.stageBefore;
+    summary.hungerAfter = c.hunger;
+    return summary;
+  }
+
+  const hours = ms/HOUR;
+  const hunger0 = c.hunger;
+  const rate = c.hungerRatePerHour;
+
+  if(hunger0>0){
+    const tZero = hunger0/rate; // hours until hunger hits 0
+    if(hours <= tZero){
+      c.hunger = clamp(hunger0 - rate*hours, 0, 100);
+    } else {
+      c.hunger = 0;
+      const overshoot = hours - tZero; // hours spent at 0 so far this interval
+      c.hungerZeroAt = now() - overshoot*HOUR;
+      if(overshoot >= HUNGER_ZERO_GRACE_HOURS){
+        c.alive = false;
+        c.causeOfDeath = "Prolonged starvation";
+        c.diedAt = c.hungerZeroAt + HUNGER_ZERO_GRACE_HOURS*HOUR;
+        summary.died = true; summary.cause = c.causeOfDeath;
+      }
+    }
   } else {
-    liveUpdate();
+    // already at 0
+    if(c.hungerZeroAt==null) c.hungerZeroAt = now()-ms;
+    const overshoot = (now() - c.hungerZeroAt)/HOUR;
+    if(overshoot >= HUNGER_ZERO_GRACE_HOURS){
+      c.alive=false; c.causeOfDeath="Prolonged starvation";
+      c.diedAt = c.hungerZeroAt + HUNGER_ZERO_GRACE_HOURS*HOUR;
+      summary.died = true; summary.cause = c.causeOfDeath;
+    }
   }
-  updateFooter();
+
+  // stage progression only up to point of death (approx: use full ms if alive, else proportion before death)
+  let activeAdd = ms;
+  if(summary.died){
+    const aliveMs = clamp(c.diedAt - c.lastTickAt, 0, ms);
+    activeAdd = aliveMs;
+  }
+  const prevStage = stageFromHours(c.activeMs/HOUR);
+  c.activeMs += activeAdd;
+  const newStage = stageFromHours(c.activeMs/HOUR);
+  if(newStage>prevStage && c.alive){
+    for(let s=prevStage+1; s<=newStage; s++){
+      const part = grantStageUpPart(c);
+      if(part) summary.newParts.push(part.text);
+      addLog("Specimen advanced to Stage "+s+" ("+STAGE_NAMES[s-1]+").", "evt-evolve");
+      if(part) addLog("New development: "+part.text+".", "evt-mutation");
+    }
+  }
+
+  // rampage check (only while alive, hunger critical)
+  if(c.alive){
+    const lowHours = c.hunger<=10 ? hours : (hunger0>10 ? Math.max(0, hours - (hunger0-10)/rate) : hours);
+    if(lowHours>0){
+      const p = 1 - Math.pow(1-RAMPAGE_HOURLY_CHANCE, lowHours);
+      if(rnd() < p){
+        const loss = Math.max(5, Math.round(state.currency * (0.15+rnd()*0.20)));
+        state.currency = Math.max(0, state.currency - loss);
+        c.rampageCount++;
+        summary.rampage = true; summary.rampageLoss = loss;
+        addLog(choice(RAMPAGE_LOGS)+" (-"+loss+" RC)", "evt-rampage");
+      }
+    }
+  }
+
+  // ambient flavor logs (light touch, capped)
+  if(c.alive){
+    const n = Math.min(3, Math.floor(hours/5));
+    for(let i=0;i<n;i++){ addLog(choice(AMBIENT_LOGS), ""); summary.ambient++; }
+  }
+
+  if(summary.died){
+    addLog("SPECIMEN TERMINATED — cause: "+c.causeOfDeath+".", "evt-death");
+    archiveCreature(c);
+  }
+
+  c.lastTickAt = now();
+  summary.hungerAfter = c.hunger;
+  summary.stageAfter = summary.died ? summary.stageBefore : stageFromHours(c.activeMs/HOUR);
+  return summary;
 }
 
-/* =========================================================================
-   RENDERING
-   ========================================================================= */
-var TABS = [
-  {id:'report', label:'Field Report'},
-  {id:'reading', label:'Reading Log'},
-  {id:'shop', label:'Market'},
-  {id:'inventory', label:'Provisions'},
-  {id:'archive', label:'Case Archive'},
-  {id:'settings', label:'Settings'}
-];
-
-function el(tag, attrs, children){
-  var e = document.createElement(tag);
-  if(attrs) Object.keys(attrs).forEach(function(k){
-    if(k==='html') e.innerHTML = attrs[k];
-    else if(k==='text') e.textContent = attrs[k];
-    else if(k.indexOf('on')===0 && typeof attrs[k]==='function') e.addEventListener(k.slice(2), attrs[k]);
-    else e.setAttribute(k, attrs[k]);
+function archiveCreature(c){
+  state.archive.unshift({
+    designation: designation(c),
+    nickname: c.nickname,
+    stageReached: stageFromHours(c.activeMs/HOUR),
+    containment: containmentClass(c),
+    parts: c.parts.slice(),
+    traits: c.traits.slice(),
+    bornAt: c.bornAt,
+    diedAt: c.diedAt || now(),
+    survivalMs: (c.diedAt || now()) - c.bornAt,
+    causeOfDeath: c.causeOfDeath || "Unknown",
+    rampageCount: c.rampageCount
   });
-  (children||[]).forEach(function(c){ if(c) e.appendChild(c); });
-  return e;
 }
 
-function renderTabbar(){
-  var bar = document.getElementById('tabbar');
-  bar.innerHTML = '';
-  TABS.forEach(function(t){
-    var b = el('button', {
-      'class':'tabbtn' + (activeTab===t.id ? ' active':''),
-      onclick:function(){ activeTab=t.id; render(); }
-    });
-    b.textContent = t.label;
-    bar.appendChild(b);
-  });
+function startNewCreature(){
+  state.creature = freshCreature();
+  addLog("A new specimen has entered containment: "+designation(state.creature)+".", "evt-evolve");
 }
 
-function hungerClass(h){
-  if(h>50) return '';
-  if(h>20) return 'warn';
-  return 'danger';
+/* --- Reading / currency --- */
+function readingToRC(minutes){
+  return Math.max(0, Math.round(RC_K*Math.sqrt(Math.max(0,minutes))));
 }
-function hungerStatusText(h){
-  if(h>=80) return 'Well Fed';
-  if(h>=50) return 'Content';
-  if(h>=25) return 'Peckish';
-  if(h>=10) return 'Hungry';
-  if(h>0) return 'Ravenous';
-  return 'STARVING';
+function pendingReadingDates(){
+  const created = dateStr(state.meta.createdAt);
+  let start = state.lastEnteredDate ? addDays(state.lastEnteredDate,1) : addDays(created,-1);
+  const end = addDays(todayStr(),-1);
+  const out=[];
+  let d=start;
+  let guard=0;
+  while(d<=end && guard<400){ out.push(d); d=addDays(d,1); guard++; }
+  return out;
 }
-
-function render(){
-  document.getElementById('hdrCredits').textContent = state.currency + ' RC';
-  renderTabbar();
-  var page = document.getElementById('page');
-  page.innerHTML = '';
-  if(activeTab==='report') page.appendChild(renderReport());
-  else if(activeTab==='reading') page.appendChild(renderReading());
-  else if(activeTab==='shop') page.appendChild(renderShop());
-  else if(activeTab==='inventory') page.appendChild(renderInventory());
-  else if(activeTab==='archive') page.appendChild(renderArchive());
-  else if(activeTab==='settings') page.appendChild(renderSettings());
-  updateFooter();
+function submitReading(dateKey, minutes){
+  minutes = Math.max(0, Math.round(minutes));
+  const rc = readingToRC(minutes);
+  state.readingLog[dateKey] = minutes;
+  state.lastEnteredDate = dateKey;
+  state.currency += rc;
+  addLog("Logged "+minutes+"m reading for "+dateKey+" → +"+rc+" RC.", "");
 }
 
-function renderReport(){
-  var frag = document.createDocumentFragment();
-  frag.appendChild(el('h2',{'class':'section-title', text:'Field Report'}));
-
-  var c = state.creature;
-  if(!c || !c.alive){
-    var box = el('div',{'class':'empty-state'});
-    box.innerHTML = 'No active specimen is currently under containment.<br><br>';
-    var btn = el('button',{'class':'primary', onclick:function(){ acquireNewSpecimen(); render(); }});
-    btn.textContent = 'Acquire New Specimen';
-    box.appendChild(btn);
-    frag.appendChild(box);
-    frag.appendChild(renderFieldLog());
-    return frag;
+/* --- Shop --- */
+function ensureShop(){
+  const t = todayStr();
+  if(state.shop.date !== t){
+    state.shop.date = t;
+    state.shop.rerolls = 0;
+    rollShop();
+  } else if(state.shop.offerings.length===0){
+    rollShop();
   }
-
-  var card = el('div',{'class':'card'});
-  var head = el('div',{style:'display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;'});
-  var left = el('div');
-  left.appendChild(el('div',{html:'<strong style="font-family:\'Special Elite\';font-size:1.05rem;">'+c.designation+'</strong>'}));
-  left.appendChild(el('div',{'class':'small-note', text:'Stage '+c.stage+' — '+STAGE_NAMES[c.stage]}));
-  head.appendChild(left);
-  var right = el('div');
-  right.appendChild(el('span',{'class':'stamp', text:classificationOf(c)}));
-  if(c.frozen) right.appendChild(el('span',{'class':'badge frozen', text:' FROZEN ', style:'margin-left:6px;'}));
-  head.appendChild(right);
-  card.appendChild(head);
-
-  card.appendChild(el('hr',{'class':'hr'}));
-
-  // hunger
-  var hRow = el('div');
-  hRow.appendChild(el('div',{'class':'meter-label', html:'<span>Hunger: '+hungerStatusText(c.hunger)+'</span><span id="hungerPct">'+Math.round(c.hunger)+'%</span>'}));
-  var meter = el('div',{'class':'meter'});
-  var fill = el('div',{'class':'meter-fill '+hungerClass(c.hunger), id:'hungerFill', style:'width:'+c.hunger+'%;'});
-  meter.appendChild(fill);
-  hRow.appendChild(meter);
-  card.appendChild(hRow);
-  if(c.hunger<=0){
-    card.appendChild(el('div',{'class':'danger-text small-note', id:'starveWarn', text:'CRITICAL: Specimen is starving. Time until neglect termination: '+fmtDur(STARVE_GRACE_MS-c.starvingMs)}));
+}
+function rollShop(){
+  const rng = seededRng(state.shop.date+"|"+state.shop.rerolls+"|"+(state.creature?state.creature.uid:"x"));
+  const pool = FOOD_CATALOG.slice();
+  const n = 4;
+  const offerings=[];
+  const used=new Set();
+  while(offerings.length<n && used.size<pool.length){
+    const idx = Math.floor(rng()*pool.length);
+    if(used.has(idx)) continue;
+    used.add(idx);
+    offerings.push(pool[idx].id);
   }
+  state.shop.offerings = offerings;
+}
+function rerollCost(){ return 5*(state.shop.rerolls+1); }
+function doReroll(){
+  const cost = rerollCost();
+  if(state.currency<cost) return false;
+  state.currency -= cost;
+  state.shop.rerolls++;
+  rollShop();
+  addLog("Rerolled today's market for "+cost+" RC.", "");
+  return true;
+}
+function buyFood(foodId){
+  const food = FOOD_CATALOG.find(f=>f.id===foodId);
+  if(!food) return false;
+  if(state.currency<food.cost) return false;
+  state.currency -= food.cost;
+  state.inventory[foodId] = (state.inventory[foodId]||0)+1;
+  addLog("Purchased "+food.name+" for "+food.cost+" RC.", "");
+  return true;
+}
 
-  // age / evolution countdown
-  var ageRow = el('div',{style:'margin-top:10px;'});
-  ageRow.appendChild(el('div',{'class':'small-note', id:'ageLine', text:'Active age: '+fmtDur(c.ageMs)}));
-  if(c.stage<5){
-    var remain = STAGE_THRESH_MS[c.stage]-c.ageMs;
-    ageRow.appendChild(el('div',{'class':'small-note', id:'evoLine', text:(c.frozen?'Evolution paused (frozen). ':'Next evolution in: ')+(c.frozen?'':fmtDur(remain))}));
+/* --- Feeding --- */
+function feedCreature(foodId){
+  const c = state.creature;
+  if(!c || !c.alive) return null;
+  if(!state.inventory[foodId]) return null;
+  const food = FOOD_CATALOG.find(f=>f.id===foodId);
+  state.inventory[foodId]--;
+  const before = c.hunger;
+  c.hunger = clamp(c.hunger + food.hunger, 0, 100);
+  if(c.hunger>0) c.hungerZeroAt=null;
+  // reset warn flags that are now above current hunger
+  Object.keys(c.warnFlags).forEach(k=>{ if(+k < c.hunger) c.warnFlags[k]=false; });
+  addLog("Fed "+food.name+". Hunger "+Math.round(before)+"% → "+Math.round(c.hunger)+"%.", "");
+  let mutation=null, stabilized=false;
+  if(rnd() < food.mut){
+    const m = pickMutation(c, food.cat);
+    if(m){
+      if(m.isPart) c.parts.push(m.item.id); else c.traits.push(m.item.id);
+      mutation = m.item.text;
+      addLog("Mutation observed: "+m.item.text+".", "evt-mutation");
+    } else {
+      stabilized = true;
+      addLog("Specimen's biology has stabilized — no further mutations possible.", "");
+    }
+  }
+  return {food, mutation, stabilized, before, after:c.hunger};
+}
+
+/* --- Biography / Dossier --- */
+function generateBiography(c){
+  const stage = stageFromHours(c.activeMs/HOUR);
+  const cls = containmentClass(c);
+  const name = designation(c);
+  const nick = c.nickname ? ' "'+c.nickname+'"' : "";
+  const ageMs = (c.alive?now():c.diedAt) - c.bornAt;
+  const ageStr = fmtHM(ageMs);
+  const partTxt = c.parts.length ? c.parts.map(id=>BODY_PARTS.find(p=>p.id===id).text).join("; ") : "no notable anatomical deviations";
+  const traitTxt = c.traits.length ? c.traits.map(id=>TRAITS.find(t=>t.id===id).text).join("; ") : "no behavioral anomalies on record";
+  const lines = [];
+  lines.push(name+nick+" — Containment Class: "+cls);
+  lines.push("Stage "+stage+" ("+STAGE_NAMES[stage-1]+") · Age: "+ageStr);
+  lines.push("");
+  lines.push("Physical deviations: "+partTxt+".");
+  lines.push("Behavioral/anomalous traits: "+traitTxt+".");
+  lines.push("");
+  if(c.rampageCount>0) lines.push("Incident history: "+c.rampageCount+" recorded rampage event(s).");
+  lines.push(cls==="KETER" ? "Recommend elevated containment protocols." : cls==="EUCLID" ? "Standard monitoring sufficient at this time." : "Specimen remains stable and low-risk.");
+  return lines.join("\n");
+}
+
+/* ============================= RENDER ============================= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+let activeTab = "field";
+
+function switchTab(tab){
+  activeTab = tab;
+  $$("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  $$(".panel").forEach(p=>p.classList.toggle("active", p.id==="panel-"+tab));
+  renderPanel(tab);
+}
+$$("#tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+
+function renderPanel(tab){
+  if(tab==="field") renderField();
+  else if(tab==="reading") renderReading();
+  else if(tab==="market") renderMarket();
+  else if(tab==="provisions") renderProvisions();
+  else if(tab==="archive") renderArchive();
+  else if(tab==="settings") renderSettings();
+}
+
+function renderHeader(){
+  const c = state.creature;
+  $("#hdrRC").textContent = state.currency+" RC";
+  if(!c){
+    $("#hdrName").textContent = "— no specimen —";
+    $("#hdrStage").textContent = "";
+    $("#hdrClass").textContent = "";
+    $("#hdrClass").className = "badge";
+    $("#hdrHungerFill").style.width="0%";
+    $("#hdrHungerPct").textContent="—";
+    $("#hdrFrozenTag").style.display="none";
+    document.title = "Abomination Keeper";
+    return;
+  }
+  $("#hdrName").textContent = designation(c) + (c.nickname?' "'+c.nickname+'"':"");
+  const stage = stageFromHours(c.activeMs/HOUR);
+  $("#hdrStage").textContent = "Stage "+stage+(isMatured(c)?" · MATURE":"");
+  const cls = containmentClass(c);
+  $("#hdrClass").textContent = cls;
+  $("#hdrClass").className = "badge "+cls;
+  $("#hdrHungerFill").style.width = c.hunger+"%";
+  $("#hdrHungerFill").style.background = c.hunger>50?"#3f5a3a":c.hunger>25?"#a9720f":"#9c2b1f";
+  $("#hdrHungerPct").textContent = Math.round(c.hunger)+"%";
+  $("#hdrFrozenTag").style.display = c.frozen ? "inline" : "none";
+
+  if(!c.alive){
+    document.title = "☠ "+designation(c)+" — terminated";
+  } else if(c.hunger<=0){
+    const graceLeftMs = HUNGER_ZERO_GRACE_HOURS*HOUR - (now()-(c.hungerZeroAt||now()));
+    const hLeft = Math.max(0, Math.ceil(graceLeftMs/HOUR));
+    document.title = "⚠ "+designation(c)+" — "+hLeft+"h until termination";
   } else {
-    ageRow.appendChild(el('div',{'class':'small-note good-text', text:'Full maturity reached. No further growth stages.'}));
+    document.title = "Abomination Keeper — "+designation(c);
   }
-  card.appendChild(ageRow);
-
-  // actions
-  var actions = el('div',{'class':'inline-actions'});
-  var freezeBtn = el('button',{onclick:function(){ toggleFreeze(); render(); }});
-  freezeBtn.textContent = c.frozen ? 'Release from Stasis' : 'Freeze (Halt Time)';
-  actions.appendChild(freezeBtn);
-  card.appendChild(actions);
-
-  frag.appendChild(card);
-
-  // body parts & traits
-  var grid = el('div',{'class':'grid'});
-  var partsCard = el('div',{'class':'card'});
-  partsCard.appendChild(el('h3',{'class':'sub-title', text:'Physical Development ('+c.bodyParts.length+')'}));
-  var partsList = el('div',{'class':'taglist'});
-  c.bodyParts.forEach(function(p){
-    partsList.appendChild(el('span',{'class':'tag', text:p.slot+': '+p.name}));
-  });
-  if(c.bodyParts.length===0) partsList.appendChild(el('span',{'class':'small-note', text:'None yet.'}));
-  partsCard.appendChild(partsList);
-  grid.appendChild(partsCard);
-
-  var traitsCard = el('div',{'class':'card'});
-  traitsCard.appendChild(el('h3',{'class':'sub-title', text:'Behavioral Traits ('+c.traits.length+')'}));
-  var traitsList = el('div',{'class':'taglist'});
-  c.traits.forEach(function(t){
-    traitsList.appendChild(el('span',{'class':'tag', text:t.name}));
-  });
-  if(c.traits.length===0) traitsList.appendChild(el('span',{'class':'small-note', text:'None yet.'}));
-  traitsCard.appendChild(traitsList);
-  grid.appendChild(traitsCard);
-  frag.appendChild(grid);
-
-  // biography
-  var bioCard = el('div',{'class':'card'});
-  bioCard.appendChild(el('h3',{'class':'sub-title', text:'Generated Biography'}));
-  var bioText = el('textarea',{readonly:'readonly', rows:'5'});
-  bioText.value = generateBiography(c, null);
-  bioCard.appendChild(bioText);
-  var bioNote = el('div',{'class':'small-note', text:'Select the text above and copy to share this specimen with others.'});
-  bioCard.appendChild(bioNote);
-  frag.appendChild(bioCard);
-
-  frag.appendChild(renderFieldLog());
-  return frag;
 }
 
-function renderFieldLog(){
-  var card = el('div',{'class':'card'});
-  card.appendChild(el('h3',{'class':'sub-title', text:'Field Log (Last 10 Entries)'}));
-  if(state.fieldLog.length===0){
-    card.appendChild(el('div',{'class':'small-note', text:'No activity recorded yet.'}));
-  } else {
-    state.fieldLog.forEach(function(entry){
-      var line = el('div',{'class':'logline'});
-      line.appendChild(el('span',{'class':'ts', text:fmtTime(entry.t)}));
-      line.appendChild(document.createTextNode(entry.msg));
-      card.appendChild(line);
-    });
+function hungerWarning(c){
+  if(c.hunger<=0) return {level:"starving", text:"STARVING — termination in "+Math.max(0,Math.ceil((HUNGER_ZERO_GRACE_HOURS*HOUR-(now()-(c.hungerZeroAt||now())))/HOUR))+"h."};
+  if(c.hunger<=10) return {level:"critical", text:"Critical hunger."};
+  if(c.hunger<=25) return {level:"warn", text:"Feeding recommended."};
+  if(c.hunger<=50) return {level:"mild", text:"Specimen is getting hungry."};
+  return null;
+}
+
+function timeToHungerEstimates(c){
+  if(c.frozen) return "Timer paused (frozen).";
+  const rate=c.hungerRatePerHour;
+  const targets=[25,0];
+  const parts=[];
+  targets.forEach(t=>{
+    if(c.hunger>t){
+      const h=(c.hunger-t)/rate;
+      parts.push("~"+fmtHM(h*HOUR)+" until "+(t===0?"Starving (0%)":"Critical ("+t+"%)"));
+    }
+  });
+  return parts.length?parts.join(" · "):"Already at critical levels.";
+}
+
+function renderField(){
+  const el = $("#panel-field");
+  const c = state.creature;
+  if(!c){
+    el.innerHTML = '<div class="sheet"><h2>Field Report</h2><p class="muted">No active specimen.</p></div>';
+    return;
   }
-  return card;
+  if(!c.alive){
+    el.innerHTML = `
+      <div class="sheet">
+        <h2>Case Closed</h2>
+        <p><span class="stampbox" style="color:var(--danger)">TERMINATED</span></p>
+        <p>${esc(designation(c))}${c.nickname?' "'+esc(c.nickname)+'"':""} — Stage ${stageFromHours(c.activeMs/HOUR)}, Containment Class ${containmentClass(c)}.</p>
+        <p class="muted">Cause of death: ${esc(c.causeOfDeath||"Unknown")}<br>Survived: ${fmtHM((c.diedAt||now())-c.bornAt)}</p>
+        <button class="btn" id="btnNewSpecimen">Begin New Specimen</button>
+      </div>
+      <div class="sheet"><h2>Field Log</h2>${renderLogHtml()}</div>
+    `;
+    $("#btnNewSpecimen").onclick=()=>{ startNewCreature(); save(); renderAll(); };
+    return;
+  }
+  const stage = stageFromHours(c.activeMs/HOUR);
+  const mature = isMatured(c);
+  const nextThreshold = STAGE_HOURS[Math.min(stage-1,4)];
+  const curHours = c.activeMs/HOUR;
+  const remainingHours = mature?0:Math.max(0, nextThreshold-curHours);
+  const warn = hungerWarning(c);
+  const cls = containmentClass(c);
+
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Field Report</h2>
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div style="font-family:'Special Elite',monospace;font-size:1.05rem;">${esc(designation(c))}</div>
+          <div class="muted small" id="nickWrap">${c.nickname?('"'+esc(c.nickname)+'" ') : ''}<a href="#" id="editNick" class="small">${c.nickname?"[rename]":"[give nickname]"}</a></div>
+        </div>
+        <span class="badge ${cls}">${cls}</span>
+      </div>
+      <hr class="rule">
+      <div class="row" style="justify-content:space-between;">
+        <div><strong>Stage ${stage} — ${STAGE_NAMES[stage-1]}</strong>${mature?" (fully matured)":""}</div>
+        <div class="mono small">${c.frozen?"❄ FROZEN — timer paused":(mature?"No further growth stages":"Next evolution in "+fmtHM(remainingHours*HOUR))}</div>
+      </div>
+      <h3>Hunger — ${Math.round(c.hunger)}%</h3>
+      <div class="hbar"><div class="hbar-fill" style="width:${c.hunger}%; background:${c.hunger>50?"#3f5a3a":c.hunger>25?"#a9720f":"#9c2b1f"}"></div></div>
+      ${warn?`<div class="warn-banner ${warn.level==='starving'?'starving':warn.level==='critical'?'critical':''}">${esc(warn.text)}</div>`:""}
+      <p class="muted small">${esc(timeToHungerEstimates(c))}</p>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn" id="btnFeed">Feed</button>
+        <button class="btn secondary" id="btnFreeze">${c.frozen?"Unfreeze":"Freeze"}</button>
+        <button class="btn secondary" id="btnCopyDossier">Copy Dossier</button>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <h2>Specimen Traits</h2>
+      <h3>Body parts (${c.parts.length}/${c.partCap})${c.parts.length>=c.partCap?' <span class="muted small">— at capacity</span>':""}</h3>
+      <ul class="trait-list">${c.parts.length? c.parts.map(id=>{const p=BODY_PARTS.find(x=>x.id===id); return '<li class="part">'+rarityTagHtml(p.rarity)+esc(p.text)+'</li>';}).join(""): '<li class="muted">None recorded yet.</li>'}</ul>
+      <h3>Traits (${c.traits.length}/${c.traitCap})${c.traits.length>=c.traitCap?' <span class="muted small">— at capacity</span>':""}</h3>
+      <ul class="trait-list">${c.traits.length? c.traits.map(id=>{const t=TRAITS.find(x=>x.id===id); return '<li class="trait">'+rarityTagHtml(t.rarity)+esc(t.text)+'</li>';}).join(""): '<li class="muted">None recorded yet.</li>'}</ul>
+      <p class="muted small">Every specimen is born with its own random anatomical and behavioral limits — this one can develop up to ${c.partCap} body parts and ${c.traitCap} traits over its lifetime.</p>
+    </div>
+
+    <div class="sheet">
+      <h2>Field Log</h2>
+      ${renderLogHtml()}
+    </div>
+  `;
+
+  $("#btnFeed").onclick = openFeedModal;
+  $("#btnFreeze").onclick = ()=>{
+    c.frozen = !c.frozen;
+    c.lastTickAt = now();
+    addLog(c.frozen?"Specimen placed in cryogenic stasis.":"Specimen released from stasis.", "");
+    save(); renderAll();
+  };
+  $("#btnCopyDossier").onclick = ()=>{
+    const text = generateBiography(c);
+    copyToClipboard(text);
+    toast("Dossier copied to clipboard.", "");
+  };
+  $("#editNick").onclick = (e)=>{
+    e.preventDefault();
+    const val = prompt("Nickname for "+designation(c)+":", c.nickname||"");
+    if(val!==null){ c.nickname = val.trim().slice(0,24); save(); renderAll(); }
+  };
+}
+
+function renderLogHtml(){
+  if(!state.log.length) return '<p class="muted small">Nothing recorded yet.</p>';
+  return '<ul class="log-list">'+state.log.map(l=>{
+    const t = new Date(l.ts);
+    return `<li class="${l.cls}"><span class="t">${pad(t.getHours())}:${pad(t.getMinutes())}</span>${esc(l.text)}</li>`;
+  }).join("")+"</ul>";
+}
+
+function openFeedModal(){
+  const c = state.creature;
+  const avail = Object.keys(state.inventory).filter(id=>state.inventory[id]>0);
+  const deficit = 100 - c.hunger;
+  const items = avail.map(id=>FOOD_CATALOG.find(f=>f.id===id)).filter(Boolean);
+  items.sort((a,b)=>a.hunger-b.hunger);
+  // pick up to 3: prefer ones closest to filling remaining hunger without much waste
+  let shortlist = items.slice();
+  shortlist.sort((a,b)=>{
+    const wa = Math.max(0, a.hunger-deficit), wb = Math.max(0, b.hunger-deficit);
+    if(wa!==wb) return wa-wb;
+    return b.hunger-a.hunger;
+  });
+  shortlist = shortlist.slice(0,3);
+
+  const html = `
+    <div class="modal">
+      <h2>Feed Specimen</h2>
+      <p class="muted small">Current hunger: ${Math.round(c.hunger)}%. Choose from your provisions:</p>
+      ${shortlist.length? shortlist.map(f=>{
+        const qty = state.inventory[f.id];
+        const wasteful = f.hunger > deficit+15;
+        return `<div class="food-opt ${wasteful?'disabled':''}">
+          <div>
+            <div class="fname">${esc(f.name)} <span class="muted small">×${qty}</span></div>
+            <div class="fmeta">+${f.hunger} hunger · mutation ${pct(f.mut)}%${wasteful?' · <span style="color:var(--danger)">wasteful</span>':''}</div>
+          </div>
+          <button class="btn small" data-food="${f.id}" ${wasteful?'disabled':''}>Feed</button>
+        </div>`;
+      }).join("") : '<p class="muted">No provisions in stock. Visit the Market.</p>'}
+      <div class="row" style="justify-content:flex-end; margin-top:10px;">
+        <button class="btn secondary" id="modalClose">Close</button>
+      </div>
+    </div>
+  `;
+  showModal(html);
+  $$("[data-food]").forEach(btn=>{
+    btn.onclick=()=>{
+      const res = feedCreature(btn.dataset.food);
+      closeModal();
+      if(res){
+        toast("Fed "+res.food.name+". Hunger "+Math.round(res.before)+"% → "+Math.round(res.after)+"%.", "");
+        if(res.mutation) toast("Mutation: "+res.mutation, "mutation");
+        else if(res.stabilized) toast("No mutation — specimen is at capacity.", "");
+      }
+      save(); renderAll();
+    };
+  });
+  $("#modalClose").onclick = closeModal;
 }
 
 function renderReading(){
-  var frag = document.createDocumentFragment();
-  frag.appendChild(el('h2',{'class':'section-title', text:'Reading Log'}));
-  frag.appendChild(el('p',{'class':'small-note', text:'Record exactly one entry per day for the previous day\'s total reading time. Reading time converts to Ration Credits with diminishing returns — long marathon sessions earn proportionally less per minute.'}));
-
-  var recDate = readingRecordingDate(Date.now());
-  var card = el('div',{'class':'card'});
-  if(recDate===null){
-    card.appendChild(el('div',{'class':'good-text', text:'Reading time already logged for '+state.lastLoggedDate+'.'}));
-    card.appendChild(el('div',{'class':'small-note', text:'Entry will unlock again tomorrow.'}));
-  } else {
-    card.appendChild(el('label',{text:'Total minutes read on ' + recDate}));
-    var row = el('div',{style:'display:flex;gap:8px;flex-wrap:wrap;align-items:center;'});
-    var input = el('input',{type:'number', min:'0', max:'960', step:'1', id:'readingInput', placeholder:'e.g. 45'});
-    row.appendChild(input);
-    var msgSpan = el('span',{'class':'small-note', id:'readingMsg'});
-    var btn = el('button',{'class':'primary', onclick:function(){
-      var v = parseFloat(input.value);
-      if(isNaN(v) || v<0){ msgSpan.textContent = 'Enter a valid number of minutes.'; return; }
-      var res = submitReading(v);
-      msgSpan.textContent = res.msg;
-      if(res.ok) render();
-    }});
-    btn.textContent = 'Submit';
-    row.appendChild(btn);
-    card.appendChild(row);
-    card.appendChild(msgSpan);
-  }
-  frag.appendChild(card);
-
-  frag.appendChild(el('h3',{'class':'sub-title', text:'History'}));
-  if(state.readingLog.length===0){
-    frag.appendChild(el('div',{'class':'empty-state', text:'No reading time logged yet.'}));
-  } else {
-    var table = el('table',{'class':'simple'});
-    var thead = el('thead',{}, [el('tr',{},[el('th',{text:'Date'}),el('th',{text:'Minutes'}),el('th',{text:'RC Earned'})])]);
-    table.appendChild(thead);
-    var tbody = el('tbody');
-    state.readingLog.slice(0,20).forEach(function(r){
-      tbody.appendChild(el('tr',{},[el('td',{text:r.date}),el('td',{text:r.minutes}),el('td',{text:'+'+r.gained})]));
+  const el = $("#panel-reading");
+  const pending = pendingReadingDates();
+  const historyDates = Object.keys(state.readingLog).sort().reverse().slice(0,14);
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Reading Log</h2>
+      <p class="muted small">Enter your total reading time for each missed day (yesterday and earlier). Reading is converted to Reading Credits (RC) using diminishing returns: <span class="mono">RC = round(${RC_K} × √minutes)</span> — so marathon sessions earn proportionally less.</p>
+      ${pending.length===0?'<p class="muted">All caught up — nothing to log right now. Check back tomorrow.</p>':""}
+      ${pending.map(d=>`
+        <div class="pending-entry" data-date="${d}">
+          <div class="row" style="justify-content:space-between;">
+            <strong>${d}</strong>
+            <span class="mono small" id="preview-${d}">0 RC</span>
+          </div>
+          <div class="row" style="margin-top:6px;">
+            <input type="number" min="0" step="1" placeholder="minutes" style="width:110px" id="input-${d}">
+            <button class="btn small" data-submit="${d}">Log</button>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+    <div class="sheet">
+      <h2>History</h2>
+      ${historyDates.length?`<table class="rlog"><tr><th>Date</th><th>Minutes</th><th>RC earned</th></tr>${historyDates.map(d=>`<tr><td>${d}</td><td>${state.readingLog[d]}</td><td>${readingToRC(state.readingLog[d])}</td></tr>`).join("")}</table>`:'<p class="muted">No entries yet.</p>'}
+    </div>
+  `;
+  pending.forEach(d=>{
+    const inp = $("#input-"+d);
+    inp.addEventListener("input",()=>{
+      const v = parseFloat(inp.value)||0;
+      $("#preview-"+d).textContent = readingToRC(v)+" RC";
     });
-    table.appendChild(tbody);
-    frag.appendChild(table);
-  }
-  return frag;
+  });
+  $$("[data-submit]").forEach(btn=>{
+    btn.onclick=()=>{
+      const d = btn.dataset.submit;
+      const inp = $("#input-"+d);
+      const v = parseFloat(inp.value)||0;
+      submitReading(d, v);
+      save(); renderAll();
+      toast("Logged "+d+": +"+readingToRC(v)+" RC", "");
+    };
+  });
 }
 
-function renderShop(){
-  var frag = document.createDocumentFragment();
-  frag.appendChild(el('h2',{'class':'section-title', text:'Provisions Market'}));
-  var cost = REROLL_BASE + state.shop.rerollsUsed*REROLL_STEP;
-  var topRow = el('div',{style:'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;'});
-  topRow.appendChild(el('div',{'class':'small-note', text:'Stock refreshes daily. Reroll for a new random selection at increasing cost.'}));
-  var rerollBtn = el('button',{onclick:function(){
-    var res = rerollShop();
-    render();
-  }});
-  rerollBtn.textContent = 'Reroll Stock ('+cost+' RC)';
-  if(state.currency<cost) rerollBtn.disabled = true;
-  topRow.appendChild(rerollBtn);
-  frag.appendChild(topRow);
-  frag.appendChild(el('hr',{'class':'hr'}));
-
-  if(state.shop.items.length===0){
-    frag.appendChild(el('div',{'class':'empty-state', text:'The market is empty today.'}));
-  }
-  state.shop.items.forEach(function(entry, idx){
-    var item = FOOD_BY_ID[entry.foodId];
-    var row = el('div',{'class':'foodrow' + (entry.stock<=0 ? ' soldout':'')});
-    var left = el('div');
-    left.appendChild(el('div',{'class':'fname', text:item.name}));
-    left.appendChild(el('div',{'class':'fmeta', text:CAT_LABEL[item.category]+' · Restores '+item.restore+' hunger · Mutation chance '+Math.round(item.mut*100)+'% · Stock: '+entry.stock}));
-    row.appendChild(left);
-    var right = el('div',{style:'display:flex;gap:8px;align-items:center;'});
-    right.appendChild(el('span',{'class':'badge', text:item.price+' RC'}));
-    var buyBtn = el('button',{'class':'primary', onclick:function(){
-      var res = buyFood(idx);
-      render();
-    }});
-    buyBtn.textContent = entry.stock<=0 ? 'Sold Out' : 'Buy';
-    if(entry.stock<=0 || state.currency<item.price) buyBtn.disabled = true;
-    right.appendChild(buyBtn);
-    row.appendChild(right);
-    frag.appendChild(row);
+function renderMarket(){
+  ensureShop();
+  const el = $("#panel-market");
+  const offerings = state.shop.offerings.map(id=>FOOD_CATALOG.find(f=>f.id===id));
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Market — ${state.shop.date}</h2>
+      <p class="muted small">Today's stock refreshes daily. Reroll for a new selection at increasing cost.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <button class="btn secondary small" id="btnReroll">Reroll (${rerollCost()} RC)</button>
+        <span class="mono small">Balance: ${state.currency} RC</span>
+      </div>
+      <div class="shop-grid">
+        ${offerings.map(f=>`
+          <div class="shop-card">
+            <h4>${esc(f.name)}</h4>
+            <p class="muted small">${esc(f.flavor)}</p>
+            <p class="mono small">+${f.hunger} hunger · mutation ${pct(f.mut)}% · <strong>${f.cost} RC</strong></p>
+            <button class="btn small" data-buy="${f.id}" ${state.currency<f.cost?"disabled":""}>Buy</button>
+            <span class="muted small">In stock: ${state.inventory[f.id]||0}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+  $("#btnReroll").onclick=()=>{
+    if(doReroll()){ save(); renderAll(); }
+    else toast("Not enough RC to reroll.", "danger");
+  };
+  $$("[data-buy]").forEach(btn=>{
+    btn.onclick=()=>{
+      if(buyFood(btn.dataset.buy)){ save(); renderAll(); }
+    };
   });
-  return frag;
 }
 
-function renderInventory(){
-  var frag = document.createDocumentFragment();
-  frag.appendChild(el('h2',{'class':'section-title', text:'Provisions Inventory'}));
-  var keys = Object.keys(state.inventory).filter(function(k){ return state.inventory[k]>0; });
-  var c = state.creature;
-  if(keys.length===0){
-    frag.appendChild(el('div',{'class':'empty-state', text:'No food items in storage. Visit the Market to purchase provisions.'}));
-    return frag;
-  }
-  if(!c || !c.alive){
-    frag.appendChild(el('div',{'class':'small-note danger-text', text:'No active specimen to feed.'}));
-  } else if(c.frozen){
-    frag.appendChild(el('div',{'class':'small-note', text:'Specimen is frozen in stasis and cannot be fed until released.'}));
-  }
-  keys.forEach(function(fid){
-    var item = FOOD_BY_ID[fid];
-    var row = el('div',{'class':'foodrow'});
-    var left = el('div');
-    left.appendChild(el('div',{'class':'fname', text:item.name+' × '+state.inventory[fid]}));
-    left.appendChild(el('div',{'class':'fmeta', text:CAT_LABEL[item.category]+' · Restores '+item.restore+' hunger · Mutation chance '+Math.round(item.mut*100)+'%'}));
-    row.appendChild(left);
-    var feedBtn = el('button',{'class':'primary', onclick:function(){
-      var res = feedCreature(fid, true);
-      render();
-    }});
-    feedBtn.textContent = 'Feed';
-    if(!c || !c.alive || c.frozen) feedBtn.disabled = true;
-    row.appendChild(feedBtn);
-    frag.appendChild(row);
-  });
-  return frag;
+function renderProvisions(){
+  const el = $("#panel-provisions");
+  const items = Object.keys(state.inventory).filter(id=>state.inventory[id]>0).map(id=>({food:FOOD_CATALOG.find(f=>f.id===id), qty:state.inventory[id]}));
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Provisions</h2>
+      ${items.length? items.map(it=>`
+        <div class="food-opt">
+          <div>
+            <div class="fname">${esc(it.food.name)} <span class="muted small">×${it.qty}</span></div>
+            <div class="fmeta">+${it.food.hunger} hunger · mutation ${pct(it.food.mut)}%</div>
+            <div class="muted small">${esc(it.food.flavor)}</div>
+          </div>
+        </div>
+      `).join("") : '<p class="muted">No provisions stocked. Visit the Market to buy food.</p>'}
+    </div>
+  `;
 }
 
 function renderArchive(){
-  var frag = document.createDocumentFragment();
-  frag.appendChild(el('h2',{'class':'section-title', text:'Case Archive'}));
-  frag.appendChild(el('p',{'class':'small-note', text:'A permanent record of every specimen ever raised under this account.'}));
-  if(state.archive.length===0){
-    frag.appendChild(el('div',{'class':'empty-state', text:'No concluded cases yet.'}));
-    return frag;
-  }
-  state.archive.forEach(function(a){
-    var details = el('details',{'class':'archive-item'});
-    var summary = el('summary');
-    summary.textContent = a.designation + ' — Stage '+a.stageReached+' ('+STAGE_NAMES[a.stageReached]+') — '+a.cause;
-    details.appendChild(summary);
-    var body = el('div',{style:'margin-top:8px;'});
-    body.appendChild(el('div',{'class':'small-note', text:'Born: '+fmtTime(a.bornAt)+'  ·  Died: '+fmtTime(a.diedAt)}));
-    var pl = el('div',{'class':'taglist'});
-    a.bodyParts.forEach(function(p){ pl.appendChild(el('span',{'class':'tag', text:p.name})); });
-    body.appendChild(pl);
-    var tl = el('div',{'class':'taglist', style:'margin-top:4px;'});
-    a.traits.forEach(function(t){ tl.appendChild(el('span',{'class':'tag', text:t.name})); });
-    body.appendChild(tl);
-    var bioBox = el('textarea',{readonly:'readonly', rows:'4', style:'margin-top:8px;'});
-    bioBox.value = a.biography;
-    body.appendChild(bioBox);
-    details.appendChild(body);
-    frag.appendChild(details);
-  });
-  return frag;
+  const el = $("#panel-archive");
+  const filterClass = el.dataset.filterClass || "ALL";
+  const list = state.archive.filter(a=>filterClass==="ALL"||a.containment===filterClass);
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Archive — Past Specimens (${state.archive.length})</h2>
+      <div class="row" style="margin-bottom:10px;">
+        <label class="small muted">Filter:</label>
+        <select id="archFilter" class="mono small">
+          <option value="ALL">All</option>
+          <option value="SAFE">Safe</option>
+          <option value="EUCLID">Euclid</option>
+          <option value="KETER">Keter</option>
+        </select>
+      </div>
+      ${list.length? list.map(a=>`
+        <div class="archive-card">
+          <h4>${esc(a.designation)}${a.nickname?' "'+esc(a.nickname)+'"':""} <span class="badge ${a.containment}">${a.containment}</span></h4>
+          <p class="muted small">Reached Stage ${a.stageReached} · Survived ${fmtHM(a.survivalMs)} · Cause of death: ${esc(a.causeOfDeath)}</p>
+          <p class="small">Parts: ${a.parts.length? a.parts.map(id=>{const p=BODY_PARTS.find(x=>x.id===id); return p?(rarityTagHtml(p.rarity)+esc(p.text)):null;}).filter(Boolean).join(" &nbsp; "):"none"}</p>
+          <p class="small">Traits: ${a.traits.length? a.traits.map(id=>{const t=TRAITS.find(x=>x.id===id); return t?(rarityTagHtml(t.rarity)+esc(t.text)):null;}).filter(Boolean).join(" &nbsp; "):"none"}</p>
+        </div>
+      `).join("") : '<p class="muted">No specimens recorded yet.</p>'}
+    </div>
+  `;
+  $("#archFilter").value = filterClass;
+  $("#archFilter").onchange = (e)=>{ el.dataset.filterClass = e.target.value; renderArchive(); };
 }
 
 function renderSettings(){
-  var frag = document.createDocumentFragment();
-  frag.appendChild(el('h2',{'class':'section-title', text:'Settings'}));
-
-  var autoCard = el('div',{'class':'card'});
-  autoCard.appendChild(el('h3',{'class':'sub-title', text:'Auto-Save'}));
-  var row = el('div',{style:'display:flex;gap:8px;align-items:center;flex-wrap:wrap;'});
-  row.appendChild(el('label',{text:'Interval (minutes)', style:'margin:0;'}));
-  var mins = el('input',{type:'number', min:'1', max:'120', value:state.settings.autosaveMinutes});
-  row.appendChild(mins);
-  var applyBtn = el('button',{onclick:function(){
-    var v = parseInt(mins.value,10);
-    if(isNaN(v)||v<1) v=1;
-    state.settings.autosaveMinutes = v;
-    restartAutosave();
-    saveToLocalStorage();
-    render();
-  }});
-  applyBtn.textContent = 'Apply';
-  row.appendChild(applyBtn);
-  autoCard.appendChild(row);
-  var saveNowBtn = el('button',{style:'margin-top:8px;', onclick:function(){ saveToLocalStorage(); updateFooter(); }});
-  saveNowBtn.textContent = 'Save Now';
-  autoCard.appendChild(saveNowBtn);
-  frag.appendChild(autoCard);
-
-  var exCard = el('div',{'class':'card'});
-  exCard.appendChild(el('h3',{'class':'sub-title', text:'Export Save (Base-64)'}));
-  var exArea = el('textarea',{readonly:'readonly', rows:'4'});
-  exArea.value = exportBase64();
-  exCard.appendChild(exArea);
-  var exBtn = el('button',{style:'margin-top:6px;', onclick:function(){
-    exArea.select();
-    try{ document.execCommand('copy'); }catch(e){}
-  }});
-  exBtn.textContent = 'Select All (then copy)';
-  exCard.appendChild(exBtn);
-  frag.appendChild(exCard);
-
-  var imCard = el('div',{'class':'card'});
-  imCard.appendChild(el('h3',{'class':'sub-title', text:'Import Save (Base-64)'}));
-  var imArea = el('textarea',{rows:'4', placeholder:'Paste a base-64 save string here...'});
-  imCard.appendChild(imArea);
-  var imMsg = el('div',{'class':'small-note'});
-  var imBtn = el('button',{'class':'primary', style:'margin-top:6px;', onclick:function(){
+  const el = $("#panel-settings");
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Save Data</h2>
+      <div class="row">
+        <button class="btn secondary" id="btnExport">Export Save (Base64)</button>
+        <button class="btn secondary" id="btnImport">Import Save</button>
+      </div>
+      <textarea id="saveText" placeholder="Base64 save data appears here..." style="margin-top:8px;"></textarea>
+      <p class="muted small">Autosave interval (minutes):
+        <input type="number" min="1" max="60" id="autosaveMin" value="${state.settings.autosaveMin}" style="width:60px;">
+        <button class="btn small secondary" id="btnSetAutosave">Set</button>
+      </p>
+    </div>
+    <div class="sheet">
+      <h2>Danger Zone</h2>
+      <button class="btn danger" id="btnReset">Full Reset</button>
+      <p class="muted small">Erases your specimen, currency, inventory, reading log and archive permanently.</p>
+    </div>
+    <div class="sheet">
+      <h2>Guide &amp; FAQ</h2>
+      <details class="faq"><summary>How do I earn currency?</summary><p>Log your previous day's total reading time in the Reading tab. It converts to Reading Credits (RC) with diminishing returns, so spreading reading across days is more efficient than one long binge.</p></details>
+      <details class="faq"><summary>How does feeding work?</summary><p>Open Feed from the Field Report to see a few suggested provisions from your inventory, sorted to minimize waste. Different foods restore different amounts of hunger and carry different mutation odds.</p></details>
+      <details class="faq"><summary>What happens if hunger reaches 0%?</summary><p>Your specimen enters a starvation countdown. Feed it before time runs out or it will not survive. Warnings escalate well before that point.</p></details>
+      <details class="faq"><summary>What does Freeze do?</summary><p>Freezing halts hunger decay and growth entirely — useful if you'll be away for a while — but progress toward the next life stage also pauses.</p></details>
+      <details class="faq"><summary>Can my specimen die from something other than hunger?</summary><p>Neglected, agitated specimens have been known to lash out. Keep an eye on your funds.</p></details>
+      <details class="faq"><summary>What are containment classes?</summary><p>As your specimen accumulates traits and body parts, it may be reclassified from Safe to Euclid to Keter. This is cosmetic flavor reflecting how unusual your specimen has become.</p></details>
+      <details class="faq"><summary>Is there a limit to how many body parts or traits a specimen can have?</summary><p>Yes — each specimen is born with its own randomized ceiling for body parts and for traits, shown on the Field Report. That's part of what makes every specimen distinct: some have room to grow into sprawling anomalies, others stabilize early.</p></details>
+    </div>
+  `;
+  $("#btnExport").onclick=()=>{
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    $("#saveText").value = b64;
+    copyToClipboard(b64);
+    toast("Save exported and copied to clipboard.", "");
+  };
+  $("#btnImport").onclick=()=>{
+    const val = $("#saveText").value.trim();
+    if(!val) return;
     try{
-      var parsed = importBase64(imArea.value);
+      const parsed = JSON.parse(decodeURIComponent(escape(atob(val))));
       state = parsed;
-      normalizeStateAfterImport();
-      saveToLocalStorage();
-      restartAutosave();
-      imMsg.textContent = 'Import successful.';
-      render();
-    } catch(e){
-      imMsg.textContent = 'Import failed: invalid save string.';
+      save();
+      renderAll();
+      toast("Save imported.", "");
+    }catch(e){ toast("Invalid save data.", "danger"); }
+  };
+  $("#btnSetAutosave").onclick=()=>{
+    const v = clamp(parseInt($("#autosaveMin").value)||5,1,60);
+    state.settings.autosaveMin = v;
+    save();
+    restartAutosave();
+    toast("Autosave set to every "+v+" minute(s).", "");
+  };
+  $("#btnReset").onclick=()=>{
+    if(confirm("This will permanently erase ALL progress, including your archive. Are you absolutely sure?")){
+      if(confirm("Really sure? This cannot be undone.")){
+        localStorage.removeItem(SAVE_KEY);
+        state = defaultState();
+        save();
+        renderAll();
+        toast("Game fully reset.", "");
+      }
     }
-  }});
-  imBtn.textContent = 'Import';
-  imCard.appendChild(imBtn);
-  imCard.appendChild(imMsg);
-  frag.appendChild(imCard);
-
-  var resetCard = el('div',{'class':'card'});
-  resetCard.appendChild(el('h3',{'class':'sub-title', text:'Full Reset'}));
-  resetCard.appendChild(el('div',{'class':'danger-text', text:'Warning: this permanently deletes your current specimen, currency, inventory, and case archive. This cannot be undone.'}));
-  var confirmRow = el('div',{style:'margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;'});
-  confirmRow.appendChild(el('label',{text:'Type RESET to confirm', style:'margin:0;'}));
-  var confirmInput = el('input',{type:'text', id:'resetConfirmInput'});
-  confirmRow.appendChild(confirmInput);
-  var resetBtn = el('button',{'class':'danger-btn', onclick:function(){
-    if(confirmInput.value.trim()==='RESET'){
-      state = defaultState();
-      saveToLocalStorage();
-      restartAutosave();
-      activeTab='report';
-      render();
-    }
-  }});
-  resetBtn.textContent = 'Erase Everything';
-  confirmRow.appendChild(resetBtn);
-  resetCard.appendChild(confirmRow);
-  frag.appendChild(resetCard);
-
-  return frag;
+  };
 }
 
-function normalizeStateAfterImport(){
-  if(!state.settings) state.settings = {autosaveMinutes:5};
-  if(!state.inventory) state.inventory = {};
-  if(!state.shop) state.shop = {dateGenerated:null, items:[], rerollsUsed:0};
-  if(!state.fieldLog) state.fieldLog = [];
-  if(!state.archive) state.archive = [];
-  if(!state.readingLog) state.readingLog = [];
-  if(state.creature){
-    var now = Date.now();
-    flushCreature(state.creature, now);
-    checkEvolution(state.creature);
-    checkDeath(state.creature);
-  }
-  refreshShopIfNeeded(Date.now());
+/* ============================= MODAL / TOAST ============================= */
+function showModal(html){
+  $("#modalRoot").innerHTML = `<div class="modal-bg" id="modalBg">${html}</div>`;
+  $("#modalBg").addEventListener("click",(e)=>{ if(e.target.id==="modalBg") closeModal(); });
 }
-
-/* Cheap per-second updates for the report tab without a full rebuild */
-function liveUpdate(){
-  if(activeTab!=='report') return;
-  var c = state.creature;
-  if(!c || !c.alive) return;
-  var pct = document.getElementById('hungerPct');
-  var fill = document.getElementById('hungerFill');
-  if(pct) pct.textContent = Math.round(c.hunger)+'%';
-  if(fill){ fill.style.width = c.hunger+'%'; fill.className = 'meter-fill '+hungerClass(c.hunger); }
-  var ageLine = document.getElementById('ageLine');
-  if(ageLine) ageLine.textContent = 'Active age: '+fmtDur(c.ageMs);
-  var evoLine = document.getElementById('evoLine');
-  if(evoLine && c.stage<5){
-    var remain = STAGE_THRESH_MS[c.stage]-c.ageMs;
-    evoLine.textContent = (c.frozen?'Evolution paused (frozen).':'Next evolution in: '+fmtDur(remain));
-  }
-  var starveWarn = document.getElementById('starveWarn');
-  if(c.hunger<=0){
-    var txt = 'CRITICAL: Specimen is starving. Time until neglect termination: '+fmtDur(Math.max(0,STARVE_GRACE_MS-c.starvingMs));
-    if(starveWarn) starveWarn.textContent = txt;
-  }
-  document.getElementById('hdrCredits').textContent = state.currency + ' RC';
-}
-
-function updateFooter(){
-  var status = document.getElementById('footStatus');
-  var clock = document.getElementById('footClock');
-  if(status){
-    var savedAgo = state.lastSaveTime ? fmtDur(Date.now()-state.lastSaveTime)+' ago' : 'never';
-    status.textContent = 'Last saved: '+savedAgo+' · Auto-save every '+state.settings.autosaveMinutes+' min';
-  }
-  if(clock){
-    clock.textContent = new Date().toLocaleString();
-  }
-}
-
-function showStamp(text){
-  var layer = document.getElementById('stampLayer');
-  var d = document.createElement('div');
-  d.className = 'stamp-pop';
+function closeModal(){ $("#modalRoot").innerHTML=""; }
+function toast(text, cls){
+  const d = document.createElement("div");
+  d.className = "toast "+(cls||"");
   d.textContent = text;
-  layer.appendChild(d);
-  setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 2600);
+  $("#toastWrap").appendChild(d);
+  setTimeout(()=>{ d.style.opacity="0"; d.style.transition="opacity .4s"; setTimeout(()=>d.remove(),400); }, 3800);
+}
+function copyToClipboard(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(()=>{fallbackCopy(text);});
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text){
+  const ta=document.createElement("textarea");
+  ta.value=text; document.body.appendChild(ta); ta.select();
+  try{document.execCommand("copy");}catch(e){}
+  document.body.removeChild(ta);
 }
 
-/* =========================================================================
-   INIT
-   ========================================================================= */
+/* ============================= AWAY REPORT ============================= */
+function showAwayReport(summary, wasAlive, diedNow){
+  let html;
+  if(diedNow){
+    html = `
+      <div class="modal">
+        <h2>Incident Report</h2>
+        <p class="stampbox" style="color:var(--danger)">CASE CLOSED</p>
+        <p>Since your last session:</p>
+        <ul>
+          <li>${esc(state.archive[0]?state.archive[0].designation:"Specimen")} survived ${fmtHM(summary.elapsedMs)} unattended before termination.</li>
+          <li>Cause: ${esc(summary.cause||"Unknown")}</li>
+        </ul>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn" id="ackAway">Review Case</button>
+        </div>
+      </div>`;
+  } else {
+    html = `
+      <div class="modal">
+        <h2>Incident Report</h2>
+        <p class="muted small">Since your last session:</p>
+        <ul>
+          <li>${fmtHM(summary.elapsedMs)} elapsed</li>
+          <li>Hunger fell from ${Math.round(summary.hungerBefore)}% → ${Math.round(summary.hungerAfter)}%</li>
+          ${summary.stageAfter>summary.stageBefore?`<li>Specimen reached Stage ${summary.stageAfter}</li>`:""}
+          ${summary.newParts.length?`<li>New development: ${summary.newParts.map(esc).join(", ")}</li>`:""}
+          ${summary.ambient?`<li>${summary.ambient} ambient observation(s) recorded</li>`:""}
+          ${summary.rampage?`<li>Specimen went into a rampage, losing ${summary.rampageLoss} RC</li>`:""}
+        </ul>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn" id="ackAway">Acknowledge</button>
+        </div>
+      </div>`;
+  }
+  showModal(html);
+  $("#ackAway").onclick = ()=>{ closeModal(); switchTab(diedNow?"archive":"field"); };
+}
+
+/* ============================= MAIN LOOP ============================= */
+let autosaveHandle=null;
+function restartAutosave(){
+  if(autosaveHandle) clearInterval(autosaveHandle);
+  autosaveHandle = setInterval(()=>{ save(); }, state.settings.autosaveMin*60000);
+}
+
+function liveTick(){
+  if(!state.creature || !state.creature.alive) { renderHeader(); return; }
+  const c = state.creature;
+  const elapsed = now() - c.lastTickAt;
+  if(elapsed<1000) return;
+  const wasAlive = c.alive;
+  const prevWarn = hungerWarning(c);
+  const summary = advanceTime(elapsed);
+
+  // escalating warnings (toast once per threshold crossing)
+  if(c.alive){
+    WARN_THRESHOLDS.forEach(th=>{
+      if(c.hunger<=th && !c.warnFlags[th]){
+        c.warnFlags[th]=true;
+        const msg = th===0?"STARVING — termination in "+HUNGER_ZERO_GRACE_HOURS+"h.":
+                    th===10?"Critical hunger.":
+                    th===25?"Feeding recommended.":
+                    "Specimen is getting hungry.";
+        toast(msg, th<=10?"danger":"");
+      }
+    });
+  }
+  if(summary.newParts.length){
+    summary.newParts.forEach(p=>toast("Evolved! New development: "+p, "evolve"));
+  }
+  if(summary.rampage){
+    toast("Specimen rampaged! Lost "+summary.rampageLoss+" RC.", "danger");
+  }
+  if(wasAlive && !c.alive){
+    toast("Your specimen has died.", "danger");
+  }
+  renderHeader();
+  if(activeTab==="field") renderField();
+  save();
+}
+
+function renderAll(){
+  renderHeader();
+  renderPanel(activeTab);
+}
+
+/* ============================= INIT ============================= */
 function init(){
-  var loaded = loadFromLocalStorage();
+  const loaded = load();
+  const isNew = !loaded;
   state = loaded || defaultState();
-  normalizeStateAfterImport();
-  refreshShopIfNeeded(Date.now());
-  render();
+  // defensive defaults for older/partial saves
+  state.settings = state.settings || {autosaveMin:5, lastAckAway:0};
+  state.log = state.log || [];
+  state.archive = state.archive || [];
+  state.inventory = state.inventory || {};
+  state.shop = state.shop || {date:null, offerings:[], rerolls:0};
+  if(state.creature && (state.creature.partCap==null || state.creature.traitCap==null)){
+    state.creature.partCap = state.creature.partCap!=null ? state.creature.partCap : Math.max(randInt(5,11), state.creature.parts.length);
+    state.creature.traitCap = state.creature.traitCap!=null ? state.creature.traitCap : Math.max(randInt(4,10), state.creature.traits.length);
+  }
+
+  if(!isNew && state.creature){
+    const elapsed = now() - (state.creature.lastTickAt || state.meta.lastTickAt || now());
+    const wasAlive = state.creature.alive;
+    if(elapsed > 60000){
+      const summary = advanceTime(elapsed);
+      save();
+      if(elapsed > 4*60000 || summary.died){
+        setTimeout(()=>showAwayReport(summary, wasAlive, wasAlive && !state.creature.alive), 50);
+      }
+    }
+  } else if(isNew){
+    addLog("Containment initiated. Specimen "+designation(state.creature)+" logged.", "evt-evolve");
+    save();
+  }
+
+  switchTab("field");
+  renderAll();
   restartAutosave();
-  setInterval(tick, 1000);
-  window.addEventListener('beforeunload', function(){ saveToLocalStorage(); });
+  setInterval(liveTick, 15000);
+  window.addEventListener("beforeunload", ()=>{ if(state.creature) state.creature.lastTickAt = now(); save(); });
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.visibilityState==="visible"){
+      liveTick();
+    } else {
+      save();
+    }
+  });
 }
 
-document.addEventListener('DOMContentLoaded', init);
+init();
+
+})();
 </script>
 </body>
 </html>
