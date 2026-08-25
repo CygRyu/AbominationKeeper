@@ -1289,30 +1289,611 @@ function feedCreature(foodId){
   return {food, mutation, stabilized, before, after:c.hunger};
 }
 
-/* --- Biography / Dossier --- */
+/* --- Biography / Dossier ---
+   Narrative dossier generator. Rather than a single fixed template, this
+   draws from pools of fragments (openers, connectors, closers, asides,
+   atmosphere) keyed to the specimen's containment class, stage, and
+   history -- the same pattern FAMILY_AMBIENT_LOGS uses for ambient flavor
+   text, just applied at paragraph scale. Selection uses plain Math.random
+   (via rnd()/choice()), so re-clicking "Copy Dossier" on the same
+   specimen produces a different phrasing and paragraph order each time,
+   while still staying consistent with that specimen's actual stats. */
+const DOSSIER_CONTEXT = [
+  "Its intake file lists no clear point of origin.",
+  "Records regarding its point of origin remain incomplete.",
+  "How it came into containment is, itself, still a matter under review.",
+  "The circumstances of its capture remain redacted even from most assigned staff.",
+  "Little is known about where it came from, and fewer still are asking.",
+  "Its original discovery site was never entered into the public record.",
+  "The chain of custody begins abruptly, with no surviving documentation of what came before.",
+  "No reliable account exists of how the specimen first came to staff attention.",
+  "Its history prior to containment consists largely of conflicting reports and missing paperwork.",
+  "The intake report is unusually brief given the specimen's subsequent development.",
+  "Several early records concerning the specimen were lost, damaged, or quietly withdrawn.",
+  "The specimen arrived with more questions attached to it than answers.",
+  "Whatever circumstances preceded containment, staff have been unable to reconstruct them with confidence.",
+  "There are indications that someone knew about the specimen before the facility did. There is no agreement on who.",
+  "The earliest surviving reference to the specimen predates its official intake by an indeterminate amount of time.",
+  "Its provenance remains disputed. The current file simply lists the matter as unresolved.",
+  "Attempts to establish a reliable origin story have produced several mutually incompatible versions.",
+  "No personnel currently assigned to the facility were present at the time of its initial recovery.",
+  "The specimen's pre-containment history is notable mainly for how little of it can be verified.",
+  "Why it was brought here in the first place is considered less certain than the fact that it was."
+];
+const DOSSIER_OPENERS = {
+  SAFE: [
+    "{name} has spent {ageStr} in containment without incident worth escalating.",
+    "By most measures, {name} remains exactly what its intake file predicted: manageable.",
+    "Staff assigned to {name} describe its routine as, if anything, dull.",
+    "{name} has given containment staff little reason for concern.",
+    "For {ageStr}, {name} has occupied its enclosure with almost remarkable consistency.",
+    "{name} is not the sort of specimen that keeps researchers awake at night.",
+    "There is little drama in {name}'s file, which staff generally consider a positive development.",
+    "If containment facilities had quiet successes, {name} would qualify as one.",
+    "{name} has proven remarkably cooperative by containment standards.",
+    "So far, {name} has been less a problem than a responsibility.",
+    "The most notable thing about {name} may be how little it has demanded from the people assigned to it.",
+    "{ageStr} of observation have produced no serious complications from {name}.",
+    "Nothing in {name}'s current record suggests an immediate cause for concern.",
+    "{name} remains one of those rare specimens whose file contains more routine observations than incident reports.",
+    "Containment staff have developed a comfortable familiarity with {name}, which is generally considered a good sign.",
+    "There are more difficult specimens in the facility. {name} is not presently one of them.",
+    "{name} has settled into containment with considerably less resistance than expected.",
+    "At present, {name} represents a manageable specimen with an unusually uneventful record.",
+    "For all the uncertainty surrounding its origins, {name} has been remarkably predictable in containment.",
+    "No emergency briefing has ever been called specifically because of {name}. Staff would like to keep it that way."
+  ],
+  EUCLID: [
+    "{ageStr} into observation, {name} has proven more trouble than its early paperwork suggested.",
+    "{name}'s file has grown considerably since intake, and not in ways staff find reassuring.",
+    "What began as a routine specimen has, over {ageStr}, become something containment staff approach with visible caution.",
+    "{name} occupies that uncomfortable middle ground between predictable and dangerous.",
+    "There was a time when staff considered {name} straightforward. That assessment has since been revised.",
+    "{name} has not exactly become dangerous, but the distinction has grown increasingly academic.",
+    "The longer {name} remains under observation, the less comfortable staff become with simple explanations.",
+    "{name} continues to behave within acceptable limits, provided those limits are interpreted generously.",
+    "Early reports described {name} as manageable. Current reports use considerably more qualified language.",
+    "Containment remains routine for {name}, though nobody would describe it as effortless.",
+    "The specimen has accumulated enough irregularities that its original classification now feels optimistic.",
+    "{name} has spent {ageStr} demonstrating why preliminary assessments are called preliminary.",
+    "Nothing about {name} is immediately catastrophic. Unfortunately, that is not the same thing as reassuring.",
+    "Staff have learned to distinguish between {name} being quiet and {name} being inactive. The difference matters.",
+    "{name} remains containable, though the margin for error has become noticeably smaller.",
+    "The file on {name} has developed a habit of making yesterday's assumptions obsolete.",
+    "Routine observation has become less routine as {name} continues to demonstrate unexpected behavior.",
+    "No single event explains {name}'s current classification. The accumulated evidence does.",
+    "Containment personnel rarely agree on what {name} will do next. They agree that pretending to know is unwise.",
+    "At some point during {ageStr} of observation, {name} stopped being considered an ordinary containment case."
+  ],
+  KETER: [
+    "{name} is not, by any reasonable definition, safe.",
+    "After {ageStr} in containment, the question surrounding {name} is no longer whether it will breach protocol, but when.",
+    "Few specimens earn their classification as thoroughly as {name} has.",
+    "Containment staff do not volunteer for shifts near {name}.",
+    "{name} has made a convincing argument against the idea that containment is permanent.",
+    "There is very little about {name}'s record that can be described as reassuring.",
+    "{name} is the sort of specimen for which contingency plans have contingency plans.",
+    "Staff are instructed to treat every quiet period around {name} as temporary.",
+    "The current containment arrangement for {name} is best described as functional rather than secure.",
+    "{name} has repeatedly demonstrated that established procedures are suggestions at best.",
+    "The facility does not contain {name} so much as repeatedly convince it to remain where it is.",
+    "At this point, {name}'s containment status is maintained through preparation, redundancy, and considerable caution.",
+    "Every department that has handled {name} has eventually added something to the emergency protocol.",
+    "{name} has accumulated enough incidents that its file reads less like a report and more like a warning.",
+    "There is no comfortable interpretation of {name}'s current containment record.",
+    "The specimen has demonstrated an ability to turn ordinary containment failures into serious incidents with very little warning.",
+    "{name} remains contained. The word 'remains' is doing substantial work here.",
+    "Containment personnel are reminded that familiarity with {name} should never be mistaken for safety.",
+    "The facility has adapted extensively to {name}. Whether {name} has adapted to the facility remains unclear.",
+    "If {name} ever becomes predictable, staff have been instructed to assume that something has gone wrong."
+  ]
+};
+const DOSSIER_STAGE_MATURE = [
+  "Growth ceased some time ago; whatever it has become, it is unlikely to change further.",
+  "It has stopped developing — what remains now is simply upkeep.",
+  "Fully matured, it shows no further signs of anatomical or behavioral drift.",
+  "Development appears complete, leaving staff to document rather than anticipate further changes.",
+  "The specimen has reached apparent maturity, with no measurable development since.",
+  "Whatever process once drove its growth has now gone quiet.",
+  "No further maturation has been observed. Staff remain reluctant to call that permanent.",
+  "Its current form appears stable, though researchers continue to monitor for late-stage changes.",
+  "The developmental cycle appears to have reached its endpoint.",
+  "It has settled into a mature state and, mercifully, seems content to remain there.",
+  "No meaningful changes have been recorded since maturity was reached.",
+  "The specimen's anatomy has remained stable long enough for staff to consider this its final form.",
+  "Its period of development appears to be over. What that means biologically remains unclear.",
+  "Growth has ceased, leaving researchers with the considerably harder task of understanding what they are looking at.",
+  "The specimen no longer changes in any obvious way, though subtle behavioral shifts continue to be monitored."
+];
+const DOSSIER_STAGE_GROWING = [
+  "It remains at Stage {stage} of a presumed five, and staff brace for what comes next.",
+  "Development continues; the {stageName} phase shows no sign of slowing.",
+  "Currently in its {stageName} phase, the specimen is expected to change further before it's through.",
+  "At Stage {stage}, {name} remains an unfinished problem.",
+  "The specimen is still developing, and previous stages provide only limited clues about what comes next.",
+  "Its current {stageName} phase has already produced changes staff did not initially anticipate.",
+  "Stage {stage} has proven considerably less stable than earlier observations suggested.",
+  "Development remains ongoing, with the {stageName} phase producing new characteristics at irregular intervals.",
+  "Whatever its final form may be, {name} has not reached it yet.",
+  "Researchers continue to document changes as the specimen advances through Stage {stage}.",
+  "The {stageName} phase appears transitional, though nobody can agree on what it is transitioning toward.",
+  "Growth has not stopped. If anything, recent observations suggest it may be accelerating.",
+  "At this stage, prediction remains difficult; each developmental change seems to invalidate at least one earlier assumption.",
+  "Stage {stage} has introduced enough new traits that the specimen's original description is becoming increasingly obsolete.",
+  "The specimen remains in active development, making long-term containment planning unusually difficult.",
+  "Its {stageName} phase continues to produce changes that staff have yet to fully explain."
+];
+const DOSSIER_PART_OPENERS = [
+  "Most striking is",
+  "The first thing any observer notices is",
+  "Impossible to overlook is",
+  "Most notable among its physical deviations is",
+  "The most obvious alteration is",
+  "Chief among its abnormalities is",
+  "Visually, the most significant deviation is",
+  "The feature that draws the most attention is",
+  "Among its more unusual characteristics, staff consistently note",
+  "The specimen's most pronounced physical anomaly is",
+  "One feature in particular has drawn repeated attention:",
+  "Researchers have repeatedly flagged",
+  "The clearest indication of its altered physiology is",
+  "Perhaps the easiest change to document is",
+  "Its anatomy is dominated by",
+  "At first glance, the most unusual feature is"
+];
+const DOSSIER_PART_MIDDLES = [
+  "It has also developed",
+  "Additionally, it bears",
+  "Staff have also logged",
+  "It has since grown",
+  "Further examination revealed",
+  "Researchers have documented",
+  "The specimen also possesses",
+  "Additional observations have identified",
+  "Less prominently, it has developed",
+  "Staff later discovered",
+  "Repeated examinations have confirmed",
+  "The anatomy also shows signs of",
+  "Secondary changes include",
+  "Further deviations have appeared in the form of",
+  "Its physiology has also produced",
+  "More recent examinations revealed"
+];
+const DOSSIER_PART_CLOSERS = [
+  "Less explicable is",
+  "Stranger still is",
+  "Most unsettling of all is",
+  "More difficult to account for is",
+  "What remains unexplained is",
+  "Staff have been less successful in explaining",
+  "The purpose of this feature remains unclear:",
+  "Researchers remain divided over",
+  "No satisfactory explanation has yet been offered for",
+  "Perhaps most concerning is",
+  "More unusual than the others is",
+  "The least understood characteristic is",
+  "Nobody has yet established why",
+  "The most persistent question concerns",
+  "What concerns researchers is not its presence, but",
+  "The final anomaly is the one staff discuss least:"
+];
+const DOSSIER_NO_PARTS = [
+  "{name} shows no notable anatomical deviations at this time — a fact staff find almost more unsettling than the alternative.",
+  "Physically, {name} remains, for now, unremarkable.",
+  "No significant anatomical abnormalities have been documented.",
+  "At present, there is little about {name}'s physical form that requires special notation.",
+  "Its anatomy remains within expected parameters, at least by current observations.",
+  "For all its other irregularities, {name} has retained an apparently ordinary physical structure.",
+  "No visible mutations or unusual anatomical structures have been confirmed.",
+  "The specimen's physical appearance offers few clues as to what makes it unusual.",
+  "Nothing about its current anatomy immediately explains its classification.",
+  "Researchers have yet to identify a physical characteristic that clearly distinguishes {name} from baseline specimens.",
+  "Its body remains surprisingly conventional given the rest of its file.",
+  "No significant physical deviations have emerged during the observation period.",
+  "The absence of visible abnormalities has made some researchers more curious, not less.",
+  "Physically, {name} presents a remarkably ordinary profile.",
+  "So far, its body has provided fewer answers than its behavior."
+];
+const DOSSIER_PART_ASIDE = [
+  "Its function, if it serves one, remains unclear.",
+  "Whether this is cosmetic or functional is still being debated internally.",
+  "Attempts to determine its purpose have so far gone nowhere.",
+  "Nobody on staff has volunteered to test what it's for.",
+  "No reliable hypothesis has survived repeated observation.",
+  "Researchers have proposed several explanations, none of which have gained consensus.",
+  "The specimen has not provided particularly useful answers.",
+  "Attempts at controlled testing have produced inconsistent results.",
+  "Whether the feature is intentional remains unknown.",
+  "Staff disagree on whether the structure serves any biological purpose at all.",
+  "Its apparent function remains theoretical.",
+  "No obvious evolutionary or practical explanation has been established.",
+  "The working theory has changed three times since intake.",
+  "Further testing has been postponed pending a safer method of investigation.",
+  "Nobody has yet found a reason to assume the feature is harmless.",
+  "For now, researchers have settled on documenting it rather than explaining it."
+];
+const DOSSIER_TRAIT_OPENERS = [
+  "Behaviorally, it",
+  "In temperament, it",
+  "On the behavioral side, staff note that it",
+  "In practice, it",
+  "When observed over longer periods, it",
+  "Staff have found that it",
+  "Its behavior is characterized by the tendency to",
+  "Under routine observation, it",
+  "From a behavioral standpoint, it",
+  "The specimen's temperament suggests that it",
+  "Repeated observation indicates that it",
+  "During ordinary containment, it",
+  "When left undisturbed, it",
+  "When staff intervene, it",
+  "Under controlled conditions, it",
+  "Behavioral logs consistently show that it"
+];
+const DOSSIER_TRAIT_MIDDLES = [
+  "It also",
+  "The specimen further",
+  "Staff separately note that it",
+  "It has additionally been observed to",
+  "Researchers have also recorded that it",
+  "On several occasions, it has",
+  "Further observation suggests that it",
+  "The specimen is also prone to",
+  "Less frequently, it will",
+  "Staff have repeatedly noted that it",
+  "There is also evidence that it",
+  "During extended observation, it has been known to",
+  "The same pattern appears when it",
+  "Additional logs indicate that it",
+  "Researchers have separately documented its tendency to",
+  "In less predictable moments, it"
+];
+const DOSSIER_TRAIT_CLOSERS = [
+  "Perhaps most tellingly, it",
+  "More troubling still, it",
+  "Most concerning is its tendency to",
+  "The behavior staff find hardest to explain is that it",
+  "More difficult to dismiss is the fact that it",
+  "What concerns researchers most is that it",
+  "The most consistent warning sign is that it",
+  "Most importantly, staff have observed that it",
+  "The pattern becomes particularly concerning when it",
+  "The behavior that receives the most attention is its tendency to",
+  "More than anything else, it",
+  "The clearest indication of its temperament is that it",
+  "Of particular concern is how readily it",
+  "The least predictable aspect is its tendency to",
+  "Perhaps the most revealing behavior is that it",
+  "The distinction between instinct and intent becomes difficult when it"
+];
+const DOSSIER_NO_TRAITS = [
+  "No behavioral anomalies are on record, though staff continue to watch closely.",
+  "Its behavior, so far, has offered nothing worth flagging.",
+  "No unusual behavioral patterns have been identified.",
+  "Behavioral observation has so far produced an uneventful record.",
+  "Staff have yet to identify a consistent behavioral deviation.",
+  "Its temperament remains within expected parameters.",
+  "Nothing about its routine behavior currently warrants special intervention.",
+  "For now, the specimen behaves much as expected.",
+  "No persistent behavioral abnormalities have been documented.",
+  "Observation logs remain notably ordinary where behavior is concerned.",
+  "The specimen has displayed no repeatable behavioral anomaly to date.",
+  "Researchers continue to monitor it, but so far there is little to distinguish its behavior from baseline.",
+  "Its routine has remained stable throughout the observation period.",
+  "No obvious behavioral triggers or irregularities have been identified.",
+  "If {name} has unusual behavioral tendencies, it has yet to demonstrate them consistently."
+];
+const DOSSIER_TRAIT_ASIDE = [
+  "Whether this is learned behavior or something innate is unknown.",
+  "Staff have not ruled out that this is deliberate.",
+  "It is unclear whether the specimen is even aware it does this.",
+  "No clear trigger has been identified.",
+  "There is no consensus on what causes the behavior.",
+  "Researchers remain divided over whether the behavior is instinctive.",
+  "Attempts to reproduce the behavior under controlled conditions have been unsuccessful.",
+  "The pattern is too consistent to dismiss, but too irregular to predict.",
+  "No environmental factor has yet been shown to explain it.",
+  "Staff have learned not to assume the behavior is accidental.",
+  "Whether the behavior represents intelligence, instinct, or something else remains unresolved.",
+  "The specimen has never provided a clear indication of why it behaves this way.",
+  "The behavior appears context-dependent, though the relevant context remains uncertain.",
+  "No reliable method of preventing the behavior has been established.",
+  "Researchers suspect there may be a trigger that current observation protocols simply fail to detect.",
+  "The distinction between reflex and intent remains unresolved."
+];
+const DOSSIER_FAMILY_FLOURISH = [
+  "Its {family} anomalies alone have generated {count} separate incident reports — more than any other family of deviation it exhibits.",
+  "Staff increasingly treat its {family} deviations as its defining characteristic rather than a curiosity.",
+  "Of everything on file, its {family} traits draw the most attention from researchers.",
+  "The majority of serious observations concerning {name} involve its {family} characteristics.",
+  "Its {family} traits account for a disproportionate share of the specimen's documented irregularities.",
+  "Researchers have spent more time studying its {family} deviations than any other aspect of its physiology.",
+  "If {name} has a defining category of anomaly, {family} would be the obvious candidate.",
+  "The {family} characteristics are difficult to ignore, particularly given the number of incidents associated with them.",
+  "Most routine assessments eventually return to the subject of its {family} deviations.",
+  "Its {family} anomalies have become sufficiently prominent that newer staff are briefed on them before anything else.",
+  "Nearly every major reassessment of {name} has included new observations concerning its {family} traits.",
+  "The specimen's {family} characteristics remain the subject of ongoing research.",
+  "What began as an unusual feature has become the most thoroughly documented aspect of the specimen's file.",
+  "Of its various deviations, the {family} traits have proven the most persistent.",
+  "The facility has accumulated {count} reports concerning its {family} anomalies, and the number continues to grow.",
+  "Staff generally agree that its {family} characteristics are the least understood part of the specimen.",
+  "The {family} deviations have attracted enough attention to warrant their own section in several internal reports.",
+  "Researchers remain divided over whether its {family} traits are related or merely coincidental.",
+  "Its {family} anomalies are responsible for a remarkable amount of paperwork.",
+  "Among all recorded deviations, the {family} characteristics are the ones most likely to produce a second look."
+];
+const DOSSIER_RAMPAGE = {
+  none: [
+    "No incidents have been recorded to date — for now, the specimen's temperament matches its file.",
+    "The absence of any incident report so far is, in its own way, notable.",
+    "Nothing on record suggests instability, though staff remain cautious regardless.",
+    "The incident log remains clean.",
+    "No containment breach, agitation event, or comparable incident has been attributed to the specimen.",
+    "So far, {name} has given staff no reason to activate emergency procedures.",
+    "Its incident history is uneventful, which staff consider preferable.",
+    "No rampage events have been recorded. Researchers remain reluctant to assume that will last.",
+    "The specimen has never required emergency intervention.",
+    "Despite its other irregularities, {name} has remained remarkably calm in containment.",
+    "There have been no recorded episodes of significant agitation.",
+    "Nothing resembling a containment incident has occurred during the current observation period.",
+    "Its file contains no emergency events worth noting.",
+    "Staff have yet to see the specimen lose control.",
+    "For now, the incident counter remains reassuringly empty."
+  ],
+  one: [
+    "Once, the specimen lapsed into agitation severe enough to breach minor protocol. Staff have not forgotten it.",
+    "There was one incident — brief, contained, and enough to change how staff talk about the specimen.",
+    "One incident appears in the record. It has been discussed more often than its brevity would suggest.",
+    "The specimen has only one recorded incident, though it was sufficient to prompt a review of containment procedures.",
+    "A single episode of severe agitation remains the only mark against an otherwise quiet incident history.",
+    "There has been one confirmed rampage. Staff consider that one more than ideal.",
+    "One event required intervention beyond standard handling procedures.",
+    "The incident log contains a single serious entry, and nobody is particularly interested in adding another.",
+    "Only once has {name} required emergency intervention.",
+    "One documented episode changed the recommended handling procedures for the specimen.",
+    "The specimen has been involved in exactly one serious disturbance.",
+    "A solitary incident has so far interrupted an otherwise stable containment record.",
+    "One event was enough to convince staff that the possibility should not be dismissed.",
+    "The record shows one confirmed episode of instability, with no reliable explanation for what caused it."
+  ],
+  few: [
+    "On {count} separate occasions, the specimen has lapsed into agitation severe enough to breach minor protocol — a pattern that has not gone unnoticed.",
+    "{count} incidents are on file now, spaced out but not random. Staff have started to see the shape of a pattern.",
+    "The specimen has experienced {count} significant episodes of agitation, each one prompting some revision to procedure.",
+    "{count} separate incidents have required intervention beyond routine containment.",
+    "There have been {count} recorded disturbances. None were catastrophic, but none were entirely predictable either.",
+    "{count} incidents have accumulated in the file, enough to make staff cautious about calling the previous ones isolated.",
+    "The incident history is beginning to form a pattern: {count} separate episodes, with no completely reliable trigger.",
+    "Staff have intervened during {count} significant episodes to date.",
+    "{count} recorded incidents have made routine handling considerably less routine.",
+    "The specimen has breached minor containment protocol {count} times, each incident adding another caveat to the handling guide.",
+    "With {count} incidents on record, researchers are increasingly interested in identifying what precedes an episode.",
+    "The specimen's {count} recorded disturbances remain difficult to predict, though several common factors have been identified."
+  ],
+  many: [
+    "The specimen has rampaged {count} times to date. At this point, staff plan around it rather than for it.",
+    "{count} recorded incidents make this specimen one of the more volatile files on record.",
+    "With {count} incidents logged, instability is no longer considered an exception to its behavior.",
+    "{count} separate rampages have been documented, and each has added another restriction to its handling protocol.",
+    "The incident counter has reached {count}. Staff have stopped describing individual episodes as unusual.",
+    "{count} incidents have occurred under containment, enough to make emergency response part of the routine.",
+    "The specimen has experienced {count} significant episodes of aggression. Researchers are now more interested in minimizing damage than predicting every occurrence.",
+    "{count} disturbances are recorded in the current file. The number is considered operationally significant.",
+    "After {count} separate incidents, staff have learned that calm periods should never be mistaken for permanent stability.",
+    "The specimen's record contains {count} confirmed rampages, each reinforcing the need for elevated precautions.",
+    "{count} incidents have occurred despite progressively stricter containment measures.",
+    "At {count} recorded incidents, the facility's approach has shifted from prevention alone to continuous preparedness.",
+    "The specimen has proven volatile {count} times. Nobody expects that number to remain final.",
+    "Its incident history is extensive: {count} serious episodes, several of which resulted in permanent procedural changes."
+  ]
+};
+const DOSSIER_OBSERVATION = [
+  "Handlers rotate shifts more frequently than standard protocol requires around this specimen — an unofficial policy nobody has confirmed but everyone follows.",
+  "The observation log for this specimen runs longer than most, filled with notes that read more like impressions than data.",
+  "More than one staff member has requested reassignment after extended exposure to the specimen, though none cite a specific reason.",
+  "Its enclosure sees more foot traffic than its containment class technically warrants — curiosity, mostly, though staff frame it otherwise.",
+  "Junior researchers are advised, informally, not to observe this specimen alone for extended periods.",
+  "Nothing in the observation notes is conclusive, but taken together they paint a consistent picture.",
+  "Staff tend to lower their voices when discussing the specimen, despite there being no procedural reason to do so.",
+  "The observation room is rarely empty when {name} is active.",
+  "Several researchers have developed personal routines for working near the enclosure. None appear in the official handbook.",
+  "The specimen has acquired a reputation among junior staff that its formal file does not entirely explain.",
+  "Researchers assigned to long observation sessions often leave with fewer notes than expected and considerably more questions.",
+  "There is an unusual amount of disagreement between personnel who have observed {name} for extended periods.",
+  "The specimen is rarely described the same way twice, though certain details recur with suspicious consistency.",
+  "Long-term observers frequently mention the same small behavioral details that do not appear in standard reports.",
+  "The facility has learned to distinguish between what the specimen does and what staff expect it to do. The two are not always the same.",
+  "Observation of {name} is considered routine on paper and mentally exhausting in practice.",
+  "Staff are instructed to record what they see rather than what they believe the specimen intended.",
+  "Several observations have been dismissed as coincidence before later entries made that position difficult to defend.",
+  "The longer an observer remains with the specimen, the more complicated the resulting report tends to become.",
+  "No single observation explains the specimen. The accumulated ones are considerably harder to ignore.",
+  "Researchers have noted that {name} behaves differently when it appears to be unobserved. Whether that distinction is real remains unresolved.",
+  "There is no formal reason to distrust the observation equipment. Staff do so anyway.",
+  "The specimen has generated an unusual number of handwritten notes appended to otherwise ordinary reports.",
+  "Personnel are discouraged from anthropomorphizing {name}. The instruction has not been especially successful.",
+  "The official reports remain clinical. The margins are less so.",
+  "Nothing about routine observation should be remarkable, yet the logs surrounding {name} rarely read that way.",
+  "Several staff members independently described the specimen as 'watchful.' The term has no technical meaning and keeps appearing anyway.",
+  "Researchers disagree on whether the specimen notices individual observers. Nobody seems willing to test the question casually.",
+  "The observation schedule has been revised several times, though the reasons given in the paperwork remain deliberately vague.",
+  "Most staff eventually develop an opinion about {name}. Fewer are comfortable putting that opinion into writing."
+];
+const DOSSIER_CLOSING_NOTE = [
+  " Filed pending further observation.",
+  " Review scheduled for the standard interval.",
+  " See attached addendum for the full incident log.",
+  " Further updates to follow as the file develops.",
+  " Additional observation recommended.",
+  " No further action required at present.",
+  " File remains open pending reassessment.",
+  " Continued monitoring is advised.",
+  " Supplemental reports remain attached to the primary file.",
+  " Reclassification may be considered following the next review.",
+  " Current assessment remains provisional.",
+  " Observation period extended pending further evidence.",
+  " Containment staff have been briefed accordingly.",
+  " Any significant change should be appended to this record immediately.",
+  " Further conclusions are deferred pending additional observation.",
+  " Review remains pending.",
+  " Current findings should not be considered definitive.",
+  " Monitoring requirements remain in effect.",
+  " See incident archive for supporting documentation.",
+  " This assessment supersedes earlier informal observations.",
+  " No amendments to the current file are recommended at this time.",
+  " Further documentation will be added as necessary.",
+  " Status remains unchanged pending formal review.",
+  " File retained for longitudinal comparison."
+];
+const DOSSIER_CLOSERS = {
+  SAFE: [
+    "Specimen remains stable and low-risk.",
+    "No changes to containment protocol are recommended at this time.",
+    "For now, {name} remains one of the easier files on record.",
+    "Current containment procedures remain adequate.",
+    "{name} continues to present minimal operational risk.",
+    "No escalation is warranted based on current observations.",
+    "The specimen remains well within acceptable containment parameters.",
+    "Routine monitoring should be sufficient.",
+    "At present, there is little reason to alter its classification.",
+    "{name} remains cooperative, stable, and largely uneventful.",
+    "No additional precautions are considered necessary at this time.",
+    "The current assessment remains favorable.",
+    "Staff may continue standard handling procedures.",
+    "Nothing in the current record justifies elevated containment measures.",
+    "For all known irregularities, {name} remains a manageable specimen.",
+    "Containment has remained effective, and no procedural changes are recommended.",
+    "The specimen's current behavior does not warrant further intervention.",
+    "No immediate concerns have been identified.",
+    "Until new evidence emerges, {name} may be treated as a stable containment case.",
+    "For now, routine remains routine."
+  ],
+  EUCLID: [
+    "Standard monitoring remains sufficient for now — but staff are advised not to assume that will stay true.",
+    "No immediate escalation is recommended, though the file bears watching.",
+    "{name} continues to sit just this side of the line.",
+    "Current containment procedures remain adequate, provided staff follow them precisely.",
+    "No reclassification is recommended yet, though the possibility remains under discussion.",
+    "The specimen remains manageable, but the margin for error is narrowing.",
+    "Containment remains effective. Staff are advised not to become complacent.",
+    "For now, existing protocols are sufficient. That assessment is subject to change.",
+    "{name} remains contained, though recent observations justify continued scrutiny.",
+    "No emergency measures are required at present.",
+    "The current classification remains appropriate, if increasingly conditional.",
+    "Routine containment is still possible, provided routine is not interpreted as careless.",
+    "Staff should continue monitoring for signs that its current behavior is becoming more consistent.",
+    "The file does not yet justify escalation. It also does not justify relaxation.",
+    "Current procedures remain adequate, though several researchers have recommended increased observation.",
+    "{name} has not crossed the threshold for elevated containment. Staff are advised to remember where that threshold is.",
+    "No immediate action is required beyond continued observation.",
+    "The specimen remains an acceptable risk under current conditions.",
+    "Further developments may warrant reassessment sooner than the standard review interval.",
+    "For now, containment holds. That remains the operative conclusion."
+  ],
+  KETER: [
+    "Recommend elevated containment protocols without delay.",
+    "Staff assigned to {name} should not work alone.",
+    "This file should not be treated as settled.",
+    "Containment procedures should remain under continuous review.",
+    "All personnel are advised to treat the current containment arrangement as temporary.",
+    "No reduction in security measures is recommended.",
+    "The specimen remains an active containment concern.",
+    "Current protocols should be considered the minimum acceptable standard.",
+    "Personnel should assume that unexpected behavior remains possible at all times.",
+    "Any deviation from established procedure should be reported immediately.",
+    "The current containment arrangement is functional but carries significant residual risk.",
+    "Additional safeguards should be maintained until further notice.",
+    "Staff should not interpret recent stability as evidence of reduced threat.",
+    "The specimen remains unsuitable for unsupervised handling.",
+    "Containment integrity should be checked more frequently than standard protocol requires.",
+    "All observations concerning behavioral changes should be escalated immediately.",
+    "No aspect of the current file supports complacency.",
+    "The classification remains justified.",
+    "{name} should be considered an ongoing operational hazard.",
+    "Further incidents should be assumed possible rather than exceptional."
+  ]
+};
+function fillTpl(tpl, vars){
+  return Object.keys(vars).reduce((s,k)=>s.replace(new RegExp("{"+k+"}","g"), vars[k]), tpl);
+}
 function generateBiography(c){
+  const pick = choice; // plain Math.random-backed pick, reused from utils above
   const stage = stageFromHours(c.activeMs/HOUR);
   const cls = containmentClass(c);
-  const name = designation(c);
-  const nick = c.nickname ? ' "'+c.nickname+'"' : "";
+  const name = designation(c) + (c.nickname ? ' "'+c.nickname+'"' : "");
   const ageMs = (c.alive?now():c.diedAt) - c.bornAt;
   const ageStr = fmtHM(ageMs);
-  const partTxt = c.parts.length ? c.parts.map(id=>BODY_PARTS.find(p=>p.id===id).text).join("; ") : "no notable anatomical deviations";
-  const traitTxt = c.traits.length ? c.traits.map(id=>TRAITS.find(t=>t.id===id).text).join("; ") : "no behavioral anomalies on record";
-  const lines = [];
-  lines.push(name+nick+" — Containment Class: "+cls);
-  lines.push("Stage "+stage+" ("+STAGE_NAMES[stage-1]+") · Age: "+ageStr);
-  lines.push("");
-  lines.push("Physical deviations: "+partTxt+".");
-  lines.push("Behavioral/anomalous traits: "+traitTxt+".");
+  const mature = isMatured(c);
+  const vars = {name, ageStr, stage, stageName: STAGE_NAMES[stage-1]};
+
+  // Opening + stage framing, occasionally padded with an origin/context line
+  const stageLine = mature ? pick(DOSSIER_STAGE_MATURE) : pick(DOSSIER_STAGE_GROWING);
+  let openPara = fillTpl(pick(DOSSIER_OPENERS[cls]), vars)+" "+fillTpl(stageLine, vars);
+  if(rnd()<0.6) openPara += " "+pick(DOSSIER_CONTEXT);
+
+  // Physical deviations, woven into prose, with an occasional aside on a random entry
+  let partPara;
+  if(c.parts.length){
+    const asideIdx = c.parts.length>1 && rnd()<0.5 ? randInt(0, c.parts.length-1) : -1;
+    const sentences = c.parts.map((id,i)=>{
+      const p = BODY_PARTS.find(x=>x.id===id);
+      const isLast = i===c.parts.length-1;
+      const connector = i===0 ? pick(DOSSIER_PART_OPENERS)
+        : (isLast && c.parts.length>=3) ? pick(DOSSIER_PART_CLOSERS)
+        : pick(DOSSIER_PART_MIDDLES);
+      let s = connector+" "+p.text+".";
+      if(i===asideIdx) s += " "+pick(DOSSIER_PART_ASIDE);
+      return s;
+    });
+    partPara = sentences.join(" ");
+  } else {
+    partPara = fillTpl(pick(DOSSIER_NO_PARTS), vars);
+  }
+
+  // Behavioral traits, woven into prose, with an occasional aside plus family-affinity flourish
+  let traitPara;
+  if(c.traits.length){
+    const asideIdx = c.traits.length>1 && rnd()<0.5 ? randInt(0, c.traits.length-1) : -1;
+    const sentences = c.traits.map((id,i)=>{
+      const t = TRAITS.find(x=>x.id===id);
+      const isLast = i===c.traits.length-1;
+      const connector = i===0 ? pick(DOSSIER_TRAIT_OPENERS)
+        : (isLast && c.traits.length>=3) ? pick(DOSSIER_TRAIT_CLOSERS)
+        : pick(DOSSIER_TRAIT_MIDDLES);
+      let s = connector+" "+t.text+".";
+      if(i===asideIdx) s += " "+pick(DOSSIER_TRAIT_ASIDE);
+      return s;
+    });
+    traitPara = sentences.join(" ");
+  } else {
+    traitPara = pick(DOSSIER_NO_TRAITS);
+  }
   const fc = familyCounts(c);
   let topFam = null, topCount = 0;
   Object.keys(fc).forEach(f=>{ if(fc[f]>topCount){ topCount=fc[f]; topFam=f; } });
-  if(topFam && topCount>=3) lines.push("Specimen exhibits a pronounced "+topFam+" deviation ("+topCount+" related observations).");
-  lines.push("");
-  if(c.rampageCount>0) lines.push("Incident history: "+c.rampageCount+" recorded rampage event(s).");
-  lines.push(cls==="KETER" ? "Recommend elevated containment protocols." : cls==="EUCLID" ? "Standard monitoring sufficient at this time." : "Specimen remains stable and low-risk.");
-  return lines.join("\n");
+  if(topFam && topCount>=3){
+    traitPara += " "+fillTpl(pick(DOSSIER_FAMILY_FLOURISH), {family: topFam, count: topCount});
+  }
+
+  // Atmosphere paragraph — pure flavor, independent of stats
+  const obsPara = pick(DOSSIER_OBSERVATION);
+
+  // Incident history — always present, flavored by rampage count
+  const tier = c.rampageCount<=0 ? "none" : c.rampageCount>=4 ? "many" : c.rampageCount>=2 ? "few" : "one";
+  const incidentPara = fillTpl(pick(DOSSIER_RAMPAGE[tier]), {count: c.rampageCount});
+
+  // Closing verdict, occasionally padded with a filing note
+  let closePara = fillTpl(pick(DOSSIER_CLOSERS[cls]), vars);
+  if(rnd()<0.5) closePara += pick(DOSSIER_CLOSING_NOTE);
+
+  // Randomize whether physical or behavioral deviations are described first,
+  // and whether the atmosphere paragraph lands before or after incident history —
+  // same underlying content, different layout each time.
+  const bodyParas = rnd()<0.5 ? [partPara, traitPara] : [traitPara, partPara];
+  const tailParas = rnd()<0.5 ? [obsPara, incidentPara] : [incidentPara, obsPara];
+
+  return [openPara, ...bodyParas, ...tailParas, closePara].join("\n\n");
 }
 
 /* ============================= RENDER ============================= */
