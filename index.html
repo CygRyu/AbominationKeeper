@@ -312,6 +312,84 @@
   @keyframes dcursor{50%{opacity:0;}}
   .dossier-actions{display:flex; gap:8px; flex-wrap:wrap;}
   .dossier-hint{margin:0;}
+
+  /* ===== Keeper profile ===== */
+  .keeper-editor{display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;}
+  .keeper-photo-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; flex:0 0 auto;}
+  .keeper-photo, .keeper-photo-placeholder{
+    width:96px; height:96px; border-radius:2px; border:1.5px solid var(--ink);
+    object-fit:cover; background:#d9cba4; filter:grayscale(1);
+  }
+  .keeper-photo-placeholder{
+    display:flex; align-items:center; justify-content:center; color:var(--ink-soft);
+    font-family:'Courier Prime',monospace; font-size:0.68rem; text-align:center; padding:6px;
+  }
+  .keeper-fields{flex:1 1 220px; display:flex; flex-direction:column; gap:8px; min-width:220px;}
+  .keeper-rank-line{
+    font-family:'Special Elite',monospace; font-size:0.95rem; color:var(--ink);
+    border-left:3px solid var(--stamp-gold); padding:4px 10px; background:rgba(138,106,31,0.08);
+  }
+  .keeper-rank-sub{font-family:'Courier Prime',monospace; font-size:0.75rem; color:var(--ink-soft); margin-top:2px;}
+
+  /* ===== ID Card popup ===== */
+  .idcard-shell{width:100%; max-width:460px; display:flex; flex-direction:column; gap:10px;}
+  .idcard{
+    position:relative;
+    background:
+      radial-gradient(ellipse at 12% 18%, rgba(122,90,40,0.18), transparent 42%),
+      linear-gradient(#f2e7c9, #e7d7ac);
+    border:1px solid #9c8a5c;
+    box-shadow:0 14px 34px rgba(0,0,0,0.45), inset 0 0 46px rgba(80,60,20,0.16);
+    padding:18px 18px 14px; border-radius:2px;
+    transform:rotate(var(--tilt, 0.5deg));
+  }
+  .idcard::before{content:""; position:absolute; inset:6px; border:1px solid rgba(60,45,20,0.35); pointer-events:none;}
+  .idcard-top{display:flex; gap:14px; align-items:flex-start; margin-top:6px;}
+  .idcard-photo, .idcard-photo-placeholder{
+    width:84px; height:84px; border:1.5px solid var(--ink); border-radius:2px; object-fit:cover;
+    background:#d9cba4; filter:grayscale(1); flex:0 0 auto;
+  }
+  .idcard-photo-placeholder{display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:'Courier Prime',monospace; font-size:0.62rem; text-align:center; padding:4px;}
+  .idcard-heading{font-family:'Special Elite',monospace; font-size:1.05rem; letter-spacing:1px; margin:0 0 2px;}
+  .idcard-rank{font-family:'Courier Prime',monospace; font-size:0.78rem; color:var(--stamp-gold); font-weight:700; margin-bottom:2px;}
+  .idcard-idnum{font-family:'Courier Prime',monospace; font-size:0.78rem; color:var(--ink-soft); letter-spacing:0.5px; margin:1px 0;}
+  .idcard-sub{font-family:'Courier Prime',monospace; font-size:0.72rem; color:var(--ink-soft);}
+  .idcard-orgheader{font-family:'Courier Prime',monospace; font-size:0.62rem; letter-spacing:1.5px; line-height:1.35; padding-right:104px;}
+  .idcard-org-line1{font-weight:700; color:var(--ink);}
+  .idcard-org-line2{color:var(--ink-soft); opacity:0.85;}
+  .idcard-stamp{
+    position:absolute; top:10px; right:12px; width:96px; text-align:center; white-space:normal;
+    color:var(--stamp-green); border:3px double var(--stamp-green);
+    padding:3px 5px; font-family:'Special Elite',monospace; font-size:0.56rem; letter-spacing:1px; line-height:1.3;
+    transform:rotate(5deg); opacity:0.78; border-radius:4px; pointer-events:none;
+  }
+  .idcard-section-label{
+    font-family:'Special Elite',monospace; font-size:0.7rem; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--ink-soft); margin:0 0 6px; border-bottom:1px dashed var(--rule); padding-bottom:3px;
+  }
+  .idcard-record-row{display:flex; align-items:baseline; gap:4px; font-family:'Courier Prime',monospace; font-size:0.8rem; margin:5px 0;}
+  .idcard-record-row .lbl{white-space:nowrap; color:var(--ink-soft);}
+  .idcard-record-row .fill{flex:1; border-bottom:1px dotted var(--ink-soft); margin:0 3px; transform:translateY(-3px); opacity:0.7;}
+  .idcard-record-row .val{white-space:nowrap; font-weight:700;}
+  .idcard-status-block{margin-top:10px; text-align:right;}
+  .idcard-status{font-family:'Courier Prime',monospace; font-size:0.78rem; font-weight:700; letter-spacing:0.5px;}
+  .idcard-authorized{font-family:'Courier Prime',monospace; font-size:0.6rem; color:var(--stamp-green); letter-spacing:2px; margin-top:2px;}
+  .idcard-stats{margin-top:12px; padding-top:10px; border-top:1px dashed var(--rule);}
+  .idcard-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .idcard-hint{margin:0;}
+
+  .roster-list{display:flex; flex-wrap:wrap; gap:6px; margin:10px 0;}
+  .roster-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--paper); border:1px solid var(--rule); border-radius:3px;
+    padding:3px 6px 3px 10px; font-family:'Courier Prime',monospace; font-size:0.8rem;
+  }
+  .roster-chip.default{border-style:dashed;}
+  .roster-chip button{
+    border:none; background:transparent; color:var(--danger); cursor:pointer;
+    font-family:'Courier Prime',monospace; font-size:0.9rem; line-height:1; padding:2px 4px;
+  }
+  .roster-chip button:disabled{color:var(--ink-soft); opacity:0.4; cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -335,6 +413,7 @@
     </div>
     <nav id="tabs">
       <button data-tab="field" class="active">Field Report</button>
+      <button data-tab="keeper">Keeper</button>
       <button data-tab="incubator">Incubator</button>
       <button data-tab="reading">Reading</button>
       <button data-tab="market">Market</button>
@@ -348,6 +427,7 @@
 
   <main>
     <section class="panel active" id="panel-field"></section>
+    <section class="panel" id="panel-keeper"></section>
     <section class="panel" id="panel-incubator"></section>
     <section class="panel" id="panel-reading"></section>
     <section class="panel" id="panel-market"></section>
@@ -376,7 +456,8 @@ const STAGE_NAMES = ["Nascent","Juvenile","Subadult","Mature","Fully Matured"];
 const GREEK = ["Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Eta","Theta","Iota","Kappa","Lambda","Mu","Nu","Xi","Omicron","Pi","Rho","Sigma","Tau","Upsilon","Phi","Chi","Psi","Omega"];
 const RC_K = 6; // currency = round(RC_K * sqrt(minutes))
 const HUNGER_ZERO_GRACE_HOURS = 8; // time from hunger=0 to death
-const RAMPAGE_HOURLY_CHANCE = 0.08; // when hunger <=10
+const RAMPAGE_THRESHOLD = 90; // hunger % at/below which rampage risk exists at all
+const RAMPAGE_MAX_HOURLY_CHANCE = 0.10; // hourly chance at hunger = 0 (worst case, top of the ramp)
 const WARN_THRESHOLDS = [50,25,10,0];
 
 /* Incubator: off-to-the-side storage for specimens the keeper isn't actively
@@ -384,6 +465,77 @@ const WARN_THRESHOLDS = [50,25,10,0];
    identical to Freeze) so parking one there is completely safe. Starts with
    3 free slots; slots 4-10 (7 unlocks) are bought with RC on a gentle ramp. */
 const INCUBATOR_BASE_SLOTS = 3;
+
+/* ============================= KEEPER PROFILE =============================
+   Cosmetic player identity, kept in state.profile. Deliberately tracked
+   separately from the rest of the save's lifecycle: Full Reset and Import
+   both ask before replacing it (see their handlers), so a Keeper's tenure,
+   name and photo can survive a fresh game if the player wants that. */
+const KEEPER_RANKS = [
+  {min:0,   title:"Trainee Keeper",          stamp:"FIELD ID"},
+  {min:10,  title:"Junior Keeper",           stamp:"FIELD ID"},
+  {min:25,  title:"Keeper",                  stamp:"FIELD ID / ACTIVE"},
+  {min:50,  title:"Senior Keeper",           stamp:"FIELD ID / ACTIVE"},
+  {min:90,  title:"Containment Specialist",  stamp:"FIELD ID / SENIOR"},
+  {min:150, title:"Site Overseer",           stamp:"FIELD ID / RESTRICTED"}
+];
+const KEEPER_PHOTO_SIZE = 128; // px, square
+const KEEPER_ID_PATTERN = /^[A-Z0-9]{1,8}-[A-Z0-9]{1,8}-[A-Z0-9]{1,8}$/;
+
+/* Generates a serial in the KPR-###-#### template from the profile's
+   creation date (day-of-year) plus a random 4-digit block. Called once,
+   at profile creation (or backfilled once for older saves) -- after that
+   it's stored on the profile and stays fixed, exactly like a real-world
+   badge number, even though the player is free to edit it afterward. */
+function generateKeeperId(createdAt){
+  const d = new Date(createdAt);
+  const startOfYear = new Date(d.getFullYear(),0,0);
+  const dayOfYear = Math.max(1, Math.ceil((d-startOfYear)/DAY));
+  const serial = String(randInt(0,9999)).padStart(4,"0");
+  return "KPR-"+String(dayOfYear).padStart(3,"0")+"-"+serial;
+}
+
+function freshProfile(){
+  const createdAt = now();
+  return {
+    name: "",
+    photo: null, // data URL: grayscale, KEEPER_PHOTO_SIZE x KEEPER_PHOTO_SIZE JPEG
+    idNumber: generateKeeperId(createdAt),
+    createdAt,
+    lifetimeStats: {
+      specimensArchived:0, feeds:0, mutations:0, rampages:0, stageChoicesResolved:0,
+      daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0,
+      incubatorUnlocks:0, rcEarned:0, commendationsEarned:0
+    }
+  };
+}
+
+/* Adds to a state.profile.lifetimeStats counter. No-op if there's no active
+   profile yet (shouldn't happen post-normalize, but cheap to guard). Called
+   alongside the equivalent state.stats increments so the two stay in sync,
+   except lifetimeStats is never zeroed by Full Reset (unless declined) --
+   it's the Keeper's career total, not the current save's. */
+function bumpLifetime(key, amount){
+  if(!state.profile) return;
+  const ls = state.profile.lifetimeStats;
+  ls[key] = (ls[key]||0) + (amount==null?1:amount);
+}
+
+/* Rank is cosmetic and blends two signals: real-world tenure since the
+   profile was created, and specimens successfully raised to archive over
+   the Keeper's whole career (weighted higher, since it reflects active
+   play rather than the calendar). The matched rank's `stamp` also drives
+   the wording on the printed FIELD ID stamp, so higher rank is visible on
+   the card itself without adding any extra UI. */
+function keeperRankInfo(profile){
+  const days = Math.max(0, Math.floor((now()-profile.createdAt)/DAY));
+  const archived = profile.lifetimeStats.specimensArchived||0;
+  const score = days + archived*4;
+  let rank = KEEPER_RANKS[0];
+  KEEPER_RANKS.forEach(r=>{ if(score>=r.min) rank=r; });
+  const next = KEEPER_RANKS.find(r=>r.min>rank.min && r.min>score);
+  return {days, archived, score, title:rank.title, stamp:rank.stamp, next: next? next.title:null, nextIn: next? (next.min-score):0};
+}
 const INCUBATOR_MAX_SLOTS = 10;
 const INCUBATOR_UNLOCK_COSTS = [40,60,85,115,150,190,235]; // cost to unlock slot 4,5,6,7,8,9,10 respectively
 
@@ -940,7 +1092,9 @@ function defaultState(){
     stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0},
     achievements: {}, // id -> {at: timestamp}
     settings: {autosaveMin:5, lastAckAway:0},
-    meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now()}
+    scientists: DEFAULT_SCIENTISTS.map(n=>({name:n, isDefault:true})),
+    meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now(), lastScientist: null},
+    profile: freshProfile()
   };
 }
 
@@ -1015,6 +1169,76 @@ function normalizeState(s){
   if(typeof s.meta.createdAt!=="number") s.meta.createdAt = now();
   if(typeof s.meta.lastTickAt!=="number") s.meta.lastTickAt = now();
   if(typeof s.meta.lastSaveAt!=="number") s.meta.lastSaveAt = now();
+  if(typeof s.meta.lastScientist!=="string") s.meta.lastScientist = null;
+
+  // Keeper profile: cosmetic identity, normalized the same way as the rest
+  // of the save so an older save (or one missing the field entirely) picks
+  // up sane defaults instead of breaking the Keeper tab. When the profile
+  // itself is being created for the first time -- i.e. this save predates
+  // the Keeper feature -- backfill it from whatever save data already
+  // exists, so upgrading doesn't make a veteran Keeper look like a
+  // day-one trainee with a zeroed-out service record.
+  const isNewProfile = !(s.profile && typeof s.profile==="object");
+  s.profile = isNewProfile ? freshProfile() : s.profile;
+  if(typeof s.profile.name!=="string") s.profile.name = "";
+  s.profile.name = s.profile.name.slice(0,30);
+  if(s.profile.photo!=null && typeof s.profile.photo!=="string") s.profile.photo = null;
+  if(typeof s.profile.createdAt!=="number") s.profile.createdAt = now();
+  if(isNewProfile && typeof s.meta.createdAt==="number"){
+    // Anchor tenure to when this save actually began, not to right now.
+    s.profile.createdAt = s.meta.createdAt;
+  }
+  if(typeof s.profile.idNumber!=="string" || !KEEPER_ID_PATTERN.test(s.profile.idNumber)){
+    s.profile.idNumber = generateKeeperId(s.profile.createdAt);
+  }
+  s.profile.lifetimeStats = (s.profile.lifetimeStats && typeof s.profile.lifetimeStats==="object") ? s.profile.lifetimeStats : {};
+  {
+    const ltDefaults = {specimensArchived:0, feeds:0, mutations:0, rampages:0, stageChoicesResolved:0,
+      daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0, rcEarned:0, commendationsEarned:0};
+    Object.keys(ltDefaults).forEach(k=>{ if(typeof s.profile.lifetimeStats[k]!=="number") s.profile.lifetimeStats[k] = ltDefaults[k]; });
+  }
+  if(isNewProfile){
+    const ls = s.profile.lifetimeStats;
+    ls.specimensArchived = s.archive.length;
+    ls.feeds = s.stats.feeds||0;
+    ls.mutations = s.stats.mutations||0;
+    ls.rampages = s.stats.rampages||0;
+    ls.stageChoicesResolved = s.stats.stageChoicesResolved||0;
+    ls.daysRead = s.stats.daysRead||0;
+    ls.purchases = s.stats.purchases||0;
+    ls.freezes = s.stats.freezes||0;
+    ls.incubatorStores = s.stats.incubatorStores||0;
+    ls.incubatorTerminations = s.stats.incubatorTerminations||0;
+    ls.incubatorUnlocks = s.stats.incubatorUnlocks||0;
+    ls.commendationsEarned = Object.keys(s.achievements||{}).length;
+    // Exact lifetime RC earned isn't tracked pre-upgrade (currency can be
+    // spent), so the current balance is used as a best-effort floor.
+    ls.rcEarned = s.currency||0;
+  }
+
+  // Scientist roster: dedupe by lowercase name, then backfill any missing
+  // defaults so the pool never drops below MIN_SCIENTISTS. Never discards
+  // a custom (non-default) name during this process.
+  {
+    const seen = new Set();
+    let list = Array.isArray(s.scientists) ? s.scientists : [];
+    list = list.filter(e=>e && typeof e.name==="string" && e.name.trim())
+      .map(e=>({name:e.name.trim().slice(0,40), isDefault:!!e.isDefault}));
+    list = list.filter(e=>{
+      const k = e.name.toLowerCase();
+      if(seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    DEFAULT_SCIENTISTS.forEach(n=>{
+      if(list.length>=MIN_SCIENTISTS) return;
+      if(!seen.has(n.toLowerCase())){
+        list.push({name:n, isDefault:true});
+        seen.add(n.toLowerCase());
+      }
+    });
+    s.scientists = list;
+  }
 
   const normCreature = (c)=>{
     if(!c || typeof c!=="object") return null;
@@ -1066,6 +1290,8 @@ function checkAchievements(){
     if(met){
       state.achievements[a.id] = {at: now()};
       state.currency += a.reward;
+      bumpLifetime("rcEarned", a.reward);
+      bumpLifetime("commendationsEarned");
       addLog("Commendation earned: "+a.name+" (+"+a.reward+" RC).", "evt-evolve");
       toast("Commendation: "+a.name+" (+"+a.reward+" RC)", "evolve");
     }
@@ -1219,6 +1445,7 @@ function resolveStageChoice(idx){
   markDiscovered(true, chosenId);
   addLog("New development (Stage "+pending.stage+"): "+part.text+".", "evt-mutation");
   state.stats.stageChoicesResolved++;
+  bumpLifetime("stageChoicesResolved");
   return part;
 }
 
@@ -1286,16 +1513,26 @@ function advanceTime(ms){
     }
   }
 
-  // rampage check (only while alive, hunger critical)
+  // rampage check (only while alive, hunger at/below RAMPAGE_THRESHOLD)
   if(c.alive){
-    const lowHours = c.hunger<=10 ? hours : (hunger0>10 ? Math.max(0, hours - (hunger0-10)/rate) : hours);
+    const lowHours = c.hunger<=RAMPAGE_THRESHOLD
+      ? (hunger0>RAMPAGE_THRESHOLD ? Math.max(0, hours - (hunger0-RAMPAGE_THRESHOLD)/rate) : hours)
+      : 0;
     if(lowHours>0){
-      const p = 1 - Math.pow(1-RAMPAGE_HOURLY_CHANCE, lowHours);
+      // Hourly chance ramps up as hunger falls from the threshold toward 0: barely-there risk
+      // right under the threshold, climbing (quadratically) to RAMPAGE_MAX_HOURLY_CHANCE at hunger=0.
+      const hLowStart = Math.min(hunger0, RAMPAGE_THRESHOLD);
+      const hLowEnd = c.hunger;
+      const avgHunger = (hLowStart + hLowEnd)/2;
+      const severity = clamp((RAMPAGE_THRESHOLD - avgHunger)/RAMPAGE_THRESHOLD, 0, 1); // 0 at threshold, 1 at hunger=0
+      const hourlyChance = RAMPAGE_MAX_HOURLY_CHANCE * severity*severity;
+      const p = 1 - Math.pow(1-hourlyChance, lowHours);
       if(rnd() < p){
         const loss = Math.max(5, Math.round(state.currency * (0.15+rnd()*0.20)));
         state.currency = Math.max(0, state.currency - loss);
         c.rampageCount++;
         state.stats.rampages++;
+        bumpLifetime("rampages");
         summary.rampage = true; summary.rampageLoss = loss;
         addLog(choice(RAMPAGE_LOGS)+" (-"+loss+" RC)", "evt-rampage");
       }
@@ -1321,6 +1558,7 @@ function advanceTime(ms){
 
 function archiveCreature(c){
   state.stats.specimensLost++;
+  bumpLifetime("specimensArchived");
   state.archive.unshift({
     designation: designation(c),
     nickname: c.nickname,
@@ -1366,6 +1604,7 @@ function unlockIncubatorSlot(){
   state.currency -= cost;
   state.incubatorSlots++;
   state.stats.incubatorUnlocks = (state.stats.incubatorUnlocks||0)+1;
+  bumpLifetime("incubatorUnlocks");
   addLog("Unlocked incubator slot "+state.incubatorSlots+" (-"+cost+" RC).", "");
   return true;
 }
@@ -1380,6 +1619,7 @@ function storeActiveInIncubator(){
   addLog(designation(state.creature)+" placed in the incubator.", "");
   state.incubator.push(state.creature);
   state.stats.incubatorStores = (state.stats.incubatorStores||0)+1;
+  bumpLifetime("incubatorStores");
   state.creature = null;
   return true;
 }
@@ -1419,7 +1659,7 @@ function terminateSpecimen(idx){
   archiveCreature(c);
   addLog("SPECIMEN TERMINATED — "+designation(c)+" (-"+fee+" RC).", "evt-death");
   if(idx==null){ state.creature = null; }
-  else { state.incubator.splice(idx,1); state.stats.incubatorTerminations = (state.stats.incubatorTerminations||0)+1; }
+  else { state.incubator.splice(idx,1); state.stats.incubatorTerminations = (state.stats.incubatorTerminations||0)+1; bumpLifetime("incubatorTerminations"); }
   return true;
 }
 
@@ -1443,7 +1683,9 @@ function submitReading(dateKey, minutes){
   state.readingLog[dateKey] = minutes;
   state.lastEnteredDate = dateKey;
   state.currency += rc;
+  bumpLifetime("rcEarned", rc);
   state.stats.daysRead++;
+  bumpLifetime("daysRead");
   addLog("Logged "+minutes+"m reading for "+dateKey+" → +"+rc+" RC.", "");
 }
 
@@ -1489,6 +1731,7 @@ function buyFood(foodId){
   state.currency -= food.cost;
   state.inventory[foodId] = (state.inventory[foodId]||0)+1;
   state.stats.purchases++;
+  bumpLifetime("purchases");
   addLog("Purchased "+food.name+" for "+food.cost+" RC.", "");
   return true;
 }
@@ -1501,6 +1744,7 @@ function feedCreature(foodId){
   const food = FOOD_CATALOG.find(f=>f.id===foodId);
   state.inventory[foodId]--;
   state.stats.feeds++;
+  bumpLifetime("feeds");
   const before = c.hunger;
   c.hunger = clamp(c.hunger + food.hunger, 0, 100);
   if(c.hunger>0) c.hungerZeroAt=null;
@@ -1516,6 +1760,7 @@ function feedCreature(foodId){
       mutation = m.item.text;
       addLog("Mutation observed: "+m.item.text+".", "evt-mutation");
       state.stats.mutations++;
+      bumpLifetime("mutations");
     } else {
       stabilized = true;
       addLog("Specimen's biology has stabilized — no further mutations possible.", "");
@@ -1747,6 +1992,26 @@ const DOSSIER_PART_ASIDE = [
   "Nobody has yet found a reason to assume the feature is harmless.",
   "For now, researchers have settled on documenting it rather than explaining it."
 ];
+const DOSSIER_PART_ASIDE_RARE = [
+  "Features of this rarity are uncommon enough that intake flagged it for secondary review.",
+  "It's the kind of detail that gets a specimen moved up the observation priority list.",
+  "Comparable cases exist in the archive, but not many.",
+  "Senior staff were consulted before it was formally logged.",
+  "Cross-referencing the archive turned up only a handful of similar cases.",
+  "It was enough of an outlier that the intake report needed a supervisor's signature.",
+  "Few specimens on file share this particular trait.",
+  "The classification board has asked to be kept informed of any further changes to it."
+];
+const DOSSIER_PART_ASIDE_LEGENDARY = [
+  "No comparable feature exists anywhere else in the archive.",
+  "Command has flagged this development for review above standard clearance.",
+  "Staff have quietly begun referring to it as the specimen's defining feature.",
+  "Whatever this represents, it does not resemble anything in prior case files.",
+  "The oversight committee has requested more detailed documentation than protocol usually calls for.",
+  "It is, by every metric staff have available, one of a kind.",
+  "Nobody on the current research staff has seen anything like it before.",
+  "It alone would be enough to justify the specimen's containment classification."
+];
 const DOSSIER_TRAIT_OPENERS = [
   "Behaviorally, it",
   "In temperament, it",
@@ -1835,6 +2100,26 @@ const DOSSIER_TRAIT_ASIDE = [
   "No reliable method of preventing the behavior has been established.",
   "Researchers suspect there may be a trigger that current observation protocols simply fail to detect.",
   "The distinction between reflex and intent remains unresolved."
+];
+const DOSSIER_TRAIT_ASIDE_RARE = [
+  "Behavior this specific is rare enough that it warranted its own line item in the file.",
+  "Few specimens on record exhibit anything comparable.",
+  "It was distinctive enough that a second observer was brought in to confirm the first report.",
+  "The behavioral archive turns up only a handful of similar cases.",
+  "It's the sort of pattern that gets a specimen reassigned to a more attentive observation schedule.",
+  "Staff with more tenure than most still hadn't seen this one before.",
+  "The behavioral review board asked for this to be tracked separately going forward.",
+  "It stood out enough that it made it into the shift-change notes unprompted."
+];
+const DOSSIER_TRAIT_ASIDE_LEGENDARY = [
+  "No other specimen on file behaves anything like this.",
+  "Command has asked to be notified personally if the behavior recurs.",
+  "Staff have started referring to it as the specimen's signature behavior.",
+  "Nothing in the behavioral archive comes close to matching it.",
+  "The review board has requested a level of documentation usually reserved for containment breaches.",
+  "It is, as far as anyone on staff can determine, entirely without precedent.",
+  "Even veteran researchers admit they don't know what to make of it.",
+  "On its own, it would justify the specimen's current classification."
 ];
 const DOSSIER_FAMILY_FLOURISH = [
   "Its {family} anomalies alone have generated {count} separate incident reports — more than any other family of deviation it exhibits.",
@@ -2052,6 +2337,42 @@ const DOSSIER_CLOSERS = {
 function fillTpl(tpl, vars){
   return Object.keys(vars).reduce((s,k)=>s.replace(new RegExp("{"+k+"}","g"), vars[k]), tpl);
 }
+
+/* ============================= SCIENTIST ROSTER =============================
+   Every filed dossier is signed by one scientist, drawn at random from a
+   pool the player can customize. A minimum of MIN_SCIENTISTS names must
+   remain in rotation at all times. Defaults can always be restored without
+   discarding any custom names the player has added. */
+const MIN_SCIENTISTS = 10;
+const DEFAULT_SCIENTISTS = [
+  "Ada Wong","Marcus Hale","Priya Anand","Diego Solis","Naomi Frey",
+  "Elias Cho","Renata Voss","Tobias Lindqvist","Sana Okafor","Colin Reyes"
+];
+const SCIENTIST_TITLES = [
+  "Lab Technician","Field Researcher","Containment Specialist","Senior Researcher",
+  "Junior Analyst","Behavioral Analyst","Documentation Officer","Staff Physician",
+  "Research Associate","Site Liaison"
+];
+const SIGNATURE_LEADINS = [
+  "Signed,","Filed by,","Reported by,","Compiled by,","Reviewing Staff,","Submitted by,"
+];
+
+/* Picks a scientist for the current dossier, avoiding a back-to-back repeat
+   of the last one signed (when more than one name is available), then
+   returns the trailing signature block ready to append to the report text. */
+function pickScientistSignature(){
+  const pool = state.scientists.map(s=>s.name);
+  let name = choice(pool);
+  if(pool.length>1){
+    let guard = 0;
+    while(name===state.meta.lastScientist && guard<20){ name = choice(pool); guard++; }
+  }
+  state.meta.lastScientist = name;
+  const title = choice(SCIENTIST_TITLES);
+  const lead = choice(SIGNATURE_LEADINS);
+  return "\n\n"+lead+"\n"+name+"\n"+title;
+}
+
 function generateBiography(c){
   const pick = choice; // plain Math.random-backed pick, reused from utils above
   const stage = stageFromHours(c.activeMs/HOUR);
@@ -2067,18 +2388,30 @@ function generateBiography(c){
   let openPara = fillTpl(pick(DOSSIER_OPENERS[cls]), vars)+" "+fillTpl(stageLine, vars);
   if(rnd()<0.6) openPara += " "+pick(DOSSIER_CONTEXT);
 
-  // Physical deviations, woven into prose, with an occasional aside on a random entry
+  // Physical deviations, woven into prose, with an occasional aside on a random entry.
+  // The rarest deviation leads the paragraph and, if rare/legendary, always earns a
+  // rarity-flavored aside rather than the plain generic one.
   let partPara;
   if(c.parts.length){
-    const asideIdx = c.parts.length>1 && rnd()<0.5 ? randInt(0, c.parts.length-1) : -1;
-    const sentences = c.parts.map((id,i)=>{
+    const sortedPartIds = [...c.parts].sort((a,b)=>{
+      const ra = BODY_PARTS.find(x=>x.id===a), rb = BODY_PARTS.find(x=>x.id===b);
+      return RARITY_RANK[rb.rarity] - RARITY_RANK[ra.rarity];
+    });
+    const topRarity = BODY_PARTS.find(x=>x.id===sortedPartIds[0]).rarity;
+    const forcedAside = topRarity==="legendary" || topRarity==="rare";
+    const asideIdx = forcedAside ? 0
+      : (sortedPartIds.length>1 && rnd()<0.5 ? randInt(0, sortedPartIds.length-1) : -1);
+    const asidePool = topRarity==="legendary" ? DOSSIER_PART_ASIDE_LEGENDARY
+      : topRarity==="rare" ? DOSSIER_PART_ASIDE_RARE
+      : DOSSIER_PART_ASIDE;
+    const sentences = sortedPartIds.map((id,i)=>{
       const p = BODY_PARTS.find(x=>x.id===id);
-      const isLast = i===c.parts.length-1;
+      const isLast = i===sortedPartIds.length-1;
       const connector = i===0 ? pick(DOSSIER_PART_OPENERS)
-        : (isLast && c.parts.length>=3) ? pick(DOSSIER_PART_CLOSERS)
+        : (isLast && sortedPartIds.length>=3) ? pick(DOSSIER_PART_CLOSERS)
         : pick(DOSSIER_PART_MIDDLES);
       let s = connector+" "+p.text+".";
-      if(i===asideIdx) s += " "+pick(DOSSIER_PART_ASIDE);
+      if(i===asideIdx) s += " "+pick(i===0 ? asidePool : DOSSIER_PART_ASIDE);
       return s;
     });
     partPara = sentences.join(" ");
@@ -2086,18 +2419,30 @@ function generateBiography(c){
     partPara = fillTpl(pick(DOSSIER_NO_PARTS), vars);
   }
 
-  // Behavioral traits, woven into prose, with an occasional aside plus family-affinity flourish
+  // Behavioral traits, woven into prose, with an occasional aside plus family-affinity flourish.
+  // The rarest trait leads the paragraph and, if rare/legendary, always earns a
+  // rarity-flavored aside rather than the plain generic one.
   let traitPara;
   if(c.traits.length){
-    const asideIdx = c.traits.length>1 && rnd()<0.5 ? randInt(0, c.traits.length-1) : -1;
-    const sentences = c.traits.map((id,i)=>{
+    const sortedTraitIds = [...c.traits].sort((a,b)=>{
+      const ra = TRAITS.find(x=>x.id===a), rb = TRAITS.find(x=>x.id===b);
+      return RARITY_RANK[rb.rarity] - RARITY_RANK[ra.rarity];
+    });
+    const topTraitRarity = TRAITS.find(x=>x.id===sortedTraitIds[0]).rarity;
+    const forcedTraitAside = topTraitRarity==="legendary" || topTraitRarity==="rare";
+    const asideIdx = forcedTraitAside ? 0
+      : (sortedTraitIds.length>1 && rnd()<0.5 ? randInt(0, sortedTraitIds.length-1) : -1);
+    const traitAsidePool = topTraitRarity==="legendary" ? DOSSIER_TRAIT_ASIDE_LEGENDARY
+      : topTraitRarity==="rare" ? DOSSIER_TRAIT_ASIDE_RARE
+      : DOSSIER_TRAIT_ASIDE;
+    const sentences = sortedTraitIds.map((id,i)=>{
       const t = TRAITS.find(x=>x.id===id);
-      const isLast = i===c.traits.length-1;
+      const isLast = i===sortedTraitIds.length-1;
       const connector = i===0 ? pick(DOSSIER_TRAIT_OPENERS)
-        : (isLast && c.traits.length>=3) ? pick(DOSSIER_TRAIT_CLOSERS)
+        : (isLast && sortedTraitIds.length>=3) ? pick(DOSSIER_TRAIT_CLOSERS)
         : pick(DOSSIER_TRAIT_MIDDLES);
       let s = connector+" "+t.text+".";
-      if(i===asideIdx) s += " "+pick(DOSSIER_TRAIT_ASIDE);
+      if(i===asideIdx) s += " "+pick(i===0 ? traitAsidePool : DOSSIER_TRAIT_ASIDE);
       return s;
     });
     traitPara = sentences.join(" ");
@@ -2128,7 +2473,8 @@ function generateBiography(c){
   const bodyParas = rnd()<0.5 ? [partPara, traitPara] : [traitPara, partPara];
   const tailParas = rnd()<0.5 ? [obsPara, incidentPara] : [incidentPara, obsPara];
 
-  return [openPara, ...bodyParas, ...tailParas, closePara].join(" ");
+  const report = [openPara, ...bodyParas, ...tailParas, closePara].join(" ");
+  return report + pickScientistSignature();
 }
 
 /* ============================= RENDER ============================= */
@@ -2146,6 +2492,7 @@ $$("#tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset
 
 function renderPanel(tab){
   if(tab==="field") renderField();
+  else if(tab==="keeper") renderKeeper();
   else if(tab==="incubator") renderIncubator();
   else if(tab==="reading") renderReading();
   else if(tab==="market") renderMarket();
@@ -2317,7 +2664,7 @@ function renderField(){
   $("#btnFreeze").onclick = ()=>{
     c.frozen = !c.frozen;
     c.lastTickAt = now();
-    if(c.frozen) state.stats.freezes++;
+    if(c.frozen) { state.stats.freezes++; bumpLifetime("freezes"); }
     addLog(c.frozen?"Specimen placed in cryogenic stasis.":"Specimen released from stasis.", "");
     save(); renderAll();
   };
@@ -2762,6 +3109,217 @@ function renderAchievements(){
   `;
 }
 
+function renderKeeper(){
+  const el = $("#panel-keeper");
+  const p = state.profile;
+  const rank = keeperRankInfo(p);
+  const ls = p.lifetimeStats;
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Keeper Identity</h2>
+      <p class="muted small">Personalize the lead scientist behind this containment effort. Purely cosmetic — none of it affects gameplay.</p>
+      <div class="keeper-editor">
+        <div class="keeper-photo-wrap">
+          ${p.photo
+            ? `<img class="keeper-photo" id="keeperPhotoImg" src="${p.photo}" alt="Keeper photo">`
+            : `<div class="keeper-photo-placeholder" id="keeperPhotoImg">NO<br>PHOTO</div>`}
+          <input type="file" accept="image/*" id="keeperPhotoInput" style="display:none;">
+          <div class="row" style="gap:4px;">
+            <button class="btn small secondary" id="btnKeeperPhoto">Upload</button>
+            ${p.photo? `<button class="btn small danger" id="btnKeeperPhotoClear">Remove</button>`:""}
+          </div>
+        </div>
+        <div class="keeper-fields">
+          <label class="muted small" for="keeperName">Name / nickname</label>
+          <input type="text" id="keeperName" maxlength="30" placeholder="e.g. Dr. A. Reyes" value="${esc(p.name)}">
+          <label class="muted small" for="keeperIdNumber">ID number</label>
+          <input type="text" id="keeperIdNumber" maxlength="26" class="mono" value="${esc(p.idNumber)}">
+          <p class="muted small" style="margin:0;">Format: XXX-XXX-XXXX (letters/numbers, two dashes). Generated once from your join date, but yours to edit.</p>
+          <div class="keeper-rank-line">${esc(rank.title)}
+            <div class="keeper-rank-sub">${rank.days} day(s) in service · ${rank.archived} specimen(s) raised${rank.next?` · ${rank.nextIn} pt(s) to ${esc(rank.next)}`:" · top rank reached"}</div>
+          </div>
+          <button class="btn small" id="btnGenerateID">Generate ID Card</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <h2>Service Record</h2>
+      <p class="muted small">Career totals for this Keeper profile. Unlike the current save's stats, these persist across a Full Reset if you choose to carry your profile over, and travel with Export/Import.</p>
+      <dl class="idx-stat-grid">
+        <dt>Rank</dt><dd>${esc(rank.title)}</dd>
+        <dt>Days in service</dt><dd>${rank.days}</dd>
+        <dt>Specimens raised</dt><dd>${ls.specimensArchived}</dd>
+        <dt>Total RC earned</dt><dd>${ls.rcEarned}</dd>
+        <dt>Commendations earned</dt><dd>${ls.commendationsEarned}</dd>
+        <dt>Feeds administered</dt><dd>${ls.feeds}</dd>
+        <dt>Mutations documented</dt><dd>${ls.mutations}</dd>
+        <dt>Rampages quelled</dt><dd>${ls.rampages}</dd>
+        <dt>Development choices made</dt><dd>${ls.stageChoicesResolved}</dd>
+        <dt>Reading days logged</dt><dd>${ls.daysRead}</dd>
+        <dt>Provisions purchased</dt><dd>${ls.purchases}</dd>
+        <dt>Times frozen</dt><dd>${ls.freezes}</dd>
+        <dt>Incubator stores</dt><dd>${ls.incubatorStores}</dd>
+        <dt>Incubator terminations</dt><dd>${ls.incubatorTerminations}</dd>
+        <dt>Incubator slots unlocked</dt><dd>${ls.incubatorUnlocks}</dd>
+      </dl>
+    </div>
+  `;
+
+  $("#keeperName").addEventListener("change", e=>{
+    state.profile.name = e.target.value.trim().slice(0,30);
+    save(); renderKeeper();
+  });
+  $("#keeperIdNumber").addEventListener("change", e=>{
+    const val = e.target.value.trim().toUpperCase();
+    if(!KEEPER_ID_PATTERN.test(val)){
+      toast("ID must follow the XXX-XXX-XXXX template (letters/numbers, two dashes).", "danger");
+      renderKeeper();
+      return;
+    }
+    state.profile.idNumber = val;
+    save(); renderKeeper();
+  });
+  $("#btnKeeperPhoto").onclick = ()=> $("#keeperPhotoInput").click();
+  $("#keeperPhotoInput").addEventListener("change", e=>{
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    processKeeperPhoto(file, dataUrl=>{
+      state.profile.photo = dataUrl;
+      save(); renderKeeper();
+      toast("Photo updated.", "");
+    });
+  });
+  if($("#btnKeeperPhotoClear")){
+    $("#btnKeeperPhotoClear").onclick = ()=>{
+      state.profile.photo = null;
+      save(); renderKeeper();
+      toast("Photo removed.", "");
+    };
+  }
+  $("#btnGenerateID").onclick = ()=> openIDCardModal();
+}
+
+/* Reads an <input type=file> image, center-crops it to a square, downscales
+   to KEEPER_PHOTO_SIZE, converts to grayscale, and hands back a small JPEG
+   data URL via cb(dataUrl). Keeps stored photos tiny since they live in
+   localStorage (and travel through Export/Import) alongside the rest of
+   the save. */
+function processKeeperPhoto(file, cb){
+  if(!file.type || !file.type.startsWith("image/")){
+    toast("Please choose an image file.", "danger");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const size = KEEPER_PHOTO_SIZE;
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width-side)/2, sy = (img.height-side)/2;
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      const imgData = ctx.getImageData(0,0,size,size);
+      const d = imgData.data;
+      for(let i=0;i<d.length;i+=4){
+        const gray = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+        d[i]=d[i+1]=d[i+2]=gray;
+      }
+      ctx.putImageData(imgData,0,0);
+      cb(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    img.onerror = ()=>toast("Could not read that image.", "danger");
+    img.src = e.target.result;
+  };
+  reader.onerror = ()=>toast("Could not read that file.", "danger");
+  reader.readAsDataURL(file);
+}
+
+/* ============================= KEEPER ID CARD ============================= */
+/* Cosmetic read on what the Keeper is currently doing, for the "FIELD
+   STATUS" line on the ID card -- not stored, just derived each time. */
+function keeperFieldStatus(){
+  if(state.creature && state.creature.alive) return "ACTIVE";
+  if(state.incubator && state.incubator.length) return "STANDBY";
+  return "UNASSIGNED";
+}
+
+function openIDCardModal(){
+  const p = state.profile;
+  const rank = keeperRankInfo(p);
+  const ls = p.lifetimeStats;
+  const dateStr = new Date().toLocaleDateString(undefined, {year:"numeric", month:"short", day:"numeric"}).toUpperCase();
+  const tilt = (rnd()*1.2-0.6).toFixed(2)+"deg";
+  const displayName = p.name ? p.name : "Unnamed Keeper";
+  const status = keeperFieldStatus();
+  const record = [
+    ["Specimens raised", rank.archived],
+    ["Mutations documented", ls.mutations],
+    ["Rampages quelled", ls.rampages],
+    ["Commendations", ls.commendationsEarned],
+    ["Total RC earned", ls.rcEarned]
+  ];
+  const textVersion = [
+    "ABOMINATION FIELD ARCHIVE — PERSONNEL IDENTIFICATION",
+    p.idNumber+" · "+rank.stamp,
+    "Name: "+displayName,
+    "Rank: "+rank.title,
+    "Issued: "+dateStr,
+    "",
+    "SERVICE RECORD",
+    ...record.map(([lbl,val])=>lbl+": "+val),
+    "",
+    "Field status: "+status
+  ].join("\n");
+
+  const html = `
+    <div class="idcard-shell" style="--tilt:${tilt}">
+      <div class="idcard" id="idCardPaper">
+        <div class="idcard-stamp">${esc(rank.stamp)}</div>
+        <div class="idcard-orgheader">
+          <div class="idcard-org-line1">Abomination Field Archive</div>
+          <div class="idcard-org-line2">Personnel Identification</div>
+        </div>
+        <div class="idcard-top">
+          ${p.photo
+            ? `<img class="idcard-photo" src="${p.photo}" alt="Keeper photo">`
+            : `<div class="idcard-photo-placeholder">NO<br>PHOTO</div>`}
+          <div>
+            <div class="idcard-heading">${esc(displayName)}</div>
+            <div class="idcard-rank">${esc(rank.title)}</div>
+            <div class="idcard-idnum mono">${esc(p.idNumber)}</div>
+            <div class="idcard-sub">Issued ${esc(dateStr)}</div>
+          </div>
+        </div>
+        <div class="idcard-stats">
+          <div class="idcard-section-label">Service Record</div>
+          ${record.map(([lbl,val])=>`
+            <div class="idcard-record-row"><span class="lbl">${esc(lbl.toUpperCase())}</span><span class="fill"></span><span class="val">${val}</span></div>
+          `).join("")}
+          <div class="idcard-status-block">
+            <div class="idcard-status">FIELD STATUS: ${status}</div>
+            <div class="idcard-authorized">AUTHORIZED</div>
+          </div>
+        </div>
+      </div>
+      <div class="idcard-actions">
+        <button class="btn small" id="btnIDCardCopy">Copy Text</button>
+        <button class="btn small secondary" id="btnIDCardClose">Close</button>
+      </div>
+      <p class="muted small idcard-hint">Screenshot the card to save the look, or use Copy Text to grab it as plain text.</p>
+    </div>
+  `;
+  showModal(html);
+  $("#btnIDCardCopy").onclick = (e)=>{
+    e.stopPropagation();
+    copyToClipboard(textVersion);
+    toast("ID card copied to clipboard.", "");
+  };
+  $("#btnIDCardClose").onclick = (e)=>{ e.stopPropagation(); closeModal(); };
+}
+
 function renderSettings(){
   const el = $("#panel-settings");
   el.innerHTML = `
@@ -2772,6 +3330,7 @@ function renderSettings(){
         <button class="btn secondary" id="btnImport">Import Save</button>
       </div>
       <textarea id="saveText" placeholder="Base64 save data appears here..." style="margin-top:8px;"></textarea>
+      <p class="muted small">Your Keeper profile (name, photo, rank, service record) is bundled into this same export. Importing a save with a different Keeper profile will ask before it replaces yours.</p>
       <p class="muted small">Autosave interval (minutes):
         <input type="number" min="1" max="60" id="autosaveMin" value="${state.settings.autosaveMin}" style="width:60px;">
         <button class="btn small secondary" id="btnSetAutosave">Set</button>
@@ -2780,7 +3339,24 @@ function renderSettings(){
     <div class="sheet">
       <h2>Danger Zone</h2>
       <button class="btn danger" id="btnReset">Full Reset</button>
-      <p class="muted small">Erases your specimen, currency, inventory, reading log and archive permanently.</p>
+      <p class="muted small">Erases your specimen, currency, inventory, reading log and archive permanently. You'll be asked separately whether to carry your Keeper profile (name/photo/rank/service record) into the new save.</p>
+    </div>
+    <div class="sheet">
+      <h2>Scientist Roster</h2>
+      <p class="muted small">Every filed dossier is signed by one scientist, drawn at random from this pool (never the same one twice in a row). At least ${MIN_SCIENTISTS} names must remain in rotation at all times.</p>
+      <p class="muted small mono">${state.scientists.length} name(s) in rotation.</p>
+      <div class="roster-list" id="rosterList">
+        ${state.scientists.map((sc,i)=>`
+          <span class="roster-chip${sc.isDefault?" default":""}">${esc(sc.name)}
+            <button data-idx="${i}" title="Remove" ${state.scientists.length<=MIN_SCIENTISTS?"disabled":""}>&times;</button>
+          </span>
+        `).join("")}
+      </div>
+      <div class="row">
+        <input type="text" id="newScientistName" placeholder="New scientist name" maxlength="40" style="flex:1; min-width:160px;">
+        <button class="btn small" id="btnAddScientist">Add Name</button>
+        <button class="btn small secondary" id="btnRestoreScientists">Restore Defaults</button>
+      </div>
     </div>
     <div class="sheet">
       <h2>Guide &amp; FAQ</h2>
@@ -2797,6 +3373,10 @@ function renderSettings(){
       <details class="faq"><summary>What is a Field Dossier?</summary><p>Standard procedure requires an on-demand narrative summary be available for any specimen under active containment. "View Dossier" on the Field Report compiles one: classification, anatomical and behavioral aberrations, incident history, and a closing recommendation from reviewing staff.</p></details>
       <details class="faq"><summary>Why doesn't the dossier read the same way twice?</summary><p>No two staff members file a report in identical language, and your specimen's dossier is compiled fresh from the archive each time it is requested. Expect the phrasing, and occasionally the ordering of observations, to shift between filings — the underlying facts do not.</p></details>
       <details class="faq"><summary>How do I retain a copy of the dossier?</summary><p>Requested dossiers are reproduced on archival stock and transcribed in real time as staff compile them — click anywhere on the page to compel an immediate, complete transcription. From there, a screen capture will preserve the physical document as filed, or the "Copy Text" function will extract the report as plain text for inclusion elsewhere in your records.</p></details>
+      <details class="faq"><summary>Who signs the dossier?</summary><p>Every filed dossier is signed off by a staff scientist drawn at random from the roster in Settings — the same one won't sign two dossiers in a row. Add, remove, or restore names in the Scientist Roster section to customize who ends up filing your reports.</p></details>
+      <details class="faq"><summary>What is the Keeper ID?</summary><p>The Keeper tab lets you personalize the lead scientist behind your containment effort: a name/nickname, an optional photo, and an editable ID number. "Generate ID Card" compiles all of it into a printable-style badge — organization header, photo, rank, ID number, and a Service Record of career highlights — purely cosmetic, with no effect on gameplay. The stamp in the corner changes wording as your rank climbs.</p></details>
+      <details class="faq"><summary>How is my rank calculated?</summary><p>Rank blends two things: how long your Keeper profile has existed, and how many specimens you've raised through to the Archive over your whole career (weighted more heavily, since it reflects active play). It's cosmetic flavor, not a gameplay stat.</p></details>
+      <details class="faq"><summary>Does my Keeper photo/name survive a Full Reset or Import?</summary><p>Your Keeper profile — name, photo, rank progress, and service record — is tracked separately from the rest of the save so it can outlive it. Full Reset asks whether to carry it into the new save, and importing a save with a different Keeper profile asks before replacing yours. The photo itself never leaves your device unless you choose to keep your profile across an export.</p></details>
     </div>
   `;
   $("#btnExport").onclick=()=>{
@@ -2819,6 +3399,15 @@ function renderSettings(){
       // on a different device with a different clock).
       if(normalized.creature) normalized.creature.lastTickAt = now();
       normalized.incubator.forEach(c=>{ c.lastTickAt = now(); });
+      // Keeper profile: don't silently clobber a profile already in use on
+      // this device with whatever the import happens to contain. Only asks
+      // when there's something local worth protecting and the two differ.
+      const localProfileInUse = state.profile && (state.profile.name || state.profile.photo || state.profile.lifetimeStats.specimensArchived>0);
+      const profilesDiffer = JSON.stringify(normalized.profile)!==JSON.stringify(state.profile);
+      if(localProfileInUse && profilesDiffer){
+        const keepLocal = confirm("This import contains a different Keeper profile than the one on this device.\n\nOK = keep your current Keeper profile (name/photo/rank/service record)\nCancel = replace it with the one from this import");
+        if(keepLocal) normalized.profile = state.profile;
+      }
       state = normalized;
       save();
       switchTab("field");
@@ -2839,13 +3428,59 @@ function renderSettings(){
   $("#btnReset").onclick=()=>{
     if(confirm("This will permanently erase ALL progress, including your archive. Are you absolutely sure?")){
       if(confirm("Really sure? This cannot be undone.")){
+        const carryProfile = confirm("Carry your Keeper profile (name, photo, rank, service record) into the new save?\n\nOK = keep your Keeper profile\nCancel = wipe everything, including your Keeper profile");
+        const keptProfile = carryProfile ? state.profile : null;
         localStorage.removeItem(SAVE_KEY);
         state = defaultState();
+        if(keptProfile) state.profile = keptProfile;
         save();
         renderAll();
-        toast("Game fully reset.", "");
+        toast(carryProfile ? "Game reset. Keeper profile retained." : "Game fully reset.", "");
       }
     }
+  };
+  $$("#rosterList [data-idx]").forEach(btn=>{
+    btn.onclick=()=>{
+      if(state.scientists.length<=MIN_SCIENTISTS){
+        toast("At least "+MIN_SCIENTISTS+" names must remain in rotation.", "danger");
+        return;
+      }
+      const idx = parseInt(btn.dataset.idx,10);
+      const removed = state.scientists.splice(idx,1)[0];
+      save();
+      renderSettings();
+      toast(removed ? "Removed "+removed.name+" from the roster." : "Name removed.", "");
+    };
+  });
+  $("#btnAddScientist").onclick=()=>{
+    const input = $("#newScientistName");
+    const val = input.value.trim().slice(0,40);
+    if(!val) return;
+    if(state.scientists.some(s=>s.name.toLowerCase()===val.toLowerCase())){
+      toast("That name is already in the roster.", "danger");
+      return;
+    }
+    state.scientists.push({name:val, isDefault:false});
+    save();
+    renderSettings();
+    toast(val+" added to the roster.", "");
+  };
+  $("#newScientistName").addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ e.preventDefault(); $("#btnAddScientist").click(); }
+  });
+  $("#btnRestoreScientists").onclick=()=>{
+    const present = new Set(state.scientists.map(s=>s.name.toLowerCase()));
+    let added = 0;
+    DEFAULT_SCIENTISTS.forEach(n=>{
+      if(!present.has(n.toLowerCase())){
+        state.scientists.push({name:n, isDefault:true});
+        present.add(n.toLowerCase());
+        added++;
+      }
+    });
+    save();
+    renderSettings();
+    toast(added>0 ? "Restored "+added+" default name(s)." : "All default names are already present.", "");
   };
 }
 
@@ -2911,6 +3546,7 @@ function typeText(el, text, opts){
 /* ============================= DOSSIER POPUP ============================= */
 function openDossierModal(c){
   const text = generateBiography(c);
+  save(); // persist which scientist last signed, so the next dossier avoids repeating them
   const dateStr = new Date().toLocaleDateString(undefined, {year:"numeric", month:"short", day:"numeric"});
   const tilt = (rnd()*1.6-0.8).toFixed(2)+"deg";
   const html = `
