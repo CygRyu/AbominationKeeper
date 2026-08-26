@@ -52,8 +52,49 @@
   /* ===== Layout shell ===== */
   #app{max-width:900px;margin:0 auto;padding:0 12px 40px;}
 
+  /* ===== News ticker ===== */
+  #news-ticker{
+    position:sticky; top:0; z-index:51;
+    height:22px; overflow:hidden;
+    background:var(--stamp-black); border-bottom:1px solid var(--ink);
+    display:flex; align-items:center;
+  }
+  #news-ticker .nt-tag{
+    flex:0 0 auto; display:flex; align-items:center; gap:4px;
+    padding:0 8px; height:100%;
+    background:var(--danger); color:var(--paper);
+    font-family:'Courier Prime',monospace; font-size:0.68rem; font-weight:700;
+    letter-spacing:0.5px; white-space:nowrap;
+  }
+  #news-ticker .nt-dot{
+    width:6px; height:6px; border-radius:50%; background:var(--paper);
+    opacity:0;
+  }
+  #news-ticker .nt-dot.nt-active{
+    animation:ntBlink 1.1s infinite;
+  }
+  @keyframes ntBlink{0%,45%{opacity:1;}50%,95%{opacity:0.15;}100%{opacity:1;}}
+  #news-ticker .nt-track{
+    position:relative; flex:1 1 auto; height:100%; overflow:hidden;
+  }
+  #news-ticker .nt-item{
+    position:absolute; top:0; left:0; height:100%;
+    display:flex; align-items:center;
+    white-space:nowrap;
+    font-family:'Courier Prime',monospace; font-size:0.72rem; color:var(--paper);
+    transform:translateX(100%);
+    padding-left:8px;
+  }
+  #news-ticker .nt-item.nt-run{
+    animation:ntCrawl linear forwards;
+  }
+  @keyframes ntCrawl{
+    from{transform:translateX(100%);}
+    to{transform:translateX(-100%);}
+  }
+
   header#hdr{
-    position:sticky; top:0; z-index:50;
+    position:sticky; top:22px; z-index:50;
     background:var(--paper-dark);
     border-bottom:3px double var(--ink);
     box-shadow:var(--shadow);
@@ -395,6 +436,11 @@
 <body>
 
 <div id="app">
+
+  <div id="news-ticker">
+    <div class="nt-tag"><span class="nt-dot"></span>WIRE</div>
+    <div class="nt-track" id="nt-track"></div>
+  </div>
 
   <header id="hdr">
     <div class="hdr-row1">
@@ -874,24 +920,152 @@ const RAMPAGE_LOGS = [
   "Specimen thrashed violently, damaging nearby equipment.",
   "Specimen breached minor containment protocol during a feeding delay.",
   "Specimen's agitation caused a funding shortfall.",
-  "An automated lockdown was triggered after specimen unrest.",
-  "Specimen tore through a reinforced partition before staff could intervene.",
-  "Three sensor arrays went offline during the incident; cause listed as \"specimen.\"",
-  "Specimen's outburst was heard two floors away.",
-  "A junior researcher's coffee mug did not survive the incident.",
-  "Specimen attempted to exit its enclosure through an unconventional route.",
-  "Containment foam was deployed; specimen was unimpressed.",
-  "Specimen destroyed a supply cart and everything on it.",
-  "Staff evacuated the wing as a precaution during the outburst.",
-  "Specimen's rampage was documented on camera and immediately classified.",
-  "An emergency feeding was authorized to end the incident early.",
-  "Specimen's enclosure required structural repair afterward.",
-  "The incident report cites \"extreme irritability\" as the primary factor.",
-  "Specimen overturned its enclosure furnishings during the episode.",
-  "A nearby specimen's enclosure was also damaged by proximity.",
-  "Specimen's vocalizations during the rampage were described as \"deeply unsettling.\"",
-  "Facility power flickered briefly during the disturbance; origin unconfirmed."
+  "An automated lockdown was triggered after specimen unrest."
 ];
+
+/* ===== News ticker =====
+   Purely cosmetic flavor text -- a slow drip of fake global incident
+   headlines that crawl across a thin strip above the header. One headline
+   runs at a time; after it finishes crawling, a random gap (NEWS_MIN_GAP to
+   NEWS_MAX_GAP) elapses before the next one starts, so the ticker feels
+   irregular rather than a metronome. */
+const NEWS_COUNTRIES = [
+  "Poland","Kenya","Chile","Vietnam","Norway","Peru","Mongolia","Portugal",
+  "Nigeria","Kazakhstan","New Zealand","Morocco","Finland","Uruguay","Bhutan",
+  "Iceland","Namibia","Laos","Estonia","Paraguay"
+];
+
+const NEWS_TICKER = [
+  "Site-██ in {country} reports temporary loss of visual containment; situation resolved within the hour.",
+  "Unconfirmed anomalous weather event under review near a rural site in {country}.",
+  "A joint task force has been dispatched to {country} following reports of a Class-II disclosure risk.",
+  "Routine audit at a {country} facility flags irregularities in specimen feeding logs.",
+  "Local authorities in {country} cooperate with containment teams after an unrelated incident draws attention.",
+  "Foundation liaison office in {country} denies rumors circulating on regional news networks.",
+  "A decommissioned research outpost in {country} is being resurveyed after unusual readings.",
+  "Personnel reassignment ordered across three sites following a security review.",
+  "Encrypted transmission intercepted; origin traced to Site-██ in {country}.",
+  "A minor breach at a partner organization's site in {country} was contained without casualties.",
+  "Weather balloon recovery in {country} redirected after unexpected interference.",
+  "Internal memo warns of increased anomalous activity along the {country} border region.",
+  "Archived case file from {country} reclassified after new evidence surfaces.",
+  "Maintenance crew at an undisclosed site reports unscheduled containment field fluctuation.",
+  "A retired researcher in {country} declines to comment on decades-old rumors.",
+  "Satellite imagery anomaly over {country} attributed to sensor malfunction, per official statement.",
+  "Cross-site collaboration announced to standardize enclosure protocols after a recent incident.",
+  "A whistleblower report concerning a {country} facility is under internal investigation.",
+  "Public sighting near {country} dismissed as \"atmospheric phenomena\" by regional press.",
+  "Budget review committee questions funding allocation for three overseas containment sites.",
+
+  "Containment protocol updated after an unidentified object demonstrates resistance to standard storage materials in {country}.",
+  "Security personnel at Facility-██ ordered to review emergency response procedures following an overnight alarm.",
+  "Two auxiliary containment chambers remain offline pending structural inspection at a facility in {country}.",
+  "Automated lockdown briefly activated at a remote site; no breach confirmed.",
+  "A containment transfer in {country} has been postponed indefinitely following an equipment failure.",
+  "Level-III access restrictions remain in effect at an undisclosed facility.",
+  "Unscheduled movement detected inside a sealed containment wing in {country}; investigation ongoing.",
+  "Foundation officials confirm that all personnel involved in last week's incident have been accounted for.",
+  "Emergency power systems activated at a remote containment site for reasons not disclosed.",
+  "A previously stable containment zone in {country} has exhibited intermittent spatial distortion.",
+  "Security footage from Site-██ shows unexplained activity during a scheduled maintenance window.",
+  "Containment specialists arrive in {country} after monitoring equipment records an impossible reading.",
+  "A sealed chamber has been reopened for the first time in eleven years.",
+  "Foundation technicians report successful restoration of containment infrastructure damaged during a prior incident.",
+  "Anomalous entity transfer through {country} temporarily halted after personnel reported conflicting destination coordinates.",
+
+  "Researchers in {country} announce preliminary results from a long-term observation project; publication remains restricted.",
+  "Experimental trials at a {country} laboratory suspended after test subjects exhibit unexpected behavioral changes.",
+  "A research team stationed in {country} requests additional funding for continued observation of a dormant anomaly.",
+  "New properties discovered in a recovered artifact originating from {country}; classification review pending.",
+  "Foundation researchers dispute earlier findings regarding an anomalous organism recovered in {country}.",
+  "Long-term monitoring project in {country} enters its final phase after twelve years of uninterrupted observation.",
+  "Researchers investigating unusual seismic activity in {country} report no conventional geological explanation.",
+  "A previously overlooked pattern has been identified in archival specimens held at Facility-██.",
+  "Laboratory equipment at a {country} research site records data outside its calibrated range for the third time this month.",
+  "Researchers in {country} request permission to resume experiments suspended following an unspecified incident.",
+
+  "Several senior researchers transferred from {country} following an internal security assessment.",
+  "Foundation medical staff in {country} begin routine psychological evaluations following an extended containment operation.",
+  "A veteran field agent assigned to Area-██ has been placed on indefinite administrative leave.",
+  "Personnel at a {country} facility instructed to avoid discussing recent changes to the site's command structure.",
+  "New security protocols introduced after an unauthorized personnel access attempt at a {country} site.",
+  "Foundation awards commendations to personnel involved in preventing a major containment failure in {country}.",
+  "An internal review clears staff at a {country} facility of misconduct following discrepancies in incident reports.",
+  "Three researchers return from an extended assignment; details of their work remain classified.",
+  "Recruitment drive expands to include specialists in linguistics, geology, and anomalous materials.",
+  "Personnel records at Site-██ undergo emergency archival following a database integrity concern.",
+
+  "Local media in {country} reports a sudden power outage; officials cite routine infrastructure failure.",
+  "Authorities in {country} issue a public warning regarding unexplained lights observed over a restricted area.",
+  "A series of missing livestock near {country} is classified as an ongoing wildlife investigation.",
+  "Residents near a remote region of {country} report hearing unusual sounds shortly before sunrise.",
+  "A temporary road closure in {country} is officially attributed to hazardous terrain conditions.",
+  "Tourists evacuated from an isolated area after authorities cite an unspecified environmental hazard.",
+  "Regional authorities in {country} deny reports of an abandoned facility being reopened overnight.",
+  "A viral video recorded in {country} has been removed from several platforms following a copyright complaint.",
+  "Officials dismiss rumors of unusual activity near Area-██, advising residents to avoid spreading unverified information.",
+  "A telecommunications outage affecting parts of {country} coincides with an ongoing operation.",
+
+  "Unscheduled supply convoy observed departing a Foundation facility in {country} shortly before dawn.",
+  "Specialized containment equipment redirected to {country} following an increase in incident frequency.",
+  "A shipment of classified materials destined for an overseas facility has been delayed due to customs complications.",
+  "Foundation logistics division reports shortages of specialized storage equipment at several {country} sites.",
+  "Emergency generators delivered to Outpost-██ after unexplained fluctuations in the local power grid.",
+  "Aerial transport restrictions temporarily affect Foundation operations in {country}.",
+  "Routine supply inventory at a {country} site reveals several discrepancies currently under investigation.",
+  "A new secure transport corridor has been established between two facilities operating in {country}.",
+  "Foundation procurement office announces revised protocols for anomalous material shipments entering {country}.",
+  "Unmarked vehicles linked to Foundation logistics operations reported near a restricted area.",
+
+  "Residents in a remote region of {country} report seeing the same unidentified figure at multiple locations over several days.",
+  "A monitoring station in {country} records a signal matching no known terrestrial transmission.",
+  "Foundation sensors near Sector-██ detect a brief period during which local radio signals appear to originate from underground.",
+  "An abandoned structure in {country} has been found to contain recently manufactured equipment despite showing decades of neglect.",
+  "Researchers in {country} investigate reports of identical dreams among residents living within a restricted area.",
+  "A surveillance system at Site-██ records twelve seconds of footage that cannot be reconciled with the site's physical layout.",
+  "Unidentified footprints discovered near a secured facility in {country} terminate abruptly approximately thirty meters from the perimeter.",
+  "Foundation personnel investigating an abandoned settlement in {country} report finding evidence of recent habitation.",
+  "A remote sensor in {country} continues transmitting despite having been disconnected from all power sources.",
+  "Anomalous radio transmission originating from {country} repeats the same message at precisely twelve-hour intervals.",
+  "A sealed archive has been opened following the discovery of a second copy of its contents.",
+  "Researchers report that a dormant specimen at a {country} facility has begun responding to events occurring outside its containment chamber.",
+  "A surveillance satellite briefly loses contact while passing over a restricted region of {country}.",
+  "Foundation analysts classify a recurring atmospheric phenomenon over {country} as unrelated to previous events, pending further review.",
+  "An object recovered from {country} has been designated Artifact-██ after reportedly changing position while under continuous surveillance."
+];
+
+const NEWS_MIN_GAP = 6000;   // shortest wait between headlines, ms
+const NEWS_MAX_GAP = 11000;  // longest wait between headlines, ms
+const NEWS_CRAWL_MS = 13000; // how long one headline takes to cross the screen
+
+function newsHeadline(){
+  const tpl = choice(NEWS_TICKER);
+  return fillTpl(tpl, {country: choice(NEWS_COUNTRIES)});
+}
+
+function scheduleNewsTick(){
+  const gap = NEWS_MIN_GAP + Math.random()*(NEWS_MAX_GAP-NEWS_MIN_GAP);
+  setTimeout(showNewsTick, gap);
+}
+
+function showNewsTick(){
+  const track = document.getElementById("nt-track");
+  const dot = document.querySelector("#news-ticker .nt-dot");
+  if(!track){ scheduleNewsTick(); return; }
+  track.innerHTML = "";
+  const el = document.createElement("div");
+  el.className = "nt-item";
+  el.textContent = newsHeadline();
+  el.style.animationDuration = NEWS_CRAWL_MS+"ms";
+  track.appendChild(el);
+  if(dot) dot.classList.add("nt-active");
+  requestAnimationFrame(()=> el.classList.add("nt-run"));
+  el.addEventListener("animationend", ()=>{
+    el.remove();
+    if(dot) dot.classList.remove("nt-active");
+    scheduleNewsTick();
+  });
+}
 
 /* Commendations (achievements). Conditions read from already-tracked state
    (stats counters, archive, discovered index, current creature) so unlocking
@@ -3783,6 +3957,7 @@ function init(){
   switchTab("field");
   renderAll();
   restartAutosave();
+  scheduleNewsTick();
   setInterval(liveTick, 15000);
   window.addEventListener("beforeunload", ()=>{ if(state.creature) state.creature.lastTickAt = now(); save(); });
   document.addEventListener("visibilitychange", ()=>{
