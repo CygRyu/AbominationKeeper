@@ -945,24 +945,109 @@ function defaultState(){
 }
 
 /* Records a mutation id as catalogued in the Field Index. Safe to call
-   repeatedly -- it's a no-op once an id has already been discovered. */
-function markDiscovered(isPart, id){
-  const bucket = isPart ? state.discovered.parts : state.discovered.traits;
+   repeatedly -- it's a no-op once an id has already been discovered.
+   Operates on `target` (defaults to the live global state) so it can also
+   be used to backfill a state object that isn't installed as the active
+   `state` yet (e.g. mid-import). */
+function markDiscovered(isPart, id, target){
+  const t = target || state;
+  const bucket = isPart ? t.discovered.parts : t.discovered.traits;
   if(!bucket.includes(id)) bucket.push(id);
 }
 
 /* Backfills the discovery catalog from the current specimen and the full
    archive. Used once on load for saves created before the Field Index
    existed, and is harmless to re-run. */
-function backfillDiscovered(){
-  if(state.creature){
-    state.creature.parts.forEach(id=>markDiscovered(true,id));
-    state.creature.traits.forEach(id=>markDiscovered(false,id));
+function backfillDiscovered(target){
+  const t = target || state;
+  if(t.creature){
+    t.creature.parts.forEach(id=>markDiscovered(true,id,t));
+    t.creature.traits.forEach(id=>markDiscovered(false,id,t));
   }
-  state.archive.forEach(a=>{
-    (a.parts||[]).forEach(id=>markDiscovered(true,id));
-    (a.traits||[]).forEach(id=>markDiscovered(false,id));
+  t.archive.forEach(a=>{
+    (a.parts||[]).forEach(id=>markDiscovered(true,id,t));
+    (a.traits||[]).forEach(id=>markDiscovered(false,id,t));
   });
+}
+
+/* ============================= STATE NORMALIZATION =============================
+   Fills in every field the rest of the game assumes exists, using the same
+   defaults `defaultState()` would use. This is what makes it safe to load a
+   save from an older version of the game (missing newer fields like
+   incubator/discovered/achievements) or a save that's otherwise partial.
+   Used by both first-load (init) and Import, so the two paths can never
+   drift apart again. Throws only if `s` isn't recognizable as a save at all;
+   never leaves a half-applied result -- callers should only swap it into
+   the live `state` once this returns successfully. */
+function normalizeState(s){
+  if(!s || typeof s!=="object" || Array.isArray(s)){
+    throw new Error("Save data is not a valid state object.");
+  }
+  // Must look at least a little like one of our saves.
+  const looksLikeSave = ["creature","archive","currency","inventory","log","readingLog"].some(k=>k in s);
+  if(!looksLikeSave){
+    throw new Error("Save data does not match the expected format.");
+  }
+
+  s.v = s.v || 1;
+  s.currency = (typeof s.currency==="number" && isFinite(s.currency)) ? s.currency : 0;
+  s.readingLog = (s.readingLog && typeof s.readingLog==="object") ? s.readingLog : {};
+  s.lastEnteredDate = s.lastEnteredDate || null;
+  s.inventory = (s.inventory && typeof s.inventory==="object") ? s.inventory : {};
+  s.shop = (s.shop && typeof s.shop==="object") ? s.shop : {date:null, offerings:[], rerolls:0};
+  if(!Array.isArray(s.shop.offerings)) s.shop.offerings = [];
+  if(typeof s.shop.rerolls!=="number") s.shop.rerolls = 0;
+  s.archive = Array.isArray(s.archive) ? s.archive : [];
+  s.incubator = Array.isArray(s.incubator) ? s.incubator : [];
+  s.incubatorSlots = (typeof s.incubatorSlots==="number") ? s.incubatorSlots : INCUBATOR_BASE_SLOTS;
+  s.log = Array.isArray(s.log) ? s.log : [];
+  const hadDiscovered = !!(s.discovered && Array.isArray(s.discovered.parts) && Array.isArray(s.discovered.traits));
+  s.discovered = hadDiscovered ? s.discovered : {parts:[], traits:[]};
+  s.stats = (s.stats && typeof s.stats==="object") ? s.stats : {};
+  const statDefaults = {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0,
+    daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0};
+  Object.keys(statDefaults).forEach(k=>{ if(typeof s.stats[k]!=="number") s.stats[k] = statDefaults[k]; });
+  s.achievements = (s.achievements && typeof s.achievements==="object") ? s.achievements : {};
+  s.settings = (s.settings && typeof s.settings==="object") ? s.settings : {};
+  if(typeof s.settings.autosaveMin!=="number") s.settings.autosaveMin = 5;
+  if(typeof s.settings.lastAckAway!=="number") s.settings.lastAckAway = 0;
+  s.meta = (s.meta && typeof s.meta==="object") ? s.meta : {};
+  if(typeof s.meta.createdAt!=="number") s.meta.createdAt = now();
+  if(typeof s.meta.lastTickAt!=="number") s.meta.lastTickAt = now();
+  if(typeof s.meta.lastSaveAt!=="number") s.meta.lastSaveAt = now();
+
+  const normCreature = (c)=>{
+    if(!c || typeof c!=="object") return null;
+    if(!Array.isArray(c.parts)) c.parts = [];
+    if(!Array.isArray(c.traits)) c.traits = [];
+    if(!Array.isArray(c.pendingStageChoices)) c.pendingStageChoices = [];
+    if(typeof c.partCap!=="number") c.partCap = Math.max(randInt(5,11), c.parts.length);
+    if(typeof c.traitCap!=="number") c.traitCap = Math.max(randInt(4,10), c.traits.length);
+    if(!c.warnFlags || typeof c.warnFlags!=="object") c.warnFlags = {50:false,25:false,10:false,0:false};
+    [50,25,10,0].forEach(k=>{ if(typeof c.warnFlags[k]!=="boolean") c.warnFlags[k] = false; });
+    if(typeof c.hunger!=="number") c.hunger = 100;
+    if(typeof c.hungerRatePerHour!=="number") c.hungerRatePerHour = +(2.5+rnd()*3).toFixed(2);
+    if(typeof c.activeMs!=="number") c.activeMs = 0;
+    if(typeof c.rampageCount!=="number") c.rampageCount = 0;
+    if(typeof c.bornAt!=="number") c.bornAt = now();
+    if(typeof c.lastTickAt!=="number") c.lastTickAt = now();
+    if(typeof c.alive!=="boolean") c.alive = true;
+    if(c.frozen==null) c.frozen = false;
+    if(c.causeOfDeath===undefined) c.causeOfDeath = null;
+    if(c.diedAt===undefined) c.diedAt = null;
+    if(c.hungerZeroAt===undefined) c.hungerZeroAt = null;
+    if(!c.uid) c.uid = "spc-"+Date.now().toString(36)+Math.floor(rnd()*1e4).toString(36);
+    if(typeof c.number!=="number") c.number = 100+Math.floor(rnd()*900);
+    if(!c.greek) c.greek = choice(GREEK);
+    if(typeof c.nickname!=="string") c.nickname = "";
+    return c;
+  };
+  s.creature = ("creature" in s) ? normCreature(s.creature) : freshCreature();
+  s.incubator = s.incubator.map(normCreature).filter(Boolean);
+
+  if(!hadDiscovered) backfillDiscovered(s); // one-time catch-up for saves predating the Field Index
+
+  return s;
 }
 
 function addLog(text, cls){
@@ -2017,21 +2102,21 @@ function generateBiography(c){
     });
     traitPara = sentences.join(" ");
   } else {
-    traitPara = pick(DOSSIER_NO_TRAITS);
+    traitPara = fillTpl(pick(DOSSIER_NO_TRAITS), vars);
   }
   const fc = familyCounts(c);
   let topFam = null, topCount = 0;
   Object.keys(fc).forEach(f=>{ if(fc[f]>topCount){ topCount=fc[f]; topFam=f; } });
   if(topFam && topCount>=3){
-    traitPara += " "+fillTpl(pick(DOSSIER_FAMILY_FLOURISH), {family: topFam, count: topCount});
+    traitPara += " "+fillTpl(pick(DOSSIER_FAMILY_FLOURISH), {...vars, family: topFam, count: topCount});
   }
 
   // Atmosphere paragraph — pure flavor, independent of stats
-  const obsPara = pick(DOSSIER_OBSERVATION);
+  const obsPara = fillTpl(pick(DOSSIER_OBSERVATION), vars);
 
   // Incident history — always present, flavored by rampage count
   const tier = c.rampageCount<=0 ? "none" : c.rampageCount>=4 ? "many" : c.rampageCount>=2 ? "few" : "one";
-  const incidentPara = fillTpl(pick(DOSSIER_RAMPAGE[tier]), {count: c.rampageCount});
+  const incidentPara = fillTpl(pick(DOSSIER_RAMPAGE[tier]), {...vars, count: c.rampageCount});
 
   // Closing verdict, occasionally padded with a filing note
   let closePara = fillTpl(pick(DOSSIER_CLOSERS[cls]), vars);
@@ -2725,11 +2810,24 @@ function renderSettings(){
     if(!val) return;
     try{
       const parsed = JSON.parse(decodeURIComponent(escape(atob(val))));
-      state = parsed;
+      // Normalize into a local var first -- if this throws (e.g. missing
+      // fields from an older save, or garbage input), the currently active
+      // game state is left completely untouched.
+      const normalized = normalizeState(parsed);
+      // Avoid an instant hunger/growth jump from a stale lastTickAt (the
+      // save may have been exported minutes, hours, or days ago, possibly
+      // on a different device with a different clock).
+      if(normalized.creature) normalized.creature.lastTickAt = now();
+      normalized.incubator.forEach(c=>{ c.lastTickAt = now(); });
+      state = normalized;
       save();
+      switchTab("field");
       renderAll();
       toast("Save imported.", "");
-    }catch(e){ toast("Invalid save data.", "danger"); }
+    }catch(e){
+      console.warn("Import failed:", e);
+      toast("Invalid save data.", "danger");
+    }
   };
   $("#btnSetAutosave").onclick=()=>{
     const v = clamp(parseInt($("#autosaveMin").value)||5,1,60);
@@ -3011,32 +3109,7 @@ function renderAll(){
 function init(){
   const loaded = load();
   const isNew = !loaded;
-  state = loaded || defaultState();
-  // defensive defaults for older/partial saves
-  state.settings = state.settings || {autosaveMin:5, lastAckAway:0};
-  state.log = state.log || [];
-  state.archive = state.archive || [];
-  state.inventory = state.inventory || {};
-  state.shop = state.shop || {date:null, offerings:[], rerolls:0};
-  state.incubator = state.incubator || [];
-  state.incubatorSlots = state.incubatorSlots || INCUBATOR_BASE_SLOTS;
-  const hadDiscovered = !!state.discovered;
-  state.discovered = state.discovered || {parts:[], traits:[]};
-  if(!hadDiscovered) backfillDiscovered(); // one-time catch-up for saves predating the Field Index
-  state.stats = state.stats || {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0};
-  if(state.stats.purchases==null) state.stats.purchases = 0;
-  if(state.stats.freezes==null) state.stats.freezes = 0;
-  if(state.stats.incubatorStores==null) state.stats.incubatorStores = 0;
-  if(state.stats.incubatorTerminations==null) state.stats.incubatorTerminations = 0;
-  if(state.stats.incubatorUnlocks==null) state.stats.incubatorUnlocks = 0;
-  state.achievements = state.achievements || {};
-  if(state.creature && (state.creature.partCap==null || state.creature.traitCap==null)){
-    state.creature.partCap = state.creature.partCap!=null ? state.creature.partCap : Math.max(randInt(5,11), state.creature.parts.length);
-    state.creature.traitCap = state.creature.traitCap!=null ? state.creature.traitCap : Math.max(randInt(4,10), state.creature.traits.length);
-  }
-  if(state.creature && !Array.isArray(state.creature.pendingStageChoices)){
-    state.creature.pendingStageChoices = []; // older saves predate the stage-up choice system
-  }
+  state = normalizeState(loaded || defaultState());
 
   if(!isNew && state.creature){
     const elapsed = now() - (state.creature.lastTickAt || state.meta.lastTickAt || now());
