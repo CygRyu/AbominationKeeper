@@ -331,9 +331,11 @@
         <span id="hdrHungerPct">100%</span>
       </span>
       <span id="hdrFrozenTag" class="hdr-frozen" style="display:none;">❄ FROZEN</span>
+      <span id="hdrIncubatorTag" class="hdr-frozen" style="display:none;"></span>
     </div>
     <nav id="tabs">
       <button data-tab="field" class="active">Field Report</button>
+      <button data-tab="incubator">Incubator</button>
       <button data-tab="reading">Reading</button>
       <button data-tab="market">Market</button>
       <button data-tab="provisions">Provisions</button>
@@ -346,6 +348,7 @@
 
   <main>
     <section class="panel active" id="panel-field"></section>
+    <section class="panel" id="panel-incubator"></section>
     <section class="panel" id="panel-reading"></section>
     <section class="panel" id="panel-market"></section>
     <section class="panel" id="panel-provisions"></section>
@@ -375,6 +378,14 @@ const RC_K = 6; // currency = round(RC_K * sqrt(minutes))
 const HUNGER_ZERO_GRACE_HOURS = 8; // time from hunger=0 to death
 const RAMPAGE_HOURLY_CHANCE = 0.08; // when hunger <=10
 const WARN_THRESHOLDS = [50,25,10,0];
+
+/* Incubator: off-to-the-side storage for specimens the keeper isn't actively
+   raising. Stored specimens are fully paused (no hunger decay, no growth --
+   identical to Freeze) so parking one there is completely safe. Starts with
+   3 free slots; slots 4-10 (7 unlocks) are bought with RC on a gentle ramp. */
+const INCUBATOR_BASE_SLOTS = 3;
+const INCUBATOR_MAX_SLOTS = 10;
+const INCUBATOR_UNLOCK_COSTS = [40,60,85,115,150,190,235]; // cost to unlock slot 4,5,6,7,8,9,10 respectively
 
 /* Normalizes a mutation entry so partial/older entries get safe defaults.
    Adding a future mutation only requires id, text, and cat -- slot, family,
@@ -810,7 +821,19 @@ const ACHIEVEMENTS = [
   {id:"a_old_guard", name:"Old Guard", reward:30,
     hint:"Longevity is its own kind of achievement.",
     desc:"A specimen of yours accumulated 200+ active hours.",
-    condition: s => (s.creature && s.creature.activeMs/HOUR>=200) || s.archive.some(a=>(a.survivalMs/HOUR)>=200)}
+    condition: s => (s.creature && s.creature.activeMs/HOUR>=200) || s.archive.some(a=>(a.survivalMs/HOUR)>=200)},
+  {id:"a_incubator_1", name:"On Ice", reward:10,
+    hint:"Not every specimen needs your full attention right now.",
+    desc:"You placed a specimen into the incubator for the first time.",
+    condition: s => s.stats.incubatorStores>=1},
+  {id:"a_incubator_full", name:"Full House", reward:20,
+    hint:"Containment has a way of filling up.",
+    desc:"You filled every unlocked incubator slot at once.",
+    condition: s => s.incubator && s.incubatorSlots && s.incubator.length>=s.incubatorSlots && s.incubator.length>=INCUBATOR_BASE_SLOTS},
+  {id:"a_incubator_max", name:"Maximum Capacity", reward:40,
+    hint:"There's always room for one more, if you're willing to pay for it.",
+    desc:"You unlocked all 10 incubator slots.",
+    condition: s => s.incubatorSlots>=INCUBATOR_MAX_SLOTS}
 ];
 
 /* ============================= UTIL ============================= */
@@ -910,9 +933,11 @@ function defaultState(){
     inventory: {}, // foodId -> qty
     shop: {date:null, offerings:[], rerolls:0},
     archive: [],
+    incubator: [], // paused creature objects, stored rather than actively raised
+    incubatorSlots: INCUBATOR_BASE_SLOTS,
     log: [],
     discovered: {parts:[], traits:[]}, // ids ever seen on any specimen, current or archived
-    stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0},
+    stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0},
     achievements: {}, // id -> {at: timestamp}
     settings: {autosaveMin:5, lastAckAway:0},
     meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now()}
@@ -1229,6 +1254,88 @@ function archiveCreature(c){
 function startNewCreature(){
   state.creature = freshCreature();
   addLog("A new specimen has entered containment: "+designation(state.creature)+".", "evt-evolve");
+}
+
+/* ============================= INCUBATOR ============================= */
+/* Cost in RC to terminate a specimen early (active or incubated). Scales
+   with how much has already been invested in it -- further along, or more
+   developed, costs more to walk away from. */
+function terminationFee(c){
+  if(!c) return 0;
+  const stage = stageFromHours(c.activeMs/HOUR);
+  const invested = c.parts.length + c.traits.length;
+  return Math.max(10, Math.round(8*stage + 3*invested));
+}
+
+/* Cost in RC to unlock the next incubator slot (slots 4 through 10). Returns
+   null if already at max capacity. */
+function incubatorUnlockCost(){
+  if(state.incubatorSlots>=INCUBATOR_MAX_SLOTS) return null;
+  const idx = state.incubatorSlots - INCUBATOR_BASE_SLOTS; // 0-based into the cost table
+  return INCUBATOR_UNLOCK_COSTS[idx];
+}
+
+function unlockIncubatorSlot(){
+  const cost = incubatorUnlockCost();
+  if(cost==null || state.currency<cost) return false;
+  state.currency -= cost;
+  state.incubatorSlots++;
+  state.stats.incubatorUnlocks = (state.stats.incubatorUnlocks||0)+1;
+  addLog("Unlocked incubator slot "+state.incubatorSlots+" (-"+cost+" RC).", "");
+  return true;
+}
+
+/* Moves the active specimen into the incubator (paused, fully safe) and
+   clears the active slot. Fails if there's no room or nothing to store. */
+function storeActiveInIncubator(){
+  if(!state.creature || !state.creature.alive) return false;
+  if(state.incubator.length>=state.incubatorSlots) return false;
+  state.creature.frozen = false; // incubator pause is implicit; keep the flag clean
+  state.creature.lastTickAt = now();
+  addLog(designation(state.creature)+" placed in the incubator.", "");
+  state.incubator.push(state.creature);
+  state.stats.incubatorStores = (state.stats.incubatorStores||0)+1;
+  state.creature = null;
+  return true;
+}
+
+/* Swaps a stored specimen into the active slot. If a specimen is already
+   active and alive, it's stored in the vacated spot (a straight swap, so it
+   never needs extra room). A dead/absent active specimen is simply replaced. */
+function activateFromIncubator(idx){
+  const incoming = state.incubator[idx];
+  if(!incoming) return false;
+  if(state.creature && state.creature.alive){
+    state.creature.frozen = false;
+    state.creature.lastTickAt = now();
+    state.incubator[idx] = state.creature;
+    addLog(designation(state.creature)+" placed in the incubator.", "");
+  } else {
+    state.incubator.splice(idx,1);
+  }
+  incoming.lastTickAt = now();
+  state.creature = incoming;
+  addLog(designation(incoming)+" brought out of the incubator for active study.", "evt-evolve");
+  return true;
+}
+
+/* Early termination. Costs a scaling RC fee based on stage/investment and
+   archives the specimen immediately rather than waiting it out. Works on
+   either the active specimen (idx===null) or a stored one (idx = incubator index). */
+function terminateSpecimen(idx){
+  const c = idx==null ? state.creature : state.incubator[idx];
+  if(!c || (idx==null && !c.alive)) return false;
+  const fee = terminationFee(c);
+  if(state.currency<fee) return false;
+  state.currency -= fee;
+  c.alive = false;
+  c.causeOfDeath = "Early termination (keeper's order)";
+  c.diedAt = now();
+  archiveCreature(c);
+  addLog("SPECIMEN TERMINATED — "+designation(c)+" (-"+fee+" RC).", "evt-death");
+  if(idx==null){ state.creature = null; }
+  else { state.incubator.splice(idx,1); state.stats.incubatorTerminations = (state.stats.incubatorTerminations||0)+1; }
+  return true;
 }
 
 /* --- Reading / currency --- */
@@ -1954,6 +2061,7 @@ $$("#tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset
 
 function renderPanel(tab){
   if(tab==="field") renderField();
+  else if(tab==="incubator") renderIncubator();
   else if(tab==="reading") renderReading();
   else if(tab==="market") renderMarket();
   else if(tab==="provisions") renderProvisions();
@@ -1966,8 +2074,15 @@ function renderPanel(tab){
 function renderHeader(){
   const c = state.creature;
   $("#hdrRC").textContent = state.currency+" RC";
+  const incTag = $("#hdrIncubatorTag");
+  if(state.incubator && state.incubator.length){
+    incTag.style.display = "inline";
+    incTag.textContent = "🧊 "+state.incubator.length+"/"+state.incubatorSlots;
+  } else {
+    incTag.style.display = "none";
+  }
   if(!c){
-    $("#hdrName").textContent = "— no specimen —";
+    $("#hdrName").textContent = "— no active specimen —";
     $("#hdrStage").textContent = "";
     $("#hdrClass").textContent = "";
     $("#hdrClass").className = "badge";
@@ -2025,7 +2140,18 @@ function renderField(){
   const el = $("#panel-field");
   const c = state.creature;
   if(!c){
-    el.innerHTML = '<div class="sheet"><h2>Field Report</h2><p class="muted">No active specimen.</p></div>';
+    const stored = state.incubator;
+    el.innerHTML = `
+      <div class="sheet">
+        <h2>Field Report</h2>
+        <p class="muted">No active specimen.</p>
+        <button class="btn" id="btnNewSpecimen">Begin New Specimen</button>
+        ${stored.length?`<button class="btn secondary" id="btnGoIncubator">View Incubator (${stored.length})</button>`:""}
+      </div>
+      <div class="sheet"><h2>Field Log</h2>${renderLogHtml()}</div>
+    `;
+    $("#btnNewSpecimen").onclick=()=>{ startNewCreature(); save(); renderAll(); };
+    if($("#btnGoIncubator")) $("#btnGoIncubator").onclick=()=>switchTab("incubator");
     return;
   }
   if(!c.alive){
@@ -2079,6 +2205,11 @@ function renderField(){
         <button class="btn secondary" id="btnFreeze">${c.frozen?"Unfreeze":"Freeze"}</button>
         <button class="btn secondary" id="btnCopyDossier">View Dossier</button>
       </div>
+      <div class="row" style="margin-top:8px;">
+        <button class="btn secondary" id="btnStoreIncubator" ${state.incubator.length>=state.incubatorSlots?"disabled":""}>Store in Incubator</button>
+        <button class="btn danger small" id="btnTerminate">Terminate (${terminationFee(c)} RC)</button>
+        ${state.incubator.length>=state.incubatorSlots?'<span class="muted small">Incubator full — free a slot or unlock more.</span>':""}
+      </div>
     </div>
 
     <div class="sheet">
@@ -2106,10 +2237,91 @@ function renderField(){
     save(); renderAll();
   };
   $("#btnCopyDossier").onclick = ()=>openDossierModal(c);
+  $("#btnStoreIncubator").onclick = ()=>{
+    if(storeActiveInIncubator()){ toast("Specimen moved to incubator.", ""); save(); renderAll(); }
+    else toast("No free incubator slots.", "danger");
+  };
+  $("#btnTerminate").onclick = ()=>openTerminateConfirm(null);
   $("#editNick").onclick = (e)=>{
     e.preventDefault();
     const val = prompt("Nickname for "+designation(c)+":", c.nickname||"");
     if(val!==null){ c.nickname = val.trim().slice(0,24); save(); renderAll(); }
+  };
+}
+
+function renderIncubator(){
+  const el = $("#panel-incubator");
+  const stored = state.incubator;
+  const slots = state.incubatorSlots;
+  const nextCost = incubatorUnlockCost();
+
+  const slotCards = [];
+  for(let i=0;i<INCUBATOR_MAX_SLOTS;i++){
+    if(i < stored.length){
+      const c = stored[i];
+      const stage = stageFromHours(c.activeMs/HOUR);
+      const cls = containmentClass(c);
+      slotCards.push(`
+        <div class="shop-card">
+          <h4>${esc(designation(c))}${c.nickname?' "'+esc(c.nickname)+'"':""}</h4>
+          <p class="mono small">Stage ${stage} — ${STAGE_NAMES[stage-1]} · <span class="badge ${cls}" style="font-size:0.68rem;">${cls}</span></p>
+          <p class="muted small">Hunger frozen at ${Math.round(c.hunger)}% · ${c.parts.length} part(s), ${c.traits.length} trait(s)</p>
+          <p class="muted small">❄ Paused — completely safe while stored.</p>
+          <div class="row">
+            <button class="btn small" data-activate="${i}">Activate</button>
+            <button class="btn small danger" data-terminate-inc="${i}">Terminate (${terminationFee(c)} RC)</button>
+          </div>
+        </div>
+      `);
+    } else if(i < slots){
+      slotCards.push(`
+        <div class="shop-card">
+          <h4 class="muted">Empty Slot ${i+1}</h4>
+          <p class="muted small">${state.creature && state.creature.alive ? "Store your active specimen here to raise something else." : "Activate a stored specimen, or begin a new one from Field Report."}</p>
+        </div>
+      `);
+    } else if(i === slots && nextCost!=null){
+      slotCards.push(`
+        <div class="shop-card">
+          <h4 class="muted">Locked Slot ${i+1}</h4>
+          <p class="muted small">Expand containment capacity.</p>
+          <button class="btn small secondary" id="btnUnlockSlot" ${state.currency<nextCost?"disabled":""}>Unlock (${nextCost} RC)</button>
+        </div>
+      `);
+    } else {
+      slotCards.push(`
+        <div class="shop-card">
+          <h4 class="muted">Locked Slot ${i+1}</h4>
+          <p class="muted small">Unlock earlier slots first.</p>
+        </div>
+      `);
+    }
+  }
+
+  el.innerHTML = `
+    <div class="sheet">
+      <h2>Incubator</h2>
+      <p class="muted small">Specimens stored here are fully paused — no hunger decay, no growth, completely safe — so you can freely experiment with a new specimen without losing progress on this one. Terminating a specimen early (active or stored) costs RC that scales with how developed it already is.</p>
+      <p class="mono small">${stored.length}/${slots} slots occupied · ${slots}/${INCUBATOR_MAX_SLOTS} slots unlocked · Balance: ${state.currency} RC</p>
+      <div class="shop-grid">${slotCards.join("")}</div>
+    </div>
+  `;
+
+  $$("[data-activate]").forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = parseInt(btn.dataset.activate,10);
+      if(activateFromIncubator(idx)){ toast("Specimen activated.", "evolve"); save(); renderAll(); }
+    };
+  });
+  $$("[data-terminate-inc]").forEach(btn=>{
+    btn.onclick = ()=>{
+      const idx = parseInt(btn.dataset.terminateInc,10);
+      openTerminateConfirm(idx);
+    };
+  });
+  if($("#btnUnlockSlot")) $("#btnUnlockSlot").onclick = ()=>{
+    if(unlockIncubatorSlot()){ toast("Incubator slot unlocked.", "evolve"); save(); renderAll(); }
+    else toast("Not enough RC.", "danger");
   };
 }
 
@@ -2491,6 +2703,8 @@ function renderSettings(){
       <details class="faq"><summary>How does feeding work?</summary><p>Open Feed from the Field Report to see a few suggested provisions from your inventory, sorted to minimize waste. Different foods restore different amounts of hunger and carry different mutation odds.</p></details>
       <details class="faq"><summary>What happens if hunger reaches 0%?</summary><p>Your specimen enters a starvation countdown. Feed it before time runs out or it will not survive. Warnings escalate well before that point.</p></details>
       <details class="faq"><summary>What does Freeze do?</summary><p>Freezing halts hunger decay and growth entirely — useful if you'll be away for a while — but progress toward the next life stage also pauses.</p></details>
+      <details class="faq"><summary>What does the Incubator do?</summary><p>The Incubator lets you set your active specimen aside — fully paused, exactly like Freeze, so it's completely safe — and pick up a different one, either a fresh specimen or another you've already stored. You start with 3 slots and can unlock up to 10 total by spending RC.</p></details>
+      <details class="faq"><summary>Can I stop raising a specimen without waiting for it to starve?</summary><p>Yes — Terminate ends a specimen immediately, active or in the Incubator, and moves it straight to the Archive. It costs RC, and the fee scales with how far along the specimen already is, so ending a Stage 4 specimen with several traits costs noticeably more than ending a fresh one.</p></details>
       <details class="faq"><summary>What happens when my specimen advances a life stage?</summary><p>Growth isn't entirely out of your hands. When a specimen reaches a new stage, containment staff will sometimes ask you to weigh in on what develops — keep an eye on the Field Report.</p></details>
       <details class="faq"><summary>Can my specimen die from something other than hunger?</summary><p>Neglected, agitated specimens have been known to lash out. Keep an eye on your funds.</p></details>
       <details class="faq"><summary>What are containment classes?</summary><p>As your specimen accumulates traits and body parts, it may be reclassified from Safe to Euclid to Keter. This is cosmetic flavor reflecting how unusual your specimen has become.</p></details>
@@ -2675,6 +2889,36 @@ function maybeOpenStageChoiceModal(){
   }
 }
 
+/* ============================= TERMINATE CONFIRM ============================= */
+/* idx===null terminates the active specimen; otherwise idx is the specimen's
+   position in state.incubator. */
+function openTerminateConfirm(idx){
+  const c = idx==null ? state.creature : state.incubator[idx];
+  if(!c) return;
+  const fee = terminationFee(c);
+  const afford = state.currency>=fee;
+  const html = `
+    <div class="modal">
+      <h2>Terminate Specimen</h2>
+      <p>Terminate ${esc(designation(c))}${c.nickname?' "'+esc(c.nickname)+'"':""} now, rather than waiting it out?</p>
+      <p class="muted small">This is permanent and moves the specimen to the Archive immediately. Cost scales with how developed the specimen already is.</p>
+      <p class="mono">Fee: ${fee} RC ${afford?"":"(insufficient balance)"} · Balance: ${state.currency} RC</p>
+      <div class="row" style="justify-content:flex-end; margin-top:10px;">
+        <button class="btn secondary" id="modalClose">Cancel</button>
+        <button class="btn danger" id="btnConfirmTerminate" ${afford?"":"disabled"}>Terminate</button>
+      </div>
+    </div>
+  `;
+  showModal(html);
+  $("#modalClose").onclick = closeModal;
+  $("#btnConfirmTerminate").onclick = ()=>{
+    if(terminateSpecimen(idx)){
+      toast("Specimen terminated.", "danger");
+      closeModal(); save(); renderAll();
+    }
+  };
+}
+
 /* ============================= AWAY REPORT ============================= */
 function showAwayReport(summary, wasAlive, diedNow){
   let html;
@@ -2774,12 +3018,17 @@ function init(){
   state.archive = state.archive || [];
   state.inventory = state.inventory || {};
   state.shop = state.shop || {date:null, offerings:[], rerolls:0};
+  state.incubator = state.incubator || [];
+  state.incubatorSlots = state.incubatorSlots || INCUBATOR_BASE_SLOTS;
   const hadDiscovered = !!state.discovered;
   state.discovered = state.discovered || {parts:[], traits:[]};
   if(!hadDiscovered) backfillDiscovered(); // one-time catch-up for saves predating the Field Index
   state.stats = state.stats || {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0};
   if(state.stats.purchases==null) state.stats.purchases = 0;
   if(state.stats.freezes==null) state.stats.freezes = 0;
+  if(state.stats.incubatorStores==null) state.stats.incubatorStores = 0;
+  if(state.stats.incubatorTerminations==null) state.stats.incubatorTerminations = 0;
+  if(state.stats.incubatorUnlocks==null) state.stats.incubatorUnlocks = 0;
   state.achievements = state.achievements || {};
   if(state.creature && (state.creature.partCap==null || state.creature.traitCap==null)){
     state.creature.partCap = state.creature.partCap!=null ? state.creature.partCap : Math.max(randInt(5,11), state.creature.parts.length);
