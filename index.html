@@ -431,6 +431,45 @@
     font-family:'Courier Prime',monospace; font-size:0.9rem; line-height:1; padding:2px 4px;
   }
   .roster-chip button:disabled{color:var(--ink-soft); opacity:0.4; cursor:not-allowed;}
+
+  /* ===== Observation Window (specimen sprite screen) ===== */
+  .obs-frame{
+    background:linear-gradient(#3a3226,#241f16);
+    border:1px solid var(--ink); border-radius:6px;
+    padding:10px; box-shadow:var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .obs-screen-shell{
+    position:relative; width:100%; border-radius:3px; overflow:hidden;
+    background:#0c0f0a;
+    box-shadow:inset 0 0 0 2px #100e08, inset 0 0 18px rgba(0,0,0,0.6);
+  }
+  .obs-screen-shell canvas{
+    display:block; width:100%; height:auto;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+  }
+  .obs-live{
+    position:absolute; top:6px; right:7px; z-index:2;
+    display:flex; align-items:center; gap:4px;
+    background:rgba(10,10,8,0.55); border-radius:2px; padding:2px 5px;
+    font-family:'Courier Prime',monospace; font-size:0.6rem; font-weight:700;
+    letter-spacing:0.5px; color:#e8dcb0;
+  }
+  .obs-live-dot{
+    width:5px; height:5px; border-radius:50%; background:var(--danger); opacity:0.25;
+  }
+  .obs-live.on .obs-live-dot{ animation:ntBlink 1.1s infinite; opacity:1; }
+  .obs-caption{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    margin-top:8px; flex-wrap:wrap;
+  }
+  .obs-caption .mono{color:#c9bd93; font-size:0.72rem; letter-spacing:0.5px;}
+  .obs-btnrow{display:flex; gap:6px; flex-wrap:wrap;}
+  .obs-btn{
+    font-family:'Courier Prime',monospace; font-size:0.72rem; letter-spacing:0.5px;
+    background:#241f16; color:#d8cca0; border:1px solid #59502f;
+    border-radius:2px; padding:4px 8px; cursor:pointer;
+  }
+  .obs-btn:hover{background:#332b1c;}
 </style>
 </head>
 <body>
@@ -493,6 +532,216 @@
 <script>
 (function(){
 "use strict";
+
+/* ============================= MINI GIF ENCODER (vendored, no dependencies) =============================
+   A small self-contained GIF89a writer + median-cut quantizer, used to export the
+   3-second specimen clip entirely offline. Mirrors the tiny subset of the
+   `gifenc` API we previously loaded from a CDN (GIFEncoder / quantize / applyPalette)
+   so the rest of the code below didn't need to change. */
+const MiniGIF = (function(){
+  function quantize(rgba, maxColors){
+    maxColors = maxColors || 256;
+    const counts = new Map();
+    for(let i=0;i<rgba.length;i+=4){
+      const key = (rgba[i]<<16)|(rgba[i+1]<<8)|rgba[i+2];
+      counts.set(key, (counts.get(key)||0)+1);
+    }
+    let colors = [];
+    counts.forEach((count,key)=>{
+      colors.push({r:(key>>16)&255, g:(key>>8)&255, b:key&255, count});
+    });
+    if(colors.length<=maxColors){
+      return colors.map(c=>[c.r,c.g,c.b]);
+    }
+    function range(box, ch){
+      let min=255,max=0;
+      for(const c of box){ const v=c[ch]; if(v<min)min=v; if(v>max)max=v; }
+      return max-min;
+    }
+    function widest(box){
+      const rr=range(box,"r"), rg=range(box,"g"), rb=range(box,"b");
+      if(rr>=rg && rr>=rb) return "r";
+      if(rg>=rb) return "g";
+      return "b";
+    }
+    let boxes = [colors];
+    while(boxes.length<maxColors){
+      let bestIdx=-1, bestScore=-1;
+      for(let i=0;i<boxes.length;i++){
+        const box=boxes[i];
+        if(box.length<2) continue;
+        const score=range(box, widest(box));
+        if(score>bestScore){ bestScore=score; bestIdx=i; }
+      }
+      if(bestIdx===-1) break;
+      const box=boxes[bestIdx];
+      const ch=widest(box);
+      box.sort((a,b)=>a[ch]-b[ch]);
+      let total=0; for(const c of box) total+=c.count;
+      let half=total/2, acc=0, splitAt=1;
+      for(let i=0;i<box.length;i++){ acc+=box[i].count; if(acc>=half){ splitAt=i+1; break; } }
+      if(splitAt<1) splitAt=1;
+      if(splitAt>=box.length) splitAt=box.length-1;
+      const box1=box.slice(0,splitAt), box2=box.slice(splitAt);
+      boxes.splice(bestIdx,1,box1,box2);
+    }
+    return boxes.map(box=>{
+      let r=0,g=0,b=0,total=0;
+      for(const c of box){ r+=c.r*c.count; g+=c.g*c.count; b+=c.b*c.count; total+=c.count; }
+      return [Math.round(r/total), Math.round(g/total), Math.round(b/total)];
+    });
+  }
+
+  function applyPalette(rgba, palette){
+    const n = rgba.length/4;
+    const index = new Uint8Array(n);
+    const cache = new Map();
+    for(let i=0;i<n;i++){
+      const r=rgba[i*4], g=rgba[i*4+1], b=rgba[i*4+2];
+      const key=(r<<16)|(g<<8)|b;
+      let idx = cache.get(key);
+      if(idx===undefined){
+        let best=0, bestDist=Infinity;
+        for(let p=0;p<palette.length;p++){
+          const pr=palette[p][0], pg=palette[p][1], pb=palette[p][2];
+          const dr=r-pr, dg=g-pg, db=b-pb;
+          const dist=dr*dr+dg*dg+db*db;
+          if(dist<bestDist){ bestDist=dist; best=p; }
+        }
+        idx=best;
+        cache.set(key, idx);
+      }
+      index[i]=idx;
+    }
+    return index;
+  }
+
+  // Variable-code-size LZW packer per the GIF89a spec.
+  function lzwEncode(minCodeSize, indexedPixels){
+    const clearCode = 1<<minCodeSize;
+    const eoiCode = clearCode+1;
+    let codeSize, nextCode, dict;
+    function resetDict(){
+      dict = new Map();
+      for(let i=0;i<clearCode;i++) dict.set(String(i), i);
+      nextCode = eoiCode+1;
+      codeSize = minCodeSize+1;
+    }
+    resetDict();
+
+    const bytesOut = [];
+    let curBits=0, curValue=0;
+    function writeCode(code){
+      curValue |= code<<curBits;
+      curBits += codeSize;
+      while(curBits>=8){
+        bytesOut.push(curValue & 0xFF);
+        curValue >>= 8;
+        curBits -= 8;
+      }
+    }
+
+    writeCode(clearCode);
+    if(indexedPixels.length===0){
+      writeCode(eoiCode);
+      if(curBits>0) bytesOut.push(curValue & 0xFF);
+      return bytesOut;
+    }
+    let w = String(indexedPixels[0]);
+    for(let i=1;i<indexedPixels.length;i++){
+      const k = indexedPixels[i];
+      const wk = w+","+k;
+      if(dict.has(wk)){
+        w = wk;
+      } else {
+        writeCode(dict.get(w));
+        if(nextCode<4096){
+          // Bump the code size before assigning the new entry, based on the
+          // code that's about to be inserted -- this "early change" timing
+          // is what keeps the encoder in sync with a standard GIF decoder.
+          if(nextCode >= (1<<codeSize) && codeSize<12) codeSize++;
+          dict.set(wk, nextCode++);
+        } else {
+          writeCode(clearCode);
+          resetDict();
+        }
+        w = String(k);
+      }
+    }
+    writeCode(dict.get(w));
+    writeCode(eoiCode);
+    if(curBits>0) bytesOut.push(curValue & 0xFF);
+    return bytesOut;
+  }
+
+  function GIFEncoder(){
+    const bytes = [];
+    let firstFrame = true;
+
+    function u16(v){ bytes.push(v & 0xFF, (v>>8) & 0xFF); }
+    function str(s){ for(let i=0;i<s.length;i++) bytes.push(s.charCodeAt(i)); }
+
+    function writeHeader(w,h){
+      str("GIF89a");
+      u16(w); u16(h);
+      bytes.push(0x00); // no global color table
+      bytes.push(0x00); // bg color index
+      bytes.push(0x00); // pixel aspect ratio
+      // NETSCAPE2.0 application extension: loop forever
+      bytes.push(0x21,0xFF,0x0B);
+      str("NETSCAPE2.0");
+      bytes.push(0x03,0x01,0x00,0x00,0x00);
+    }
+
+    function writeFrame(indices, w, h, opts){
+      opts = opts||{};
+      const palette = opts.palette || [[0,0,0],[255,255,255]];
+      const delayCs = opts.delay!=null ? Math.max(1, Math.round(opts.delay/10)) : 10;
+
+      if(firstFrame){ writeHeader(w,h); firstFrame=false; }
+
+      let colorDepth = 2;
+      while((1<<colorDepth) < palette.length) colorDepth++;
+      const tableSize = 1<<colorDepth;
+
+      // Graphic Control Extension
+      bytes.push(0x21,0xF9,0x04);
+      bytes.push(0x00);
+      u16(delayCs);
+      bytes.push(0x00);
+      bytes.push(0x00);
+
+      // Image Descriptor
+      bytes.push(0x2C);
+      u16(0); u16(0);
+      u16(w); u16(h);
+      bytes.push(0x80 | (colorDepth-1)); // local color table present, size
+
+      for(let i=0;i<tableSize;i++){
+        const c = palette[i] || [0,0,0];
+        bytes.push(c[0], c[1], c[2]);
+      }
+
+      bytes.push(colorDepth); // LZW minimum code size
+      const compressed = lzwEncode(colorDepth, indices);
+      let pos=0;
+      while(pos<compressed.length){
+        const len = Math.min(255, compressed.length-pos);
+        bytes.push(len);
+        for(let i=0;i<len;i++) bytes.push(compressed[pos+i]);
+        pos += len;
+      }
+      bytes.push(0x00);
+    }
+
+    function finish(){ bytes.push(0x3B); }
+    function getBytes(){ return new Uint8Array(bytes); }
+
+    return { writeFrame, finish, bytes:getBytes };
+  }
+
+  return { GIFEncoder, quantize, applyPalette };
+})();
 
 /* ============================= CONSTANTS ============================= */
 const SAVE_KEY = "abomination_keeper_save_v1";
@@ -1183,6 +1432,9 @@ function now(){return Date.now();}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function pad(n){return n<10?"0"+n:""+n;}
 function dateStr(ts){const d=new Date(ts); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function fmtStampDateTime(ts){
+  return new Date(ts).toLocaleString(undefined, {year:"numeric", month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"});
+}
 function addDays(ds,n){const [y,m,d]=ds.split("-").map(Number); const dt=new Date(y,m-1,d); dt.setDate(dt.getDate()+n); return dateStr(dt.getTime());}
 function todayStr(){return dateStr(now());}
 function fmtHM(ms){
@@ -1257,7 +1509,9 @@ function freshCreature(){
     causeOfDeath: null,
     diedAt: null,
     rampageCount: 0,
-    pendingStageChoices: [] // [{stage, options:[partId, partId?]}] awaiting keeper decision
+    pendingStageChoices: [], // [{stage, options:[partId, partId?]}] awaiting keeper decision
+    spriteCat: null, // locked "core identity" category for the sprite -- see updateSpriteIdentity()
+    spriteBirthVariant: randInt(0, BASIC_VARIANTS.length-1) // which basic-stage tan variant + birth tint
   };
 }
 
@@ -1281,7 +1535,7 @@ function defaultState(){
     discovered: {parts:[], traits:[]}, // ids ever seen on any specimen, current or archived
     stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0},
     achievements: {}, // id -> {at: timestamp}
-    settings: {autosaveMin:5, lastAckAway:0},
+    settings: {autosaveMin:5, lastAckAway:0, showSprite:true},
     scientists: DEFAULT_SCIENTISTS.map(n=>({name:n, isDefault:true})),
     meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now(), lastScientist: null},
     profile: freshProfile()
@@ -1355,6 +1609,7 @@ function normalizeState(s){
   s.settings = (s.settings && typeof s.settings==="object") ? s.settings : {};
   if(typeof s.settings.autosaveMin!=="number") s.settings.autosaveMin = 5;
   if(typeof s.settings.lastAckAway!=="number") s.settings.lastAckAway = 0;
+  if(typeof s.settings.showSprite!=="boolean") s.settings.showSprite = true;
   s.meta = (s.meta && typeof s.meta==="object") ? s.meta : {};
   if(typeof s.meta.createdAt!=="number") s.meta.createdAt = now();
   if(typeof s.meta.lastTickAt!=="number") s.meta.lastTickAt = now();
@@ -1435,6 +1690,8 @@ function normalizeState(s){
     if(!Array.isArray(c.parts)) c.parts = [];
     if(!Array.isArray(c.traits)) c.traits = [];
     if(!Array.isArray(c.pendingStageChoices)) c.pendingStageChoices = [];
+    if(c.spriteCat===undefined) c.spriteCat = null;
+    if(typeof c.spriteBirthVariant!=="number") c.spriteBirthVariant = randInt(0, BASIC_VARIANTS.length-1);
     if(typeof c.partCap!=="number") c.partCap = Math.max(randInt(5,11), c.parts.length);
     if(typeof c.traitCap!=="number") c.traitCap = Math.max(randInt(4,10), c.traits.length);
     if(!c.warnFlags || typeof c.warnFlags!=="object") c.warnFlags = {50:false,25:false,10:false,0:false};
@@ -1632,6 +1889,7 @@ function resolveStageChoice(idx){
   const chosenId = pending.options[idx]!=null ? pending.options[idx] : pending.options[0];
   const part = BODY_PARTS.find(x=>x.id===chosenId);
   c.parts.push(chosenId);
+  updateSpriteIdentity(c);
   markDiscovered(true, chosenId);
   addLog("New development (Stage "+pending.stage+"): "+part.text+".", "evt-mutation");
   state.stats.stageChoicesResolved++;
@@ -1946,6 +2204,7 @@ function feedCreature(foodId){
     const m = pickMutation(c, food.cat);
     if(m){
       if(m.isPart) c.parts.push(m.item.id); else c.traits.push(m.item.id);
+      updateSpriteIdentity(c);
       markDiscovered(m.isPart, m.item.id);
       mutation = m.item.text;
       addLog("Mutation observed: "+m.item.text+".", "evt-mutation");
@@ -2673,6 +2932,7 @@ const $$ = sel => Array.from(document.querySelectorAll(sel));
 let activeTab = "field";
 
 function switchTab(tab){
+  if(tab!=="field") stopSpecimenAnim();
   activeTab = tab;
   $$("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   $$(".panel").forEach(p=>p.classList.toggle("active", p.id==="panel-"+tab));
@@ -2758,12 +3018,813 @@ function timeToHungerEstimates(c){
   return parts.length?parts.join(" · "):"Already at critical levels.";
 }
 
+/* ============================= SPECIMEN SPRITE (Observation Window) =============================
+   A small animated pixel-art readout of the active specimen, driven entirely by its own data:
+   stage, body parts, traits, containment class, hunger and frozen state. Purely cosmetic --
+   never read by game logic. Toggleable via state.settings.showSprite (default true). */
+
+const SPR_W = 220, SPR_H = 132; // internal canvas resolution; scaled up via CSS pixelation
+const SPR_UNIT = 4;             // base "pixel" block size at scale 1
+
+// Newborns (zero parts/traits, "basic" category) all share one silhouette group but get one of
+// these four tan/beige sub-palettes picked at birth (c.spriteBirthVariant) -- so specimens are
+// still visually distinct from one another during the mechanically-identical starting phase.
+const BASIC_VARIANTS = [
+  {body:"#9c8a68", shade:"#7c6d53", hi:"#bcae8c", accent:"#5a4d34"}, // warm tan
+  {body:"#8f9270", shade:"#6d715a", hi:"#b0b48c", accent:"#4d5238"}, // olive drab
+  {body:"#a68868", shade:"#846a4f", hi:"#c7a887", accent:"#5c4530"}, // ruddy clay
+  {body:"#8a8a8a", shade:"#686868", hi:"#b0b0b0", accent:"#4a4a4a"}  // ashen grey
+];
+
+const CAT_PALETTE = {
+  basic:      {body:"#9c8a68", shade:"#7c6d53", hi:"#bcae8c", accent:"#5a4d34", group:"blob"},
+  chitin:     {body:"#8a6a3f", shade:"#5f4a2b", hi:"#b08a52", accent:"#2c2416", group:"hard"},
+  bio:        {body:"#5c8a52", shade:"#3f6339", hi:"#83b874", accent:"#c7e08a", group:"blob"},
+  fungal:     {body:"#9a6bb0", shade:"#6f4a82", hi:"#c298d6", accent:"#e6c8f2", group:"cap"},
+  void:       {body:"#3a2e4a", shade:"#221a30", hi:"#6b5590", accent:"#b98cf0", group:"jagged"},
+  energy:     {body:"#3f9aa8", shade:"#296b76", hi:"#7fd8e6", accent:"#e8fb62", group:"blob"},
+  char:       {body:"#3a2f2b", shade:"#221b18", hi:"#6b544a", accent:"#e0602f", group:"jagged"},
+  crystalline:{body:"#7fb8d8", shade:"#4f89ac", hi:"#c8ecf7", accent:"#ffffff", group:"diamond"},
+  aquatic:    {body:"#3f7f9c", shade:"#2a5a70", hi:"#79c4e0", accent:"#d8f5ff", group:"elong"},
+  mechanical: {body:"#6a6f74", shade:"#484c50", hi:"#9aa0a6", accent:"#f2c94c", group:"boxy"},
+  parasitic:  {body:"#7a8a3a", shade:"#535e27", hi:"#a3b85c", accent:"#d8e07a", group:"blob"},
+  anomaly:    {body:"#8a4a6a", shade:"#5f2f47", hi:"#c07a9e", accent:"#f0a8cf", group:"jagged"}
+};
+// Priority order for picking the "dominant" category when a specimen has a mix -- rarer/more
+// exotic categories read as more visually defining than a pile of common ones.
+const CAT_PRIORITY = ["void","anomaly","crystalline","mechanical","char","energy","fungal","aquatic","parasitic","chitin","bio","basic"];
+
+function specimenCatCounts(c){
+  const counts = {};
+  const tally = (ids, pool) => ids.forEach(id=>{
+    const m = pool.find(x=>x.id===id);
+    if(m) m.cat.forEach(cat=>{ if(CAT_PALETTE[cat]) counts[cat]=(counts[cat]||0)+1; });
+  });
+  tally(c.parts, BODY_PARTS);
+  tally(c.traits, TRAITS);
+  return counts;
+}
+
+function bestCatFromCounts(counts){
+  let best=null, bestN=0;
+  CAT_PRIORITY.forEach(cat=>{
+    const n = counts[cat]||0;
+    if(n>bestN){ best=cat; bestN=n; }
+  });
+  return best || "basic";
+}
+
+function specimenDominantCat(c){
+  return bestCatFromCounts(specimenCatCounts(c));
+}
+
+/* The sprite's "core identity" (palette + silhouette group) is the most visually dramatic thing
+   about it, so we deliberately don't let it freely flip every time a single new part or trait is
+   added -- that's what made small mutations look like a whole new creature. Instead it's locked
+   onto c.spriteCat and only re-evaluated (with hysteresis: a challenger needs to outnumber the
+   current lock by 2+) at the moments parts/traits actually change. Purely cosmetic, safe to call
+   redundantly. */
+const SPRITE_CAT_HYSTERESIS = 2;
+function updateSpriteIdentity(c){
+  const counts = specimenCatCounts(c);
+  if(!c.spriteCat){
+    c.spriteCat = bestCatFromCounts(counts);
+    return c.spriteCat;
+  }
+  const currentN = counts[c.spriteCat] || 0;
+  if(currentN===0){
+    // The locked category isn't backed by anything the specimen actually has (e.g. it's still
+    // the zero-parts "basic" placeholder) -- there's nothing earned to protect, so let it settle
+    // onto whatever the specimen's first real part/trait is immediately, no hysteresis needed.
+    c.spriteCat = bestCatFromCounts(counts);
+    return c.spriteCat;
+  }
+  let challenger=null, challengerN=0;
+  CAT_PRIORITY.forEach(cat=>{
+    if(cat===c.spriteCat) return;
+    const n = counts[cat]||0;
+    if(n>challengerN){ challenger=cat; challengerN=n; }
+  });
+  if(challenger && challengerN >= currentN + SPRITE_CAT_HYSTERESIS){
+    c.spriteCat = challenger;
+  }
+  return c.spriteCat;
+}
+
+// Fine-grained "family" hooks (from both parts & traits) that drive animation behavior.
+function specimenFamilies(c){
+  const fams = {};
+  const tally = (ids, pool) => ids.forEach(id=>{
+    const m = pool.find(x=>x.id===id);
+    if(m && m.family) fams[m.family] = (fams[m.family]||0)+1;
+  });
+  tally(c.parts, BODY_PARTS);
+  tally(c.traits, TRAITS);
+  return fams;
+}
+
+function specimenSlotCounts(c){
+  const slots = {};
+  c.parts.forEach(id=>{
+    const p = BODY_PARTS.find(x=>x.id===id);
+    if(p && p.slot) slots[p.slot]=(slots[p.slot]||0)+1;
+  });
+  return slots;
+}
+
+function specimenHasRarity(c, rarity){
+  const check = (ids,pool)=>ids.some(id=>{ const m=pool.find(x=>x.id===id); return m && m.rarity===rarity; });
+  return check(c.parts,BODY_PARTS) || check(c.traits,TRAITS);
+}
+
+/* Builds the stacked-row silhouette (array of row widths, in SPR_UNIT blocks) for a body "group".
+   rng is consumed to add small per-specimen jaggedness so identical parts don't render pixel-
+   identical between two specimens sharing the same category/stage. */
+function bodySilhouette(group, rng){
+  let rows;
+  switch(group){
+    case "hard": rows=[3,6,8,9,9,9,8,7,5]; break;
+    case "cap": rows=[9,10,10,8,6,5,4,3,2]; break;
+    case "jagged": rows=[2,5,7,8,9,8,7,6,4]; break;
+    case "diamond": rows=[1,3,5,7,9,7,5,3,1]; break;
+    case "elong": rows=[3,6,8,9,8,7,6,5,3]; break;
+    case "boxy": rows=[8,8,8,8,8,8,8,8,8]; break;
+    default: rows=[2,5,7,8,9,9,8,7,4]; // blob
+  }
+  const jaggy = (group==="jagged"||group==="hard");
+  return rows.map(w=>{
+    const jitter = jaggy ? Math.round((rng()-0.5)*2) : 0;
+    return Math.max(1, w+jitter);
+  });
+}
+
+/* Full descriptor used to draw a frame. Rebuilt every render call -- lists involved are short
+   (a handful of parts/traits) so this is cheap. The "core identity" (cat/pal/group) comes from
+   c.spriteCat, which is locked via updateSpriteIdentity() at the moment parts/traits actually
+   change (see resolveStageChoice / feedCreature), not recomputed fresh here -- that's what stops
+   a single new part from flipping the whole palette and silhouette. Each cosmetic sub-feature
+   (silhouette jitter, body scale, eye placement, skin dots) also draws from its OWN seeded RNG
+   stream rather than one shared sequential stream, so gaining a new part can't cascade into
+   reshuffling unrelated jitter that had nothing to do with it. */
+function buildSpecimenModel(c){
+  const stage = stageFromHours(c.activeMs/HOUR);
+  const cat = c.spriteCat || updateSpriteIdentity(c);
+  const birth = BASIC_VARIANTS[c.spriteBirthVariant % BASIC_VARIANTS.length];
+  let pal;
+  if(cat==="basic"){
+    pal = Object.assign({group:CAT_PALETTE.basic.group}, birth);
+  } else {
+    // Subtle per-specimen tint drawn from the birth variant, so two specimens that land on the
+    // same category still read as individuals rather than palette-swapped clones.
+    const base = CAT_PALETTE[cat];
+    const tint = 0.14;
+    pal = Object.assign({}, base, {
+      body: sprLerpColor(base.body, birth.body, tint),
+      shade: sprLerpColor(base.shade, birth.shade, tint),
+      hi: sprLerpColor(base.hi, birth.hi, tint)
+    });
+  }
+  const fams = specimenFamilies(c);
+  const slots = specimenSlotCounts(c);
+  const has = f => !!fams[f];
+
+  const rngSil = seededRng(c.uid+"|silhouette");
+  const rows = bodySilhouette(pal.group, rngSil);
+
+  const rngScale = seededRng(c.uid+"|scale");
+  const vScale = 0.92 + rngScale()*0.16;
+
+  const extraEyes = clamp(slots.eye||0, 0, 3);
+  const rngEye = seededRng(c.uid+"|eyejitter");
+  const eyeJitter = [];
+  for(let i=0;i<extraEyes;i++) eyeJitter.push({dx:(rngEye()-0.5)*0.7, dy:(rngEye()-0.2)*0.35});
+
+  const skinDetail = clamp((slots.skin||0)+(slots.torso||0), 0, 6);
+  const rngSkin = seededRng(c.uid+"|skindots");
+  const skinDots = [];
+  for(let i=0;i<skinDetail;i++) skinDots.push({tx:rngSkin(), ty:0.28+rngSkin()*0.55});
+
+  const voidy = c.parts.concat(c.traits).some(id=>{
+    const m = BODY_PARTS.find(x=>x.id===id)||TRAITS.find(x=>x.id===id);
+    return m && m.cat.includes("void");
+  });
+
+  return {
+    stage, cat, pal, rows, vScale,
+    scale: 0.62 + stage*0.095,
+    legendary: specimenHasRarity(c,"legendary"),
+    rare: specimenHasRarity(c,"rare"),
+    extraEyes, eyeJitter,
+    hasSecondHead: has("cephalic") || (slots.head||0)>=2,
+    extraArmsPair: (slots.arm||0)>0,
+    extraLegsPair: (slots.leg||0)>0,
+    hasWings: (slots.wing||0)>0, wingCount: slots.wing||0,
+    hasTail: (slots.tail||0)>0, tailCount: slots.tail||0,
+    jaggedMouth: (slots.mouth||0)>1,
+    sensors: clamp(slots.sensory||0, 0, 3),
+    skinDots, dermal: has("dermal"),
+    camouflage: has("camouflage"),
+    gravitic: has("gravitic"),
+    vocal: has("vocal"),
+    respiratory: has("respiratory"),
+    psychic: has("psychic"),
+    temporal: has("temporal"),
+    skeletal: has("skeletal"),
+    voidy
+  };
+}
+
+/* ---- Per-specimen animation runtime. Module-level and NOT persisted -- purely visual state that
+   resets whenever the active specimen (uid) changes, e.g. switching in from the Incubator. ---- */
+let sprAnimHandle = null;
+const sprRuntime = {
+  uid:null, x:0, targetX:0, nextWanderAt:0,
+  blinkUntil:0, nextBlinkAt:0,
+  soundWaveUntil:0, nextSoundWaveAt:0,
+  psychicUntil:0, nextPsychicAt:0,
+  lastStage:null, evoFlashStart:0,
+  lastPartsSig:null
+};
+
+function specimenPartsSig(c){
+  return c.parts.concat(c.traits).slice().sort().join(",");
+}
+
+function sprResetRuntime(c, model){
+  sprRuntime.uid = c.uid;
+  sprRuntime.x = SPR_W/2;
+  sprRuntime.targetX = SPR_W/2;
+  sprRuntime.nextWanderAt = 0;
+  sprRuntime.blinkUntil = 0;
+  sprRuntime.nextBlinkAt = 0;
+  sprRuntime.soundWaveUntil = 0;
+  sprRuntime.nextSoundWaveAt = 0;
+  sprRuntime.psychicUntil = 0;
+  sprRuntime.nextPsychicAt = 0;
+  sprRuntime.lastStage = model.stage;
+  sprRuntime.evoFlashStart = 0;
+  sprRuntime.lastPartsSig = specimenPartsSig(c);
+}
+
+function stopSpecimenAnim(){
+  if(sprAnimHandle){ cancelAnimationFrame(sprAnimHandle); sprAnimHandle=null; }
+}
+
+/* Time-of-day lighting tied to the real device clock -- purely atmospheric. Returns 0 (deep
+   night) .. 1 (full day), with a soft dawn/dusk transition either side. */
+function sprLighting(){
+  const h = new Date().getHours() + new Date().getMinutes()/60;
+  if(h<5 || h>=21) return 0;
+  if(h<7) return (h-5)/2;
+  if(h<18) return 1;
+  if(h<21) return 1-(h-18)/3;
+  return 0;
+}
+function sprLerp(a,b,t){return a+(b-a)*t;}
+function sprLerpColor(c1,c2,t){
+  const p=s=>[parseInt(s.substr(1,2),16),parseInt(s.substr(3,2),16),parseInt(s.substr(5,2),16)];
+  const a=p(c1), b=p(c2);
+  const r=Math.round(sprLerp(a[0],b[0],t)), g=Math.round(sprLerp(a[1],b[1],t)), bl=Math.round(sprLerp(a[2],b[2],t));
+  return "rgb("+r+","+g+","+bl+")";
+}
+function pxRect(ctx,x,y,w,h,color,alpha){
+  if(alpha!=null) ctx.globalAlpha=alpha;
+  ctx.fillStyle=color;
+  ctx.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h)));
+  if(alpha!=null) ctx.globalAlpha=1;
+}
+
+/* Draws the sprite body + attachments centered on (cx,cyCenter). opts: closed (eyes shut),
+   gray (desaturated, for a terminated specimen), camoAlpha (overall blend alpha), scaleMul
+   (evolution-flash grow animation), silhouette (flat flash-grow silhouette), sleeping (frozen). */
+function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
+  opts = opts||{};
+  const rows = model.rows;
+  const unitX = SPR_UNIT * model.scale * (opts.scaleMul!=null?opts.scaleMul:1);
+  const unitY = unitX * model.vScale;
+  const h = rows.length*unitY;
+  const top = cyCenter - h*0.62;
+
+  ctx.save();
+  ctx.globalAlpha = opts.camoAlpha!=null?opts.camoAlpha:1;
+
+  const gray = opts.gray;
+  const body = gray? "#5a5a52" : model.pal.body;
+  const shade = gray? "#3a3a34" : model.pal.shade;
+  const hi = gray? "#7a7a70" : model.pal.hi;
+
+  // Rarity glow: legendary pulses; rare gets a subtler steady halo.
+  if(!gray && (model.legendary||model.rare)){
+    const glowColor = model.legendary ? "#f5d76e" : "#cfd8e0";
+    const pulse = model.legendary ? (0.32+0.24*Math.abs(Math.sin(performance.now()/450))) : 0.2;
+    ctx.save();
+    ctx.globalAlpha *= pulse;
+    rows.forEach((w,i)=>{
+      const rw=(w+2)*unitX;
+      pxRect(ctx, cx-rw/2, top+i*unitY-1, rw, unitY+2, glowColor);
+    });
+    ctx.restore();
+  }
+
+  // Legs
+  const legW = unitX*0.9, legH = unitY*1.6;
+  const legSpread = rows[rows.length-1]*unitX*0.32;
+  [-1,1].forEach(side=>pxRect(ctx, cx+side*legSpread-legW/2, top+h-unitY*0.4, legW, legH, shade));
+  if(model.extraLegsPair){
+    [-1,1].forEach(side=>pxRect(ctx, cx+side*(legSpread*1.7)-legW/2, top+h-unitY*0.2, legW*0.85, legH*0.75, shade, 0.9));
+  }
+
+  // Tail
+  if(model.hasTail && !opts.silhouette){
+    const wag = opts.sleeping?0:Math.sin(performance.now()/260)*3;
+    ctx.save();
+    ctx.translate(cx - rows[Math.max(0,rows.length-2)]*unitX*0.5, top+h*0.7);
+    ctx.rotate(((wag+(model.tailCount>1?8:0))*Math.PI)/180);
+    pxRect(ctx, -unitX*0.4, 0, unitX*0.8, unitY*(1.6+model.tailCount*0.3), shade);
+    ctx.restore();
+  }
+
+  // Wings
+  if(model.hasWings && !opts.silhouette){
+    const flap = opts.sleeping?0.05:0.15+0.1*Math.sin(performance.now()/300);
+    [-1,1].forEach(side=>{
+      ctx.save();
+      ctx.translate(cx+side*rows[Math.floor(rows.length*0.4)]*unitX*0.55, top+h*0.35);
+      ctx.rotate(side*(0.5+flap));
+      pxRect(ctx, -unitX*0.3, -unitY*1.6, unitX*0.7, unitY*2.4, model.pal.accent, 0.82);
+      ctx.restore();
+    });
+  }
+
+  // Torso rows
+  rows.forEach((w,i)=>{
+    const rw = w*unitX;
+    const rowColor = i > rows.length*0.62 ? shade : body;
+    pxRect(ctx, cx-rw/2, top+i*unitY, rw, unitY+0.5, opts.silhouette?shade:rowColor);
+  });
+
+  if(!opts.silhouette){
+    // Highlight strip
+    rows.slice(0, Math.ceil(rows.length*0.4)).forEach((w,i)=>{
+      const rw=w*unitX;
+      pxRect(ctx, cx-rw/2, top+i*unitY, Math.max(2,rw*0.22), unitY*0.6, hi, 0.5);
+    });
+    // Skeletal rib overlay
+    if(model.skeletal){
+      ctx.save();
+      ctx.strokeStyle = shade; ctx.globalAlpha *= 0.6; ctx.lineWidth=1;
+      for(let i=3;i<rows.length-2;i+=2){
+        const rw = rows[i]*unitX*0.7;
+        ctx.beginPath(); ctx.moveTo(cx-rw/2, top+i*unitY+unitY/2); ctx.lineTo(cx+rw/2, top+i*unitY+unitY/2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    // Dermal / skin pattern dots
+    model.skinDots.forEach(d=>{
+      const rowIdx = clamp(Math.floor(d.ty*rows.length), 0, rows.length-1);
+      const rw = rows[rowIdx]*unitX;
+      pxRect(ctx, cx-rw/2+d.tx*rw, top+rowIdx*unitY, unitX*0.35, unitY*0.35, model.dermal?hi:model.pal.accent, 0.65);
+    });
+
+    // Arms
+    const armW=unitX*0.7, armH=unitY*1.5;
+    const armRowIdx = Math.floor(rows.length*0.45);
+    const armY = top+armRowIdx*unitY;
+    const armSpread = rows[armRowIdx]*unitX*0.5;
+    [-1,1].forEach(side=>pxRect(ctx, cx+side*armSpread, armY, armW, armH, shade));
+    if(model.extraArmsPair){
+      [-1,1].forEach(side=>pxRect(ctx, cx+side*(armSpread+armW+1), armY+unitY*0.4, armW*0.8, armH*0.8, shade, 0.9));
+    }
+
+    // Head bump(s)
+    const headW = rows[1]*unitX*0.9;
+    pxRect(ctx, cx-headW/2, top-unitY*0.7, headW, unitY*0.9, body);
+    if(model.hasSecondHead) pxRect(ctx, cx+headW*0.35, top-unitY*0.35, headW*0.55, unitY*0.7, shade, 0.9);
+
+    // Sensory antennae
+    if(model.sensors>0){
+      const twitch = Math.sin(performance.now()/260)*0.25;
+      ctx.save();
+      ctx.strokeStyle = model.pal.accent; ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(cx-headW*0.25, top-unitY*0.7); ctx.lineTo(cx-headW*0.25+Math.sin(twitch)*4, top-unitY*1.6);
+      ctx.moveTo(cx+headW*0.25, top-unitY*0.7); ctx.lineTo(cx+headW*0.25-Math.sin(twitch)*4, top-unitY*1.6);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Eyes
+    const eyeY = top+unitY*0.1;
+    const eyeSpots = [{dx:-0.18,dy:0},{dx:0.18,dy:0}].concat(model.eyeJitter);
+    eyeSpots.forEach(({dx,dy})=>{
+      const exPx = cx+dx*headW, eyPx = eyeY+(dy||0)*unitY;
+      if(opts.closed){
+        pxRect(ctx, exPx-unitX*0.22, eyPx+unitY*0.15, unitX*0.44, unitY*0.14, "#160f0a");
+      } else {
+        pxRect(ctx, exPx-unitX*0.22, eyPx-unitY*0.05, unitX*0.44, unitY*0.44, "#160f0a");
+        pxRect(ctx, exPx-unitX*0.08, eyPx+unitY*0.02, unitX*0.16, unitY*0.16, model.pal.accent);
+      }
+    });
+
+    // Mouth
+    const mouthY = top+unitY*0.75;
+    if(model.jaggedMouth){
+      ctx.save();
+      ctx.strokeStyle="#160f0a"; ctx.lineWidth=1; ctx.beginPath();
+      for(let i=-3;i<=3;i++) ctx.lineTo(cx+i*unitX*0.18, mouthY+(i%2?unitY*0.18:0));
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      pxRect(ctx, cx-unitX*0.4, mouthY, unitX*0.8, unitY*0.16, "#160f0a");
+    }
+  }
+
+  ctx.restore();
+}
+
+/* Draws one full frame: background/lighting/containment cues, then the animated sprite itself. */
+/* Idle containment-window background shown when there's no active specimen (all incubated, or
+   the last one was dismissed after death/termination) -- so the window reads as "vacant cell"
+   rather than being hidden outright. Shares the same day/night lighting as the live sprite. */
+function drawEmptyFrame(canvas, ctx){
+  ctx.clearRect(0,0,SPR_W,SPR_H);
+  const lightT = sprLighting();
+  const skyNight="#141428", skyDusk="#3a2a3a", skyDay="#3b3626";
+  const sky = lightT<0.5 ? sprLerpColor(skyNight, skyDusk, lightT*2) : sprLerpColor(skyDusk, skyDay, (lightT-0.5)*2);
+  const floorNight="#0c0f14", floorDay="#2b2418";
+  const floor = sprLerpColor(floorNight, floorDay, lightT);
+  ctx.fillStyle = sky; ctx.fillRect(0,0,SPR_W,SPR_H*0.72);
+  ctx.fillStyle = floor; ctx.fillRect(0,SPR_H*0.72,SPR_W,SPR_H*0.28);
+  if(lightT<0.4){ ctx.fillStyle="rgba(0,0,0,"+(0.25*(1-lightT/0.4))+")"; ctx.fillRect(0,0,SPR_W,SPR_H); }
+
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = "#8a7a54"; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+  ctx.strokeRect(SPR_W*0.30, SPR_H*0.74, SPR_W*0.40, SPR_H*0.10);
+  ctx.restore();
+
+  ctx.fillStyle = "rgba(190,180,148,0.55)";
+  ctx.font = "9px monospace"; ctx.textAlign = "center";
+  ctx.fillText("NO SPECIMEN IN CONTAINMENT", SPR_W/2, SPR_H*0.5);
+  ctx.textAlign = "left";
+}
+
+let emptyAnimHandle = null;
+function stopEmptyAnim(){ if(emptyAnimHandle){ cancelAnimationFrame(emptyAnimHandle); emptyAnimHandle=null; } }
+
+function initEmptyObservationScreen(){
+  stopSpecimenAnim();
+  stopEmptyAnim();
+  if(!state.settings.showSprite) return;
+  const canvas = $("#specimenCanvas");
+  if(!canvas) return;
+  canvas.width = SPR_W; canvas.height = SPR_H;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+  function loop(){
+    if(activeTab!=="field" || !state.settings.showSprite || !document.body.contains(canvas) || state.creature){
+      emptyAnimHandle = null;
+      return;
+    }
+    if(!document.hidden){
+      try{ drawEmptyFrame(canvas, ctx); }catch(e){ /* cosmetic-only: never break the app */ }
+    }
+    emptyAnimHandle = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function drawSpecimenFrame(canvas, ctx, c, dead){
+  const model = buildSpecimenModel(c);
+  if(sprRuntime.uid !== c.uid) sprResetRuntime(c, model);
+
+  const tNow = performance.now();
+  const elapsedS = tNow/1000;
+
+  if(model.stage !== sprRuntime.lastStage){
+    if(model.stage > sprRuntime.lastStage) sprRuntime.evoFlashStart = tNow;
+    sprRuntime.lastStage = model.stage;
+  }
+  const partsSig = specimenPartsSig(c);
+  if(partsSig !== sprRuntime.lastPartsSig){
+    if(!sprRuntime.evoFlashStart) sprRuntime.evoFlashStart = tNow;
+    sprRuntime.lastPartsSig = partsSig;
+  }
+  const flashElapsed = tNow - sprRuntime.evoFlashStart;
+  const inFlash = sprRuntime.evoFlashStart>0 && flashElapsed < 1100;
+
+  ctx.clearRect(0,0,SPR_W,SPR_H);
+
+  /* ---- background & lighting ---- */
+  const lightT = sprLighting();
+  const skyNight="#141428", skyDusk="#3a2a3a", skyDay="#3b3626";
+  const sky = lightT<0.5 ? sprLerpColor(skyNight, skyDusk, lightT*2) : sprLerpColor(skyDusk, skyDay, (lightT-0.5)*2);
+  const floorNight="#0c0f14", floorDay="#2b2418";
+  const floor = sprLerpColor(floorNight, floorDay, lightT);
+
+  const cls = containmentClass(c);
+  ctx.fillStyle = sky; ctx.fillRect(0,0,SPR_W,SPR_H*0.72);
+  ctx.fillStyle = floor; ctx.fillRect(0,SPR_H*0.72,SPR_W,SPR_H*0.28);
+  if(lightT<0.4){ ctx.fillStyle="rgba(0,0,0,"+(0.25*(1-lightT/0.4))+")"; ctx.fillRect(0,0,SPR_W,SPR_H); }
+
+  // Containment-class backdrop cues: KETER hazard stripes, EUCLID hairline cracks.
+  if(cls==="KETER"){
+    ctx.save();
+    ctx.globalAlpha = 0.15 + 0.05*Math.sin(elapsedS*1.6);
+    ctx.fillStyle="#c94d33";
+    for(let i=-1;i<6;i++){
+      ctx.save();
+      ctx.translate(i*40 - (elapsedS*4)%40, 0);
+      ctx.rotate(-0.35);
+      ctx.fillRect(0,-20,10,SPR_H+40);
+      ctx.restore();
+    }
+    ctx.restore();
+  } else if(cls==="EUCLID"){
+    ctx.save();
+    ctx.strokeStyle="rgba(220,225,230,0.22)"; ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(SPR_W*0.14,4); ctx.lineTo(SPR_W*0.22,SPR_H*0.4); ctx.lineTo(SPR_W*0.12,SPR_H*0.6);
+    ctx.moveTo(SPR_W*0.86,2); ctx.lineTo(SPR_W*0.78,SPR_H*0.34); ctx.lineTo(SPR_W*0.9,SPR_H*0.55);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Food bowl -- a small cell detail that reflects current hunger.
+  const bowlX = SPR_W*0.16, bowlY = SPR_H*0.86;
+  ctx.fillStyle="#4a3f2c"; ctx.fillRect(bowlX-9,bowlY,18,4);
+  if(c.hunger>15){
+    ctx.fillStyle="#8a6a3f";
+    const fillW = clamp(c.hunger/100,0.15,1)*14;
+    ctx.fillRect(bowlX-fillW/2, bowlY-2, fillW, 3);
+  }
+  if(c.frozen){ ctx.fillStyle="rgba(140,200,230,0.10)"; ctx.fillRect(0,0,SPR_W,SPR_H); }
+
+  if(dead){
+    ctx.save();
+    ctx.globalAlpha=0.85;
+    drawSpecimenBody(ctx, model, SPR_W/2, SPR_H*0.62, {closed:true, gray:true});
+    ctx.restore();
+    ctx.fillStyle="rgba(20,14,10,0.55)"; ctx.fillRect(0,SPR_H/2-9,SPR_W,18);
+    ctx.fillStyle="#c94d33"; ctx.font="bold 11px monospace"; ctx.textAlign="center";
+    ctx.fillText("TERMINATED", SPR_W/2, SPR_H/2+4);
+    ctx.textAlign="left";
+    return;
+  }
+
+  /* ---- behavior / movement ---- */
+  const hunger = c.hunger;
+  const shiver = !c.frozen && hunger<=25;
+  const groundY = SPR_H*0.80;
+
+  if(!c.frozen && tNow > sprRuntime.nextWanderAt){
+    const range = SPR_W*0.28;
+    sprRuntime.targetX = clamp(SPR_W/2 + (Math.random()*2-1)*range, SPR_W*0.22, SPR_W*0.78);
+    sprRuntime.nextWanderAt = tNow + 2600 + Math.random()*2600;
+  }
+  if(!c.frozen) sprRuntime.x += (sprRuntime.targetX - sprRuntime.x) * 0.02;
+
+  let bob = model.respiratory ? Math.sin(elapsedS*1.1)*3.6 : Math.sin(elapsedS*1.8)*2.4;
+  if(c.frozen) bob = Math.sin(elapsedS*0.5)*1.1;
+
+  const floatLift = model.gravitic ? 6 + Math.sin(elapsedS*0.9)*3 : 0;
+
+  let shiverX = 0;
+  if(shiver){
+    const intensity = hunger<=10 ? 1.6 : 0.8;
+    shiverX = (Math.sin(elapsedS*40)+Math.sin(elapsedS*63))*intensity;
+  }
+
+  // Camouflage fades toward the surroundings; void specimens flicker translucent instead.
+  let camoAlpha = 1;
+  if(model.camouflage) camoAlpha = 0.35 + 0.65*Math.abs(Math.sin(elapsedS*0.35));
+  else if(model.voidy) camoAlpha = 0.55 + 0.45*Math.abs(Math.sin(elapsedS*0.5+1));
+
+  if(tNow > sprRuntime.nextBlinkAt){
+    sprRuntime.blinkUntil = tNow + 140;
+    sprRuntime.nextBlinkAt = tNow + 2400 + Math.random()*3200;
+  }
+  const eyesClosed = c.frozen ? (Math.sin(elapsedS*0.5)<0.3) : (tNow < sprRuntime.blinkUntil);
+
+  if(model.vocal && tNow > sprRuntime.nextSoundWaveAt){
+    sprRuntime.soundWaveUntil = tNow + 900;
+    sprRuntime.nextSoundWaveAt = tNow + 4000 + Math.random()*4000;
+  }
+  if(model.psychic && tNow > sprRuntime.nextPsychicAt){
+    sprRuntime.psychicUntil = tNow + 1600;
+    sprRuntime.nextPsychicAt = tNow + 5000 + Math.random()*5000;
+  }
+
+  const cx = c.frozen ? SPR_W/2 : sprRuntime.x + shiverX;
+  const cy = groundY - floatLift + bob;
+
+  /* ---- evolution flash: a quick grow/flash instead of the sprite quietly getting bigger ---- */
+  if(inFlash){
+    const p = clamp(flashElapsed/1100, 0, 1);
+    const flashAlpha = p<0.25 ? p/0.25 : Math.max(0, 1-((p-0.25)/0.75));
+    const growT = clamp((flashElapsed-80)/700, 0, 1);
+    const bounce = growT<1 ? (0.5 + 0.7*Math.sin(growT*Math.PI*0.95)) : 1;
+    drawSpecimenBody(ctx, model, cx, cy, {scaleMul:0.4+0.6*bounce, silhouette:growT<0.8});
+    ctx.fillStyle="rgba(255,255,255,"+(flashAlpha*0.85)+")";
+    ctx.fillRect(0,0,SPR_W,SPR_H);
+    if(p>=1) sprRuntime.evoFlashStart = 0;
+  } else {
+    drawSpecimenBody(ctx, model, cx, cy, {closed:eyesClosed, camoAlpha, sleeping:c.frozen});
+  }
+
+  // Vocal sound-wave pop
+  if(tNow < sprRuntime.soundWaveUntil){
+    const p = 1-((sprRuntime.soundWaveUntil-tNow)/900);
+    ctx.save(); ctx.globalAlpha = 1-p; ctx.strokeStyle="#e8e0c0"; ctx.lineWidth=1.4;
+    for(let i=0;i<3;i++){ ctx.beginPath(); ctx.arc(cx+16, cy-28, 4+p*10+i*3, -0.6, 0.6); ctx.stroke(); }
+    ctx.restore();
+  }
+  // Psychic orbiting sparkle
+  if(tNow < sprRuntime.psychicUntil){
+    const ang = elapsedS*4;
+    pxRect(ctx, cx+Math.cos(ang)*14-1, cy-30+Math.sin(ang)*6-1, 2,2, "#e0b8ff", 0.85);
+  }
+  // Dozing Zzz while frozen
+  if(c.frozen && Math.sin(elapsedS*0.5)>0.3){
+    ctx.save(); ctx.globalAlpha=0.7; ctx.fillStyle="#bcd8ec"; ctx.font="9px monospace";
+    ctx.fillText("z", cx+14, cy-34);
+    ctx.restore();
+  }
+}
+
+function renderSpecimenScreenHtml(c, dead){
+  if(!state.settings.showSprite) return "";
+  return `
+    <div class="sheet obs-frame">
+      <h2>Observation Window</h2>
+      <div class="obs-screen-shell">
+        <canvas id="specimenCanvas"></canvas>
+        <div class="obs-live ${dead?"":"on"}"><span class="obs-live-dot"></span>${dead?"NO SIGNAL":"LIVE"}</div>
+      </div>
+      <div class="obs-caption">
+        <span class="mono">${dead?"NO SIGNAL":"OBSERVING &mdash; "+esc(designation(c))}</span>
+        <div class="obs-btnrow">
+          <button class="obs-btn" id="btnSpecimenSnapshot" type="button">Snapshot</button>
+          <button class="obs-btn" id="btnSpecimenGif" type="button">Save GIF (3s)</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderEmptyObservationHtml(){
+  if(!state.settings.showSprite) return "";
+  return `
+    <div class="sheet obs-frame">
+      <h2>Observation Window</h2>
+      <div class="obs-screen-shell">
+        <canvas id="specimenCanvas"></canvas>
+        <div class="obs-live"><span class="obs-live-dot"></span>STANDBY</div>
+      </div>
+      <div class="obs-caption">
+        <span class="mono">NO SPECIMEN IN CONTAINMENT</span>
+      </div>
+    </div>
+  `;
+}
+
+/* Builds a bordered "case photo" canvas around a raw sprite-canvas capture: a letterhead band
+   naming the specimen/keeper/timestamp above and below the image. Shared by the PNG snapshot and
+   every GIF frame so both exports look like a filed observation record rather than a bare crop. */
+function composeFramedCanvas(sourceCanvas, meta){
+  const scale = 3;
+  const TOP = 46, BOTTOM = 26;
+  const w = SPR_W*scale, h = SPR_H*scale;
+  const out = document.createElement("canvas");
+  out.width = w; out.height = h+TOP+BOTTOM;
+  const ctx = out.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  ctx.fillStyle = "#181410"; ctx.fillRect(0,0,out.width,out.height);
+  ctx.drawImage(sourceCanvas, 0, TOP, w, h);
+
+  ctx.strokeStyle = "#4a4128"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,TOP+0.5); ctx.lineTo(w,TOP+0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,TOP+h+0.5); ctx.lineTo(w,TOP+h+0.5); ctx.stroke();
+  ctx.strokeStyle = "#332b1c"; ctx.strokeRect(0.5,0.5,out.width-1,out.height-1);
+
+  ctx.fillStyle = "#e8dcb0";
+  ctx.font = "bold 15px 'Courier Prime', monospace";
+  ctx.textAlign = "left";
+  ctx.fillText(meta.title, 10, 21);
+  ctx.fillStyle = "#a89a68";
+  ctx.font = "10px 'Courier Prime', monospace";
+  ctx.fillText(meta.subtitle||"", 10, 37);
+
+  ctx.fillStyle = "#c9bd93";
+  ctx.font = "10px 'Courier Prime', monospace";
+  ctx.textAlign = "left";
+  ctx.fillText("KEEPER: "+(meta.keeper||"UNASSIGNED"), 10, TOP+h+18);
+  ctx.textAlign = "right";
+  ctx.fillText(meta.timestamp, out.width-10, TOP+h+18);
+  ctx.textAlign = "left";
+
+  return out;
+}
+
+function specimenExportMeta(c, dead){
+  return {
+    title: designation(c)+(c.nickname?' "'+c.nickname+'"':""),
+    subtitle: "Stage "+stageFromHours(c.activeMs/HOUR)+" \u00b7 "+containmentClass(c)+(dead?" \u00b7 TERMINATED":""),
+    keeper: (state.profile.name||"").trim().toUpperCase(),
+    timestamp: fmtStampDateTime(now())
+  };
+}
+
+function initSpecimenScreen(c, dead){
+  stopSpecimenAnim();
+  stopEmptyAnim();
+  if(!state.settings.showSprite) return;
+  const canvas = $("#specimenCanvas");
+  if(!canvas) return;
+  canvas.width = SPR_W; canvas.height = SPR_H;
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  function loop(){
+    if(activeTab!=="field" || !state.settings.showSprite || !document.body.contains(canvas)){
+      sprAnimHandle = null;
+      return;
+    }
+    if(!document.hidden){
+      try{ drawSpecimenFrame(canvas, ctx, c, dead); }catch(e){ /* cosmetic-only: never break the app */ }
+    }
+    sprAnimHandle = requestAnimationFrame(loop);
+  }
+  loop();
+
+  const snapBtn = $("#btnSpecimenSnapshot");
+  if(snapBtn) snapBtn.onclick = ()=>{
+    const framed = composeFramedCanvas(canvas, specimenExportMeta(c, dead));
+    framed.toBlob(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = designation(c).replace(/[^a-z0-9-]+/gi,"_")+"_snapshot.png";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    });
+  };
+
+  const gifBtn = $("#btnSpecimenGif");
+  if(gifBtn) gifBtn.onclick = async ()=>{
+    if(gifBtn.disabled) return;
+    gifBtn.disabled = true;
+    const origLabel = gifBtn.textContent;
+    try{
+      gifBtn.textContent = "Recording\u2026";
+      const { GIFEncoder, quantize, applyPalette } = MiniGIF;
+      const totalMs = 3000, fps = 10, frameDelay = Math.round(1000/fps);
+      const totalFrames = Math.round(totalMs/frameDelay);
+      const meta = specimenExportMeta(c, dead);
+      const frames = [];
+      for(let i=0;i<totalFrames;i++){
+        const framed = composeFramedCanvas(canvas, meta);
+        const fctx = framed.getContext("2d");
+        const imgData = fctx.getImageData(0,0,framed.width,framed.height);
+        frames.push({data:imgData.data, width:framed.width, height:framed.height});
+        if(i<totalFrames-1) await new Promise(r=>setTimeout(r, frameDelay));
+      }
+      gifBtn.textContent = "Encoding\u2026";
+      await new Promise(r=>setTimeout(r, 0)); // let the label repaint before the synchronous encode
+      const enc = GIFEncoder();
+      frames.forEach(f=>{
+        const palette = quantize(f.data, 256);
+        const index = applyPalette(f.data, palette);
+        enc.writeFrame(index, f.width, f.height, {palette, delay: frameDelay});
+      });
+      enc.finish();
+      const blob = new Blob([enc.bytes()], {type:"image/gif"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = designation(c).replace(/[^a-z0-9-]+/gi,"_")+"_clip.gif";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+      toast("Saved 3s GIF.", "");
+    }catch(e){
+      toast("Could not create GIF.", "danger");
+    }finally{
+      gifBtn.disabled = false;
+      gifBtn.textContent = origLabel;
+    }
+  };
+}
+
+
 function renderField(){
   const el = $("#panel-field");
   const c = state.creature;
   if(!c){
+    stopSpecimenAnim();
     const stored = state.incubator;
     el.innerHTML = `
+      ${renderEmptyObservationHtml()}
       <div class="sheet">
         <h2>Field Report</h2>
         <p class="muted">No active specimen.</p>
@@ -2772,12 +3833,14 @@ function renderField(){
       </div>
       <div class="sheet"><h2>Field Log</h2>${renderLogHtml()}</div>
     `;
+    initEmptyObservationScreen();
     $("#btnNewSpecimen").onclick=()=>{ startNewCreature(); save(); renderAll(); };
     if($("#btnGoIncubator")) $("#btnGoIncubator").onclick=()=>switchTab("incubator");
     return;
   }
   if(!c.alive){
     el.innerHTML = `
+      ${renderSpecimenScreenHtml(c, true)}
       <div class="sheet">
         <h2>Case Closed</h2>
         <p><span class="stampbox" style="color:var(--danger)">TERMINATED</span></p>
@@ -2787,6 +3850,7 @@ function renderField(){
       </div>
       <div class="sheet"><h2>Field Log</h2>${renderLogHtml()}</div>
     `;
+    initSpecimenScreen(c, true);
     $("#btnNewSpecimen").onclick=()=>{ startNewCreature(); save(); renderAll(); };
     return;
   }
@@ -2799,6 +3863,7 @@ function renderField(){
   const cls = containmentClass(c);
 
   el.innerHTML = `
+    ${renderSpecimenScreenHtml(c, false)}
     <div class="sheet">
       <h2>Field Report</h2>
       <div class="row" style="justify-content:space-between;">
@@ -2849,6 +3914,7 @@ function renderField(){
     </div>
   `;
 
+  initSpecimenScreen(c, false);
   $("#btnFeed").onclick = openFeedModal;
   if($("#btnResolveStage")) $("#btnResolveStage").onclick = openStageChoiceModal;
   $("#btnFreeze").onclick = ()=>{
@@ -3527,6 +4593,13 @@ function renderSettings(){
       </p>
     </div>
     <div class="sheet">
+      <h2>Display</h2>
+      <label class="row" style="cursor:pointer; align-items:center;">
+        <input type="checkbox" id="chkShowSprite" ${state.settings.showSprite?"checked":""}>
+        <span>Show animated specimen sprite (Observation Window)</span>
+      </label>
+    </div>
+    <div class="sheet">
       <h2>Danger Zone</h2>
       <button class="btn danger" id="btnReset">Full Reset</button>
       <p class="muted small">Erases your specimen, currency, inventory, reading log and archive permanently. You'll be asked separately whether to carry your Keeper profile (name/photo/rank/service record) into the new save.</p>
@@ -3614,6 +4687,11 @@ function renderSettings(){
     save();
     restartAutosave();
     toast("Autosave set to every "+v+" minute(s).", "");
+  };
+  $("#chkShowSprite").onchange = (e)=>{
+    state.settings.showSprite = !!e.target.checked;
+    save();
+    if(activeTab==="field") renderField();
   };
   $("#btnReset").onclick=()=>{
     if(confirm("This will permanently erase ALL progress, including your archive. Are you absolutely sure?")){
