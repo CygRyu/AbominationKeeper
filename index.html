@@ -1535,7 +1535,7 @@ function defaultState(){
     discovered: {parts:[], traits:[]}, // ids ever seen on any specimen, current or archived
     stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0},
     achievements: {}, // id -> {at: timestamp}
-    settings: {autosaveMin:5, lastAckAway:0, showSprite:true},
+    settings: {autosaveMin:5, lastAckAway:0, showSprite:true, fullView:false},
     scientists: DEFAULT_SCIENTISTS.map(n=>({name:n, isDefault:true})),
     meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now(), lastScientist: null},
     profile: freshProfile()
@@ -1610,6 +1610,7 @@ function normalizeState(s){
   if(typeof s.settings.autosaveMin!=="number") s.settings.autosaveMin = 5;
   if(typeof s.settings.lastAckAway!=="number") s.settings.lastAckAway = 0;
   if(typeof s.settings.showSprite!=="boolean") s.settings.showSprite = true;
+  if(typeof s.settings.fullView!=="boolean") s.settings.fullView = false;
   s.meta = (s.meta && typeof s.meta==="object") ? s.meta : {};
   if(typeof s.meta.createdAt!=="number") s.meta.createdAt = now();
   if(typeof s.meta.lastTickAt!=="number") s.meta.lastTickAt = now();
@@ -2193,6 +2194,7 @@ function feedCreature(foodId){
   state.inventory[foodId]--;
   state.stats.feeds++;
   bumpLifetime("feeds");
+  triggerSpecimenFlinch();
   const before = c.hunger;
   c.hunger = clamp(c.hunger + food.hunger, 0, 100);
   if(c.hunger>0) c.hungerZeroAt=null;
@@ -3137,25 +3139,74 @@ function specimenHasRarity(c, rarity){
   return check(c.parts,BODY_PARTS) || check(c.traits,TRAITS);
 }
 
-/* Builds the stacked-row silhouette (array of row widths, in SPR_UNIT blocks) for a body "group".
-   rng is consumed to add small per-specimen jaggedness so identical parts don't render pixel-
-   identical between two specimens sharing the same category/stage. */
-function bodySilhouette(group, rng){
-  let rows;
+/* Builds the stacked-row silhouette for a body "group": an array of row widths (in SPR_UNIT
+   blocks) plus a parallel array of horizontal row offsets. rng is consumed to distort the base
+   profile into something asymmetric and wrong-looking -- every row gets ragged, uneven edges (not
+   just the "jagged"/"hard" groups anymore), a handful of rows are yanked into tumorous bulges or
+   sucked-in pinches (each also shoving that row sideways, which is what reads as a lump rather
+   than a smooth taper), and the whole silhouette gets a slight overall cant so it never sits
+   symmetrically on its own centerline. Purely cosmetic, but this is the main lever for "grotesque
+   and weird" vs. the old clean cartoon-blob outline. */
+function bodySilhouette(group, rng, severity){
+  severity = severity||0;
+  let base;
   switch(group){
-    case "hard": rows=[3,6,8,9,9,9,8,7,5]; break;
-    case "cap": rows=[9,10,10,8,6,5,4,3,2]; break;
-    case "jagged": rows=[2,5,7,8,9,8,7,6,4]; break;
-    case "diamond": rows=[1,3,5,7,9,7,5,3,1]; break;
-    case "elong": rows=[3,6,8,9,8,7,6,5,3]; break;
-    case "boxy": rows=[8,8,8,8,8,8,8,8,8]; break;
-    default: rows=[2,5,7,8,9,9,8,7,4]; // blob
+    case "hard": base=[3,6,8,9,9,9,8,7,5]; break;
+    case "cap": base=[9,10,10,8,6,5,4,3,2]; break;
+    case "jagged": base=[2,5,7,8,9,8,7,6,4]; break;
+    case "diamond": base=[1,3,5,7,9,7,5,3,1]; break;
+    case "elong": base=[3,6,8,9,8,7,6,5,3]; break;
+    case "boxy": base=[8,8,8,8,8,8,8,8,8]; break;
+    default: base=[2,5,7,8,9,9,8,7,4]; // blob
   }
-  const jaggy = (group==="jagged"||group==="hard");
-  return rows.map(w=>{
-    const jitter = jaggy ? Math.round((rng()-0.5)*2) : 0;
-    return Math.max(1, w+jitter);
-  });
+  const rows = base.slice();
+  const offs = base.map(()=>0);
+
+  // Ragged edges on every silhouette -- no group gets a clean cartoon outline anymore. More
+  // advanced/dangerous specimens get rougher edges on top of the baseline.
+  const jitterAmp = 2.4 * (1 + severity*0.7);
+  for(let i=0;i<rows.length;i++){
+    rows[i] = Math.max(1, rows[i] + (rng()-0.5)*jitterAmp);
+  }
+
+  // A few bulge/pinch events, each also dragging that row sideways -- the source of the
+  // lopsided, tumorous silhouette instead of a smooth radial taper. Higher-severity specimens
+  // (later life stage, more dangerous containment class) accumulate more of these.
+  const eventCount = 2 + Math.floor(rng()*3) + Math.round(severity*3);
+  for(let e=0;e<eventCount;e++){
+    const idx = Math.floor(rng()*rows.length);
+    const outward = rng() < 0.7;
+    const mag = (0.35 + rng()*0.9) * (outward?1:-0.55) * (1+severity*0.4);
+    rows[idx] = Math.max(1, rows[idx] + rows[idx]*mag);
+    offs[idx] += (rng()-0.5)*rows[idx]*0.75;
+  }
+
+  // Overall lean so the body reads as canted/off-balance rather than sitting square.
+  const lean = (rng()-0.5)*1.2*(1+severity*0.5);
+  for(let i=0;i<rows.length;i++) offs[i] += lean*(i/Math.max(1,rows.length-1));
+
+  return {rows, offs};
+}
+
+/* A handful of small protrusions (bony spikes, boil-like bulges) fixed to the silhouette edge at
+   birth -- extra "something is growing out of it wrong" detail layered on top of the row shape
+   itself. Drawn in drawSpecimenBody, skipped during the flat evolution-flash silhouette pass.
+   severity (0..1, from life stage + containment class) adds more of them onto further-along
+   specimens. */
+function bodyGrowths(rng, severity){
+  severity = severity||0;
+  const count = 1 + Math.floor(rng()*2) + Math.round(severity*3);
+  const growths = [];
+  for(let i=0;i<count;i++){
+    growths.push({
+      rowT: rng(),
+      side: rng()<0.5 ? -1 : 1,
+      len: (0.55 + rng()*1.15) * (1+severity*0.3),
+      wid: 0.35 + rng()*0.55,
+      kind: rng()<0.55 ? "spike" : "boil"
+    });
+  }
+  return growths;
 }
 
 /* Full descriptor used to draw a frame. Rebuilt every render call -- lists involved are short
@@ -3189,7 +3240,13 @@ function buildSpecimenModel(c){
   const has = f => !!fams[f];
 
   const rngSil = seededRng(c.uid+"|silhouette");
-  const rows = bodySilhouette(pal.group, rngSil);
+  const stageSeverity = clamp((stage-1)/4, 0, 1);
+  const classSeverity = {SAFE:0, EUCLID:0.55, KETER:1}[containmentClass(c)] || 0;
+  const severity = stageSeverity*0.5 + classSeverity*0.5;
+  const {rows, offs} = bodySilhouette(pal.group, rngSil, severity);
+
+  const rngGrowth = seededRng(c.uid+"|growths");
+  const growths = bodyGrowths(rngGrowth, severity);
 
   const rngScale = seededRng(c.uid+"|scale");
   const vScale = 0.92 + rngScale()*0.16;
@@ -3210,7 +3267,7 @@ function buildSpecimenModel(c){
   });
 
   return {
-    stage, cat, pal, rows, vScale,
+    stage, cat, pal, rows, offs, growths, vScale,
     scale: 0.62 + stage*0.095,
     legendary: specimenHasRarity(c,"legendary"),
     rare: specimenHasRarity(c,"rare"),
@@ -3239,11 +3296,32 @@ function buildSpecimenModel(c){
 let sprAnimHandle = null;
 const sprRuntime = {
   uid:null, x:0, targetX:0, nextWanderAt:0,
-  blinkUntil:0, nextBlinkAt:0,
+  blinkUntilL:0, nextBlinkAtL:0, blinkUntilR:0, nextBlinkAtR:0,
   soundWaveUntil:0, nextSoundWaveAt:0,
   psychicUntil:0, nextPsychicAt:0,
   lastStage:null, evoFlashStart:0,
-  lastPartsSig:null
+  lastPartsSig:null,
+  // Stutter/snap: motion occasionally freezes mid-step for a beat, then jumps the rest of the
+  // way instantly instead of interpolating smoothly -- reads like a dropped frame.
+  nextStutterAt:0, stutterUntil:0,
+  // Idle "noticing": every couple of minutes it stops wandering, drifts to center, and holds
+  // still facing the viewer with eyes wide -- implies awareness rather than being purely inert.
+  nextNoticeAt:0, noticeUntil:0,
+  // Approach: rarer -- it walks toward the slit (grows in scale, drifts up) and stares, holding
+  // for a variable, occasionally much longer, duration before retreating back to wandering.
+  nextApproachAt:0, approaching:false, approachStartAt:0, approachHoldMs:0,
+  // Gaze drift: small, occasional look-away -- eyes shift off-center for a moment then snap
+  // back, instead of always staring dead-ahead. Suppressed while noticing/approaching.
+  nextGazeCheckAt:0, gazeUntil:0, gazeDX:0, gazeDY:0,
+  // Head tilt: a brief, independent cant of just the head -- a curious/quizzical tic distinct
+  // from the body's fixed lean. Eases in, holds briefly, eases out. Suppressed while staring.
+  nextTiltCheckAt:0, tiltActive:false, tiltStartAt:0, tiltHoldMs:0, tiltAngle:0,
+  // Flinch: a quick recoil jolt + wince, triggered externally (feeding, a rampage event) via
+  // triggerSpecimenFlinch() rather than on a timer. flinchRequestId/handledId is how the
+  // (possibly game-logic-driven, off animation-loop) trigger hands off to the render loop.
+  flinchRequestId:0, flinchHandledId:0, flinchStartAt:0, flinchUntil:0, flinchDir:0,
+  // Render glitch: a very brief (single/double-frame) corrupted double-exposure.
+  nextGlitchAt:0, glitchUntil:0, glitchOffset:0
 };
 
 function specimenPartsSig(c){
@@ -3255,8 +3333,10 @@ function sprResetRuntime(c, model){
   sprRuntime.x = SPR_W/2;
   sprRuntime.targetX = SPR_W/2;
   sprRuntime.nextWanderAt = 0;
-  sprRuntime.blinkUntil = 0;
-  sprRuntime.nextBlinkAt = 0;
+  sprRuntime.blinkUntilL = 0;
+  sprRuntime.nextBlinkAtL = 0;
+  sprRuntime.blinkUntilR = 0;
+  sprRuntime.nextBlinkAtR = 0;
   sprRuntime.soundWaveUntil = 0;
   sprRuntime.nextSoundWaveAt = 0;
   sprRuntime.psychicUntil = 0;
@@ -3264,6 +3344,37 @@ function sprResetRuntime(c, model){
   sprRuntime.lastStage = model.stage;
   sprRuntime.evoFlashStart = 0;
   sprRuntime.lastPartsSig = specimenPartsSig(c);
+  sprRuntime.nextStutterAt = 0;
+  sprRuntime.stutterUntil = 0;
+  sprRuntime.nextNoticeAt = 0;
+  sprRuntime.noticeUntil = 0;
+  sprRuntime.nextApproachAt = 0;
+  sprRuntime.approaching = false;
+  sprRuntime.approachStartAt = 0;
+  sprRuntime.approachHoldMs = 0;
+  sprRuntime.nextGazeCheckAt = 0;
+  sprRuntime.gazeUntil = 0;
+  sprRuntime.gazeDX = 0;
+  sprRuntime.gazeDY = 0;
+  sprRuntime.nextTiltCheckAt = 0;
+  sprRuntime.tiltActive = false;
+  sprRuntime.tiltStartAt = 0;
+  sprRuntime.tiltHoldMs = 0;
+  sprRuntime.tiltAngle = 0;
+  // Don't cancel a flinch already in flight, but drop any pending request from the previous
+  // specimen so switching creatures (e.g. via Incubator) can't fire a stale flinch on the new one.
+  sprRuntime.flinchHandledId = sprRuntime.flinchRequestId;
+  sprRuntime.nextGlitchAt = 0;
+  sprRuntime.glitchUntil = 0;
+  sprRuntime.glitchOffset = 0;
+}
+
+/* Requests a flinch reaction (recoil jolt + wince) on the next render frame. Safe to call from
+   game-logic code that has nothing to do with the animation loop (feeding, a rampage event) --
+   it just bumps a request counter; drawSpecimenFrame picks it up and stages the actual timed
+   animation using its own performance.now(). */
+function triggerSpecimenFlinch(){
+  sprRuntime.flinchRequestId = (sprRuntime.flinchRequestId||0) + 1;
 }
 
 function stopSpecimenAnim(){
@@ -3282,7 +3393,14 @@ function sprLighting(){
 }
 function sprLerp(a,b,t){return a+(b-a)*t;}
 function sprLerpColor(c1,c2,t){
-  const p=s=>[parseInt(s.substr(1,2),16),parseInt(s.substr(3,2),16),parseInt(s.substr(5,2),16)];
+  // Accepts either "#rrggbb" or "rgb(r,g,b)" -- the latter shows up because this function's own
+  // output (used for per-specimen category tinting) is frequently fed back in as an input for a
+  // second lerp pass (e.g. darkening an already-tinted palette color into the silhouette tone).
+  const p=s=>{
+    if(s[0]==="#") return [parseInt(s.substr(1,2),16),parseInt(s.substr(3,2),16),parseInt(s.substr(5,2),16)];
+    const m = s.match(/[\d.]+/g)||[0,0,0];
+    return [parseFloat(m[0]),parseFloat(m[1]),parseFloat(m[2])];
+  };
   const a=p(c1), b=p(c2);
   const r=Math.round(sprLerp(a[0],b[0],t)), g=Math.round(sprLerp(a[1],b[1],t)), bl=Math.round(sprLerp(a[2],b[2],t));
   return "rgb("+r+","+g+","+bl+")";
@@ -3294,24 +3412,36 @@ function pxRect(ctx,x,y,w,h,color,alpha){
   if(alpha!=null) ctx.globalAlpha=1;
 }
 
-/* Draws the sprite body + attachments centered on (cx,cyCenter). opts: closed (eyes shut),
+/* Draws the sprite body + attachments centered on (cx,cyCenter). opts: closed (eyes shut, both --
+   fallback when closedL/closedR aren't given), closedL/closedR (independent per-eye blink),
    gray (desaturated, for a terminated specimen), camoAlpha (overall blend alpha), scaleMul
-   (evolution-flash grow animation), silhouette (flat flash-grow silhouette), sleeping (frozen). */
+   (evolution-flash grow animation, also reused for the approach-to-slit stare and flinch squash),
+   silhouette (flat flash-grow silhouette), sleeping (frozen), gazeDX/gazeDY (small occasional
+   eye-look offset, in head-width/unit-height fractions), headTilt (radians, brief head-only
+   rotation independent of the body's fixed lean). */
 function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
   opts = opts||{};
   const rows = model.rows;
+  const offs = model.offs || rows.map(()=>0);
   const unitX = SPR_UNIT * model.scale * (opts.scaleMul!=null?opts.scaleMul:1);
   const unitY = unitX * model.vScale;
   const h = rows.length*unitY;
   const top = cyCenter - h*0.62;
+  const rowOffPx = i => (offs[i]||0)*unitX;
 
   ctx.save();
   ctx.globalAlpha = opts.camoAlpha!=null?opts.camoAlpha:1;
 
+  // Silhouette-first palette: the body reads as a dark shape with only a faint bleed of its
+  // category color through it, rather than a fully-lit cartoon fill. Accent ("glow") stays close
+  // to full strength -- it's reserved for eyes and mutation cues, the only things that should
+  // actually shine out of the dark.
   const gray = opts.gray;
-  const body = gray? "#5a5a52" : model.pal.body;
-  const shade = gray? "#3a3a34" : model.pal.shade;
-  const hi = gray? "#7a7a70" : model.pal.hi;
+  const ghost = opts.ghost;
+  const body = ghost ? model.pal.accent : (gray? "#3f3f39" : sprLerpColor("#08080a", model.pal.body, 0.22));
+  const shade = ghost ? model.pal.accent : (gray? "#201f1c" : sprLerpColor("#020203", model.pal.shade, 0.12));
+  const hi = ghost ? model.pal.accent : (gray? "#63635a" : sprLerpColor("#08080a", model.pal.hi, 0.4));
+  const glow = gray? "#9a9a90" : model.pal.accent;
 
   // Rarity glow: legendary pulses; rare gets a subtler steady halo.
   if(!gray && (model.legendary||model.rare)){
@@ -3320,18 +3450,19 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
     ctx.save();
     ctx.globalAlpha *= pulse;
     rows.forEach((w,i)=>{
-      const rw=(w+2)*unitX;
-      pxRect(ctx, cx-rw/2, top+i*unitY-1, rw, unitY+2, glowColor);
+      const rw=(w+2)*unitX, rowOff=rowOffPx(i);
+      pxRect(ctx, cx+rowOff-rw/2, top+i*unitY-1, rw, unitY+2, glowColor);
     });
     ctx.restore();
   }
 
-  // Legs
+  // Legs -- asymmetric stance, dragged sideways with the last row's offset
   const legW = unitX*0.9, legH = unitY*1.6;
+  const legRowOff = rowOffPx(rows.length-1);
   const legSpread = rows[rows.length-1]*unitX*0.32;
-  [-1,1].forEach(side=>pxRect(ctx, cx+side*legSpread-legW/2, top+h-unitY*0.4, legW, legH, shade));
+  [-1,1].forEach(side=>pxRect(ctx, cx+legRowOff+side*legSpread-legW/2, top+h-unitY*0.4, legW, legH, shade));
   if(model.extraLegsPair){
-    [-1,1].forEach(side=>pxRect(ctx, cx+side*(legSpread*1.7)-legW/2, top+h-unitY*0.2, legW*0.85, legH*0.75, shade, 0.9));
+    [-1,1].forEach(side=>pxRect(ctx, cx+legRowOff+side*(legSpread*1.7)-legW/2, top+h-unitY*0.2, legW*0.85, legH*0.75, shade, 0.9));
   }
 
   // Tail
@@ -3344,99 +3475,163 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
     ctx.restore();
   }
 
-  // Wings
+  // Wings -- thin dark membranes with only a faint bleed of the accent color, not a solid
+  // colored fill
   if(model.hasWings && !opts.silhouette){
     const flap = opts.sleeping?0.05:0.15+0.1*Math.sin(performance.now()/300);
+    const wingColor = sprLerpColor(shade, glow, 0.4);
     [-1,1].forEach(side=>{
       ctx.save();
       ctx.translate(cx+side*rows[Math.floor(rows.length*0.4)]*unitX*0.55, top+h*0.35);
       ctx.rotate(side*(0.5+flap));
-      pxRect(ctx, -unitX*0.3, -unitY*1.6, unitX*0.7, unitY*2.4, model.pal.accent, 0.82);
+      pxRect(ctx, -unitX*0.3, -unitY*1.6, unitX*0.7, unitY*2.4, wingColor, 0.55);
       ctx.restore();
     });
   }
 
-  // Torso rows
+  // Torso rows -- each row can be shoved sideways by its own offset, which is what turns the
+  // stack into a lopsided, uneven mass instead of a symmetrical cartoon silhouette. During a
+  // render glitch, an extra unseeded per-frame jitter is added on top -- the shape briefly
+  // deforms and un-deforms rather than being a smooth animation.
   rows.forEach((w,i)=>{
     const rw = w*unitX;
+    const glitchJitter = opts.jitterFrame ? (Math.random()-0.5)*unitX*1.6 : 0;
+    const rowOff = rowOffPx(i) + glitchJitter;
     const rowColor = i > rows.length*0.62 ? shade : body;
-    pxRect(ctx, cx-rw/2, top+i*unitY, rw, unitY+0.5, opts.silhouette?shade:rowColor);
+    pxRect(ctx, cx+rowOff-rw/2, top+i*unitY, rw, unitY+0.5, opts.silhouette?shade:rowColor);
   });
 
-  if(!opts.silhouette){
-    // Highlight strip
-    rows.slice(0, Math.ceil(rows.length*0.4)).forEach((w,i)=>{
-      const rw=w*unitX;
-      pxRect(ctx, cx-rw/2, top+i*unitY, Math.max(2,rw*0.22), unitY*0.6, hi, 0.5);
+  // Growths -- bony spikes and boil-like bulges fixed to the silhouette edge
+  if(!opts.silhouette && model.growths){
+    model.growths.forEach(g=>{
+      const rowIdx = clamp(Math.floor(g.rowT*rows.length), 0, rows.length-1);
+      const rw = rows[rowIdx]*unitX, rowOff = rowOffPx(rowIdx);
+      const edgeX = cx+rowOff+g.side*(rw/2);
+      const y = top+rowIdx*unitY;
+      if(g.kind==="spike"){
+        ctx.save();
+        ctx.fillStyle = shade;
+        ctx.beginPath();
+        ctx.moveTo(edgeX, y);
+        ctx.lineTo(edgeX+g.side*unitX*g.len, y+unitY*(g.wid-0.15));
+        ctx.lineTo(edgeX, y+unitY*g.wid);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.arc(edgeX+g.side*unitX*g.wid*0.5, y+unitY*g.wid*0.3, unitX*g.wid*0.7, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
     });
-    // Skeletal rib overlay
+  }
+
+  if(!opts.silhouette){
+    // Faint rim light along one edge of the body -- the only "shine" the silhouette gets, a
+    // thin sliver rather than a blocky cartoon highlight
+    rows.forEach((w,i)=>{
+      const rw=w*unitX, rowOff=rowOffPx(i);
+      const edge = cx+rowOff+rw/2;
+      pxRect(ctx, edge-1, top+i*unitY, 1, unitY, hi, 0.24);
+    });
+    // Skeletal rib overlay -- pale bone lines faintly visible against the dark body
     if(model.skeletal){
       ctx.save();
-      ctx.strokeStyle = shade; ctx.globalAlpha *= 0.6; ctx.lineWidth=1;
+      ctx.strokeStyle = hi; ctx.globalAlpha *= 0.45; ctx.lineWidth=1;
       for(let i=3;i<rows.length-2;i+=2){
-        const rw = rows[i]*unitX*0.7;
-        ctx.beginPath(); ctx.moveTo(cx-rw/2, top+i*unitY+unitY/2); ctx.lineTo(cx+rw/2, top+i*unitY+unitY/2); ctx.stroke();
+        const rw = rows[i]*unitX*0.7, rowOff = rowOffPx(i);
+        ctx.beginPath(); ctx.moveTo(cx+rowOff-rw/2, top+i*unitY+unitY/2); ctx.lineTo(cx+rowOff+rw/2, top+i*unitY+unitY/2); ctx.stroke();
       }
       ctx.restore();
     }
-    // Dermal / skin pattern dots
+    // Dermal / mutation markers -- faint category-color tint, never a full-strength fill
     model.skinDots.forEach(d=>{
       const rowIdx = clamp(Math.floor(d.ty*rows.length), 0, rows.length-1);
-      const rw = rows[rowIdx]*unitX;
-      pxRect(ctx, cx-rw/2+d.tx*rw, top+rowIdx*unitY, unitX*0.35, unitY*0.35, model.dermal?hi:model.pal.accent, 0.65);
+      const rw = rows[rowIdx]*unitX, rowOff = rowOffPx(rowIdx);
+      pxRect(ctx, cx+rowOff-rw/2+d.tx*rw, top+rowIdx*unitY, unitX*0.32, unitY*0.32, glow, 0.4);
     });
 
     // Arms
     const armW=unitX*0.7, armH=unitY*1.5;
     const armRowIdx = Math.floor(rows.length*0.45);
     const armY = top+armRowIdx*unitY;
+    const armRowOff = rowOffPx(armRowIdx);
     const armSpread = rows[armRowIdx]*unitX*0.5;
-    [-1,1].forEach(side=>pxRect(ctx, cx+side*armSpread, armY, armW, armH, shade));
+    [-1,1].forEach(side=>pxRect(ctx, cx+armRowOff+side*armSpread, armY, armW, armH, shade));
     if(model.extraArmsPair){
-      [-1,1].forEach(side=>pxRect(ctx, cx+side*(armSpread+armW+1), armY+unitY*0.4, armW*0.8, armH*0.8, shade, 0.9));
+      [-1,1].forEach(side=>pxRect(ctx, cx+armRowOff+side*(armSpread+armW+1), armY+unitY*0.4, armW*0.8, armH*0.8, shade, 0.9));
     }
 
-    // Head bump(s)
+    // Head -- carried on the same offset as the row it sits on, so it leans with the body
+    // rather than floating dead-center over a lopsided torso. A separate, subtle head-tilt
+    // rotation (opts.headTilt) can also be layered on top -- a brief curious/quizzical cant of
+    // just the head, distinct from the body's fixed lean, without breaking stride or wander.
+    const headOff = rowOffPx(1);
+    const hcx = cx+headOff;
     const headW = rows[1]*unitX*0.9;
-    pxRect(ctx, cx-headW/2, top-unitY*0.7, headW, unitY*0.9, body);
-    if(model.hasSecondHead) pxRect(ctx, cx+headW*0.35, top-unitY*0.35, headW*0.55, unitY*0.7, shade, 0.9);
+    const headTilt = opts.headTilt||0;
+    const headPivotY = top-unitY*0.4;
+    ctx.save();
+    ctx.translate(hcx, headPivotY);
+    ctx.rotate(headTilt);
+    ctx.translate(-hcx, -headPivotY);
+    pxRect(ctx, hcx-headW/2, top-unitY*0.7, headW, unitY*0.9, body);
+    if(model.hasSecondHead) pxRect(ctx, hcx+headW*0.35, top-unitY*0.35, headW*0.55, unitY*0.7, shade, 0.9);
 
-    // Sensory antennae
+    // Sensory antennae -- thin, faintly glowing category-tinted lines
     if(model.sensors>0){
       const twitch = Math.sin(performance.now()/260)*0.25;
       ctx.save();
-      ctx.strokeStyle = model.pal.accent; ctx.lineWidth=1;
+      ctx.strokeStyle = glow; ctx.globalAlpha *= 0.8; ctx.lineWidth=1;
       ctx.beginPath();
-      ctx.moveTo(cx-headW*0.25, top-unitY*0.7); ctx.lineTo(cx-headW*0.25+Math.sin(twitch)*4, top-unitY*1.6);
-      ctx.moveTo(cx+headW*0.25, top-unitY*0.7); ctx.lineTo(cx+headW*0.25-Math.sin(twitch)*4, top-unitY*1.6);
+      ctx.moveTo(hcx-headW*0.25, top-unitY*0.7); ctx.lineTo(hcx-headW*0.25+Math.sin(twitch)*4, top-unitY*1.6);
+      ctx.moveTo(hcx+headW*0.25, top-unitY*0.7); ctx.lineTo(hcx+headW*0.25-Math.sin(twitch)*4, top-unitY*1.6);
       ctx.stroke();
       ctx.restore();
     }
 
-    // Eyes
+    // Eyes -- no lit socket anymore, just pinpricks of glowing accent color hanging in the
+    // dark; closed eyes vanish almost entirely rather than showing a drawn eyelid. While
+    // "noticing" (a rare idle behavior -- it stops and holds still facing the viewer), the eyes
+    // widen and brighten instead of blinking, implying awareness rather than being purely inert.
+    // Otherwise, the eyes get a small, occasional gaze drift (opts.gazeDX/gazeDY) -- a quick
+    // look off to one side that holds briefly then snaps back, like a living thing glancing
+    // around rather than staring dead ahead the whole time. The two base eyes blink on their
+    // own independent schedules (opts.closedL/closedR) rather than in lockstep -- any extra
+    // eyeJitter eyes just follow the left eye's timing for simplicity.
     const eyeY = top+unitY*0.1;
+    const eyeScale = opts.noticing ? 1.4 : 1;
+    const gazeDX = opts.gazeDX||0, gazeDY = opts.gazeDY||0;
     const eyeSpots = [{dx:-0.18,dy:0},{dx:0.18,dy:0}].concat(model.eyeJitter);
-    eyeSpots.forEach(({dx,dy})=>{
-      const exPx = cx+dx*headW, eyPx = eyeY+(dy||0)*unitY;
-      if(opts.closed){
-        pxRect(ctx, exPx-unitX*0.22, eyPx+unitY*0.15, unitX*0.44, unitY*0.14, "#160f0a");
+    eyeSpots.forEach(({dx,dy}, idx)=>{
+      const exPx = hcx+(dx+gazeDX)*headW, eyPx = eyeY+((dy||0)+gazeDY)*unitY;
+      const isClosed = idx===0 ? (opts.closedL!=null?opts.closedL:opts.closed)
+                      : idx===1 ? (opts.closedR!=null?opts.closedR:opts.closed)
+                      : (opts.closedL!=null?opts.closedL:opts.closed);
+      if(isClosed){
+        pxRect(ctx, exPx-unitX*0.16, eyPx+unitY*0.18, unitX*0.32, unitY*0.05, glow, 0.22);
       } else {
-        pxRect(ctx, exPx-unitX*0.22, eyPx-unitY*0.05, unitX*0.44, unitY*0.44, "#160f0a");
-        pxRect(ctx, exPx-unitX*0.08, eyPx+unitY*0.02, unitX*0.16, unitY*0.16, model.pal.accent);
+        pxRect(ctx, exPx-unitX*0.15*eyeScale, eyPx+unitY*0.05, unitX*0.3*eyeScale, unitY*0.3*eyeScale, glow, gray?0.55:(opts.noticing?1:0.9));
       }
     });
 
-    // Mouth
+    // Mouth -- jagged mouths show pale, glinting teeth against the dark body; plain mouths are
+    // just a subtle dark gash, since a solid black rect would vanish into the body entirely
     const mouthY = top+unitY*0.75;
     if(model.jaggedMouth){
       ctx.save();
-      ctx.strokeStyle="#160f0a"; ctx.lineWidth=1; ctx.beginPath();
-      for(let i=-3;i<=3;i++) ctx.lineTo(cx+i*unitX*0.18, mouthY+(i%2?unitY*0.18:0));
+      ctx.strokeStyle = sprLerpColor("#d8d0c0", glow, 0.25); ctx.globalAlpha *= 0.6; ctx.lineWidth=1;
+      ctx.beginPath();
+      for(let i=-3;i<=3;i++) ctx.lineTo(hcx+i*unitX*0.18, mouthY+(i%2?unitY*0.18:0));
       ctx.stroke();
       ctx.restore();
     } else {
-      pxRect(ctx, cx-unitX*0.4, mouthY, unitX*0.8, unitY*0.16, "#160f0a");
+      pxRect(ctx, hcx-unitX*0.4, mouthY, unitX*0.8, unitY*0.14, shade, 0.85);
     }
+    ctx.restore(); // head-tilt transform
   }
 
   ctx.restore();
@@ -3446,6 +3641,76 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
 /* Idle containment-window background shown when there's no active specimen (all incubated, or
    the last one was dismissed after death/termination) -- so the window reads as "vacant cell"
    rather than being hidden outright. Shares the same day/night lighting as the live sprite. */
+/* Ambient, module-level (not per-specimen) timer for the slit narrowing briefly on its own --
+   shared across the empty-cell and live-specimen views so the effect feels like something about
+   the containment window itself, not a per-creature animation. Rare by design: this should read
+   as a surprise, not a tic. */
+const slitRuntime = { nextPulseAt:0, pulseUntil:0, pulseStart:0 };
+
+/* Draws the containment window as a narrow horizontal viewing slit -- a bunker/mail-slot cut in
+   dark plating, riveted along both edges, with a soft inward vignette so the visible strip reads
+   as something glimpsed through a gap rather than a normal window. Applied as a post-process over
+   whatever frame was already drawn (background + sprite), so it works identically for the live
+   sprite, the empty/vacant-cell frame, and exported snapshots/GIFs. Skipped entirely when
+   state.settings.fullView is on. Very occasionally the slit itself narrows for a couple of
+   seconds, as if something on the other side is adjusting it. */
+function drawContainmentSlitOverlay(ctx){
+  const tNow = performance.now();
+  if(!slitRuntime.nextPulseAt) slitRuntime.nextPulseAt = tNow + 180000 + Math.random()*180000;
+  if(!slitRuntime.pulseUntil && tNow > slitRuntime.nextPulseAt){
+    slitRuntime.pulseStart = tNow;
+    slitRuntime.pulseUntil = tNow + 900 + Math.random()*900;
+  }
+  if(slitRuntime.pulseUntil && tNow > slitRuntime.pulseUntil){
+    slitRuntime.pulseUntil = 0;
+    slitRuntime.nextPulseAt = tNow + 240000 + Math.random()*300000;
+  }
+  let pulseAmt = 0;
+  if(slitRuntime.pulseUntil){
+    const dur = slitRuntime.pulseUntil - slitRuntime.pulseStart;
+    const t = clamp((tNow-slitRuntime.pulseStart)/dur, 0, 1);
+    pulseAmt = Math.sin(t*Math.PI)*0.55; // eases in, peaks mid-pulse, eases back out
+  }
+
+  const slitH = SPR_H*0.38*(1-pulseAmt*0.42);
+  const slitTop = SPR_H*0.60 - slitH/2;
+  const slitBottom = slitTop + slitH;
+
+  const plateGrad = ctx.createLinearGradient(0,0,0,SPR_H);
+  plateGrad.addColorStop(0,"#1c1a16");
+  plateGrad.addColorStop(1,"#100f0c");
+  ctx.fillStyle = plateGrad;
+  ctx.fillRect(0,0,SPR_W,slitTop);
+  ctx.fillRect(0,slitBottom,SPR_W,SPR_H-slitBottom);
+
+  // Riveted seam along each edge of the slit
+  ctx.fillStyle = "#3a352a";
+  ctx.fillRect(0,slitTop-2,SPR_W,2);
+  ctx.fillRect(0,slitBottom,SPR_W,2);
+  ctx.fillStyle = "#0a0906";
+  for(let x=6;x<SPR_W;x+=16){
+    ctx.beginPath(); ctx.arc(x, slitTop-1, 1.1, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x+8, slitBottom+1, 1.1, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Soft inward vignette so the strip itself feels peered-through, not just cropped
+  const vigTop = ctx.createLinearGradient(0,slitTop,0,slitTop+10);
+  vigTop.addColorStop(0,"rgba(0,0,0,0.55)"); vigTop.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle = vigTop; ctx.fillRect(0,slitTop,SPR_W,10);
+  const vigBot = ctx.createLinearGradient(0,slitBottom-10,0,slitBottom);
+  vigBot.addColorStop(0,"rgba(0,0,0,0)"); vigBot.addColorStop(1,"rgba(0,0,0,0.55)");
+  ctx.fillStyle = vigBot; ctx.fillRect(0,slitBottom-10,SPR_W,10);
+
+  // Rounded-off corners so the opening reads as a mail-slot rather than a hard rectangle
+  ctx.save();
+  ctx.fillStyle = "rgba(10,9,6,0.85)";
+  ctx.beginPath(); ctx.moveTo(0,slitTop); ctx.lineTo(SPR_W*0.05,slitTop); ctx.lineTo(0,slitTop+slitH*0.4); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(0,slitBottom); ctx.lineTo(SPR_W*0.05,slitBottom); ctx.lineTo(0,slitBottom-slitH*0.4); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(SPR_W,slitTop); ctx.lineTo(SPR_W*0.95,slitTop); ctx.lineTo(SPR_W,slitTop+slitH*0.4); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(SPR_W,slitBottom); ctx.lineTo(SPR_W*0.95,slitBottom); ctx.lineTo(SPR_W,slitBottom-slitH*0.4); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
 function drawEmptyFrame(canvas, ctx){
   ctx.clearRect(0,0,SPR_W,SPR_H);
   const lightT = sprLighting();
@@ -3467,6 +3732,8 @@ function drawEmptyFrame(canvas, ctx){
   ctx.font = "9px monospace"; ctx.textAlign = "center";
   ctx.fillText("NO SPECIMEN IN CONTAINMENT", SPR_W/2, SPR_H*0.5);
   ctx.textAlign = "left";
+
+  if(!state.settings.fullView) drawContainmentSlitOverlay(ctx);
 }
 
 let emptyAnimHandle = null;
@@ -3492,6 +3759,13 @@ function initEmptyObservationScreen(){
     emptyAnimHandle = requestAnimationFrame(loop);
   }
   loop();
+
+  const fvBtn = $("#btnSpecimenFullView");
+  if(fvBtn) fvBtn.onclick = ()=>{
+    state.settings.fullView = !state.settings.fullView;
+    save();
+    fvBtn.textContent = state.settings.fullView ? "Slit View" : "Full View";
+  };
 }
 
 function drawSpecimenFrame(canvas, ctx, c, dead){
@@ -3569,6 +3843,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     ctx.fillStyle="#c94d33"; ctx.font="bold 11px monospace"; ctx.textAlign="center";
     ctx.fillText("TERMINATED", SPR_W/2, SPR_H/2+4);
     ctx.textAlign="left";
+    if(!state.settings.fullView) drawContainmentSlitOverlay(ctx);
     return;
   }
 
@@ -3577,15 +3852,103 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   const shiver = !c.frozen && hunger<=25;
   const groundY = SPR_H*0.80;
 
-  if(!c.frozen && tNow > sprRuntime.nextWanderAt){
+  // Idle "noticing": every couple of minutes it stops wandering, drifts to dead-center, and
+  // holds still with eyes wide -- as if it just turned to face whoever's watching through the
+  // slit. Rare enough to be a surprise rather than a tic.
+  if(!sprRuntime.nextNoticeAt) sprRuntime.nextNoticeAt = tNow + 45000 + Math.random()*45000;
+  if(!c.frozen && !sprRuntime.noticeUntil && !sprRuntime.approaching && tNow > sprRuntime.nextNoticeAt){
+    sprRuntime.noticeUntil = tNow + 1800 + Math.random()*1400;
+  }
+  if(sprRuntime.noticeUntil && tNow > sprRuntime.noticeUntil){
+    sprRuntime.noticeUntil = 0;
+    sprRuntime.nextWanderAt = tNow + 600;
+    sprRuntime.nextNoticeAt = tNow + 60000 + Math.random()*70000;
+  }
+  const noticing = !!sprRuntime.noticeUntil;
+
+  // Approach: rarer and more unsettling than noticing -- instead of just turning in place, it
+  // closes the distance, walking straight toward the slit until it fills more of the frame, and
+  // holds there staring. The hold length is randomized on trigger and occasionally rolls much
+  // longer than usual, so most approaches are a few seconds but every so often it just... doesn't
+  // stop staring for a long while.
+  if(!sprRuntime.nextApproachAt) sprRuntime.nextApproachAt = tNow + 100000 + Math.random()*140000;
+  if(!c.frozen && !sprRuntime.approaching && !noticing && tNow > sprRuntime.nextApproachAt){
+    sprRuntime.approaching = true;
+    sprRuntime.approachStartAt = tNow;
+    sprRuntime.approachHoldMs = (Math.random()<0.22)
+      ? 7000 + Math.random()*9000   // sometimes longer
+      : 1600 + Math.random()*2200;  // usually brief
+  }
+  const APPROACH_IN = 1400, APPROACH_OUT = 1300;
+  let approachP = 0;
+  if(sprRuntime.approaching){
+    const el = tNow - sprRuntime.approachStartAt;
+    const total = APPROACH_IN + sprRuntime.approachHoldMs + APPROACH_OUT;
+    if(el < APPROACH_IN){
+      const t = el/APPROACH_IN;
+      approachP = t*t*(3-2*t); // ease in/out
+    } else if(el < APPROACH_IN + sprRuntime.approachHoldMs){
+      approachP = 1;
+    } else if(el < total){
+      const t = (el - APPROACH_IN - sprRuntime.approachHoldMs)/APPROACH_OUT;
+      approachP = 1-(t*t*(3-2*t));
+    } else {
+      sprRuntime.approaching = false;
+      sprRuntime.nextWanderAt = tNow + 500;
+      sprRuntime.nextApproachAt = tNow + 150000 + Math.random()*210000;
+      approachP = 0;
+    }
+  }
+  const approaching = sprRuntime.approaching;
+  const staring = noticing || approaching;
+
+  // Gaze drift: while not staring at the viewer, the eyes occasionally glance off to one side
+  // for a moment and snap back -- checked on an irregular cadence with a coin-flip so it never
+  // settles into a visible rhythm, the way a real animal's eyes wander without a fixed beat.
+  if(staring){
+    sprRuntime.gazeUntil = 0; sprRuntime.gazeDX = 0; sprRuntime.gazeDY = 0;
+  } else {
+    if(tNow > sprRuntime.nextGazeCheckAt){
+      sprRuntime.nextGazeCheckAt = tNow + 2600 + Math.random()*4200;
+      if(Math.random()<0.5){
+        sprRuntime.gazeUntil = tNow + 650 + Math.random()*1250;
+        sprRuntime.gazeDX = (Math.random()*2-1)*0.16;
+        sprRuntime.gazeDY = (Math.random()*2-1)*0.07;
+      }
+    }
+    if(sprRuntime.gazeUntil && tNow > sprRuntime.gazeUntil){
+      sprRuntime.gazeUntil = 0; sprRuntime.gazeDX = 0; sprRuntime.gazeDY = 0;
+    }
+  }
+
+  if(staring){
+    sprRuntime.targetX = SPR_W/2;
+  } else if(!c.frozen && tNow > sprRuntime.nextWanderAt){
     const range = SPR_W*0.28;
     sprRuntime.targetX = clamp(SPR_W/2 + (Math.random()*2-1)*range, SPR_W*0.22, SPR_W*0.78);
     sprRuntime.nextWanderAt = tNow + 2600 + Math.random()*2600;
   }
-  if(!c.frozen) sprRuntime.x += (sprRuntime.targetX - sprRuntime.x) * 0.02;
+
+  // Stutter/snap: motion occasionally freezes mid-step for a beat, then jumps the rest of the
+  // way instantly rather than interpolating smoothly -- reads as a dropped frame rather than
+  // an animation choice.
+  if(!sprRuntime.nextStutterAt) sprRuntime.nextStutterAt = tNow + 5000 + Math.random()*7000;
+  if(sprRuntime.stutterUntil && tNow > sprRuntime.stutterUntil){
+    sprRuntime.x += (sprRuntime.targetX - sprRuntime.x) * 0.7;
+    sprRuntime.stutterUntil = 0;
+    sprRuntime.nextStutterAt = tNow + 6000 + Math.random()*9000;
+  }
+  if(!c.frozen && !staring && !sprRuntime.stutterUntil && tNow > sprRuntime.nextStutterAt){
+    sprRuntime.stutterUntil = tNow + 220 + Math.random()*260;
+  }
+  const stuttering = !!sprRuntime.stutterUntil;
+  if(!c.frozen && !stuttering){
+    sprRuntime.x += (sprRuntime.targetX - sprRuntime.x) * (approaching ? 0.12 : (noticing ? 0.06 : 0.02));
+  }
 
   let bob = model.respiratory ? Math.sin(elapsedS*1.1)*3.6 : Math.sin(elapsedS*1.8)*2.4;
   if(c.frozen) bob = Math.sin(elapsedS*0.5)*1.1;
+  if(staring) bob *= 0.25;
 
   const floatLift = model.gravitic ? 6 + Math.sin(elapsedS*0.9)*3 : 0;
 
@@ -3595,16 +3958,74 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     shiverX = (Math.sin(elapsedS*40)+Math.sin(elapsedS*63))*intensity;
   }
 
+  // Head tilt: a brief, independent cant of just the head, distinct from the body's fixed lean
+  // -- reads as a quick "huh?" curiosity gesture rather than a change in stance. Checked on the
+  // same kind of irregular coin-flip cadence as gaze drift so the two don't fall into a visible
+  // pattern together, and suppressed entirely while staring (noticing/approaching hold the head
+  // dead-forward on purpose).
+  if(!sprRuntime.nextTiltCheckAt) sprRuntime.nextTiltCheckAt = tNow + 4000 + Math.random()*5000;
+  if(staring){
+    sprRuntime.tiltActive = false;
+  } else if(!sprRuntime.tiltActive && tNow > sprRuntime.nextTiltCheckAt){
+    sprRuntime.nextTiltCheckAt = tNow + 4500 + Math.random()*6500;
+    if(Math.random()<0.4){
+      sprRuntime.tiltActive = true;
+      sprRuntime.tiltStartAt = tNow;
+      sprRuntime.tiltHoldMs = 450 + Math.random()*900;
+      sprRuntime.tiltAngle = (Math.random()<0.5?-1:1) * (0.12+Math.random()*0.15);
+    }
+  }
+  let headTilt = 0;
+  if(sprRuntime.tiltActive){
+    const TILT_IN=240, TILT_OUT=320;
+    const el = tNow - sprRuntime.tiltStartAt;
+    const total = TILT_IN + sprRuntime.tiltHoldMs + TILT_OUT;
+    let tp;
+    if(el<TILT_IN){ const t=el/TILT_IN; tp=t*t*(3-2*t); }
+    else if(el<TILT_IN+sprRuntime.tiltHoldMs){ tp=1; }
+    else if(el<total){ const t=(el-TILT_IN-sprRuntime.tiltHoldMs)/TILT_OUT; tp=1-(t*t*(3-2*t)); }
+    else { sprRuntime.tiltActive=false; tp=0; }
+    headTilt = sprRuntime.tiltAngle*tp;
+  }
+
+  // Flinch: a quick recoil jolt + wince, requested externally via triggerSpecimenFlinch() (a
+  // feeding, a rampage event) rather than on any timer of its own. Purely a render effect --
+  // never touches game state -- so it's safe to fire from game-logic code that has no idea an
+  // animation loop exists.
+  if(sprRuntime.flinchRequestId !== sprRuntime.flinchHandledId){
+    sprRuntime.flinchHandledId = sprRuntime.flinchRequestId;
+    sprRuntime.flinchStartAt = tNow;
+    sprRuntime.flinchUntil = tNow + 380;
+    sprRuntime.flinchDir = Math.random()<0.5?-1:1;
+  }
+  let flinchP = 0;
+  if(tNow < sprRuntime.flinchUntil){
+    const el = tNow - sprRuntime.flinchStartAt;
+    const dur = sprRuntime.flinchUntil - sprRuntime.flinchStartAt;
+    const t = clamp(el/dur, 0, 1);
+    flinchP = Math.sin(t*Math.PI) * (1-t*0.3);
+  }
+  const flinchJerkX = flinchP*sprRuntime.flinchDir*6;
+  const flinchSquash = 1 - flinchP*0.16;
+  const flinchClosed = flinchP > 0.45;
+  if(flinchClosed){ eyesClosedL = true; eyesClosedR = true; }
+
   // Camouflage fades toward the surroundings; void specimens flicker translucent instead.
   let camoAlpha = 1;
   if(model.camouflage) camoAlpha = 0.35 + 0.65*Math.abs(Math.sin(elapsedS*0.35));
   else if(model.voidy) camoAlpha = 0.55 + 0.45*Math.abs(Math.sin(elapsedS*0.5+1));
 
-  if(tNow > sprRuntime.nextBlinkAt){
-    sprRuntime.blinkUntil = tNow + 140;
-    sprRuntime.nextBlinkAt = tNow + 2400 + Math.random()*3200;
+  if(tNow > sprRuntime.nextBlinkAtL){
+    sprRuntime.blinkUntilL = tNow + 120 + Math.random()*50;
+    sprRuntime.nextBlinkAtL = tNow + 2200 + Math.random()*3400;
   }
-  const eyesClosed = c.frozen ? (Math.sin(elapsedS*0.5)<0.3) : (tNow < sprRuntime.blinkUntil);
+  if(tNow > sprRuntime.nextBlinkAtR){
+    sprRuntime.blinkUntilR = tNow + 120 + Math.random()*50;
+    sprRuntime.nextBlinkAtR = tNow + 2200 + Math.random()*3400;
+  }
+  const frozenClosed = c.frozen && (Math.sin(elapsedS*0.5)<0.3);
+  let eyesClosedL = staring ? false : (c.frozen ? frozenClosed : (tNow < sprRuntime.blinkUntilL));
+  let eyesClosedR = staring ? false : (c.frozen ? frozenClosed : (tNow < sprRuntime.blinkUntilR));
 
   if(model.vocal && tNow > sprRuntime.nextSoundWaveAt){
     sprRuntime.soundWaveUntil = tNow + 900;
@@ -3615,8 +4036,22 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     sprRuntime.nextPsychicAt = tNow + 5000 + Math.random()*5000;
   }
 
-  const cx = c.frozen ? SPR_W/2 : sprRuntime.x + shiverX;
-  const cy = groundY - floatLift + bob;
+  // Render glitch: a very brief (single/double-frame) corrupted double-exposure -- purely a
+  // draw-time hiccup, never touches game state.
+  if(!sprRuntime.nextGlitchAt) sprRuntime.nextGlitchAt = tNow + 14000 + Math.random()*20000;
+  if(sprRuntime.glitchUntil && tNow > sprRuntime.glitchUntil){
+    sprRuntime.glitchUntil = 0;
+    sprRuntime.nextGlitchAt = tNow + 16000 + Math.random()*26000;
+  }
+  if(!c.frozen && !sprRuntime.glitchUntil && tNow > sprRuntime.nextGlitchAt){
+    sprRuntime.glitchUntil = tNow + 90 + Math.random()*90;
+    sprRuntime.glitchOffset = (Math.random()-0.5)*12;
+  }
+  const glitching = !!sprRuntime.glitchUntil;
+
+  const cx = (c.frozen ? SPR_W/2 : sprRuntime.x + shiverX) + flinchJerkX;
+  const cy = groundY - floatLift + bob - approachP*9;
+  const approachScaleMul = (1 + approachP*0.32) * flinchSquash;
 
   /* ---- evolution flash: a quick grow/flash instead of the sprite quietly getting bigger ---- */
   if(inFlash){
@@ -3629,7 +4064,13 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     ctx.fillRect(0,0,SPR_W,SPR_H);
     if(p>=1) sprRuntime.evoFlashStart = 0;
   } else {
-    drawSpecimenBody(ctx, model, cx, cy, {closed:eyesClosed, camoAlpha, sleeping:c.frozen});
+    if(glitching){
+      ctx.save();
+      ctx.globalAlpha = 0.4;
+      drawSpecimenBody(ctx, model, cx+sprRuntime.glitchOffset, cy, {closedL:eyesClosedL, closedR:eyesClosedR, camoAlpha, sleeping:c.frozen, ghost:true, silhouette:true, scaleMul:approachScaleMul, gazeDX:sprRuntime.gazeDX, gazeDY:sprRuntime.gazeDY, headTilt});
+      ctx.restore();
+    }
+    drawSpecimenBody(ctx, model, cx, cy, {closedL:eyesClosedL, closedR:eyesClosedR, camoAlpha, sleeping:c.frozen, noticing:staring, jitterFrame:glitching, scaleMul:approachScaleMul, gazeDX:sprRuntime.gazeDX, gazeDY:sprRuntime.gazeDY, headTilt});
   }
 
   // Vocal sound-wave pop
@@ -3650,6 +4091,8 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     ctx.fillText("z", cx+14, cy-34);
     ctx.restore();
   }
+
+  if(!state.settings.fullView) drawContainmentSlitOverlay(ctx);
 }
 
 function renderSpecimenScreenHtml(c, dead){
@@ -3664,6 +4107,7 @@ function renderSpecimenScreenHtml(c, dead){
       <div class="obs-caption">
         <span class="mono">${dead?"NO SIGNAL":"OBSERVING &mdash; "+esc(designation(c))}</span>
         <div class="obs-btnrow">
+          <button class="obs-btn" id="btnSpecimenFullView" type="button">${state.settings.fullView?"Slit View":"Full View"}</button>
           <button class="obs-btn" id="btnSpecimenSnapshot" type="button">Snapshot</button>
           <button class="obs-btn" id="btnSpecimenGif" type="button">Save GIF (3s)</button>
         </div>
@@ -3683,6 +4127,9 @@ function renderEmptyObservationHtml(){
       </div>
       <div class="obs-caption">
         <span class="mono">NO SPECIMEN IN CONTAINMENT</span>
+        <div class="obs-btnrow">
+          <button class="obs-btn" id="btnSpecimenFullView" type="button">${state.settings.fullView?"Slit View":"Full View"}</button>
+        </div>
       </div>
     </div>
   `;
@@ -3757,6 +4204,13 @@ function initSpecimenScreen(c, dead){
     sprAnimHandle = requestAnimationFrame(loop);
   }
   loop();
+
+  const fvBtn = $("#btnSpecimenFullView");
+  if(fvBtn) fvBtn.onclick = ()=>{
+    state.settings.fullView = !state.settings.fullView;
+    save();
+    fvBtn.textContent = state.settings.fullView ? "Slit View" : "Full View";
+  };
 
   const snapBtn = $("#btnSpecimenSnapshot");
   if(snapBtn) snapBtn.onclick = ()=>{
@@ -4598,6 +5052,10 @@ function renderSettings(){
         <input type="checkbox" id="chkShowSprite" ${state.settings.showSprite?"checked":""}>
         <span>Show animated specimen sprite (Observation Window)</span>
       </label>
+      <label class="row" style="cursor:pointer; align-items:center; margin-top:6px;">
+        <input type="checkbox" id="chkFullView" ${state.settings.fullView?"checked":""}>
+        <span>Full view (default is a narrow observation slit) &mdash; also toggleable from the Observation Window itself</span>
+      </label>
     </div>
     <div class="sheet">
       <h2>Danger Zone</h2>
@@ -4692,6 +5150,10 @@ function renderSettings(){
     state.settings.showSprite = !!e.target.checked;
     save();
     if(activeTab==="field") renderField();
+  };
+  $("#chkFullView").onchange = (e)=>{
+    state.settings.fullView = !!e.target.checked;
+    save();
   };
   $("#btnReset").onclick=()=>{
     if(confirm("This will permanently erase ALL progress, including your archive. Are you absolutely sure?")){
@@ -4994,6 +5456,7 @@ function liveTick(){
   }
   if(summary.rampage){
     toast("Specimen rampaged! Lost "+summary.rampageLoss+" RC.", "danger");
+    triggerSpecimenFlinch();
   }
   if(wasAlive && !c.alive){
     toast("Your specimen has died.", "danger");
