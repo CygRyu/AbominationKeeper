@@ -258,6 +258,10 @@
   .log-list li.evt-evolve{color:var(--stamp-green); font-weight:700;}
   .log-list li.evt-mutation{color:var(--stamp-gold); font-weight:700;}
   .log-list li.evt-rampage{color:var(--danger);}
+  .log-by{display:block; font-size:0.68rem; opacity:0.7; margin-top:1px; font-style:italic;}
+  .log-by.clinical{color:var(--stamp-green);}
+  .log-by.terse{color:var(--danger);}
+  .log-by.casual{color:var(--stamp-gold);}
 
   /* Modal */
   .modal-bg{
@@ -431,6 +435,15 @@
     font-family:'Courier Prime',monospace; font-size:0.9rem; line-height:1; padding:2px 4px;
   }
   .roster-chip button:disabled{color:var(--ink-soft); opacity:0.4; cursor:not-allowed;}
+  .roster-chip .rc-name{cursor:pointer; border-bottom:1px dotted var(--rule);}
+  .roster-chip .rc-voice{
+    cursor:pointer; border:1px solid currentColor; border-radius:2px;
+    font-size:0.65rem; padding:0 4px; letter-spacing:0.3px; text-transform:uppercase;
+    background:none;
+  }
+  .roster-chip .rc-voice.clinical{color:var(--stamp-green);}
+  .roster-chip .rc-voice.terse{color:var(--danger);}
+  .roster-chip .rc-voice.casual{color:var(--stamp-gold);}
 
   /* ===== Observation Window (specimen sprite screen) ===== */
   .obs-frame{
@@ -753,6 +766,27 @@ const RC_K = 6; // currency = round(RC_K * sqrt(minutes))
 const HUNGER_ZERO_GRACE_HOURS = 8; // time from hunger=0 to death
 const RAMPAGE_THRESHOLD = 90; // hunger % at/below which rampage risk exists at all
 const RAMPAGE_MAX_HOURLY_CHANCE = 0.10; // hourly chance at hunger = 0 (worst case, top of the ramp)
+const HUNGER_VARIANCE = 0.08; // +/- wobble applied to hungerRatePerHour per hour-bucket
+
+/* Deterministic pseudo-random noise in [-1,1], seeded per-creature (via
+   hungerSeed) and per hour-of-existence. Same specimen + same stretch of
+   time always wobbles the same way -- reloading a save mid-tick can't
+   reshuffle a decay curve that already happened -- but two specimens born
+   with the same base hungerRatePerHour still never decay identically. */
+function metabolismNoise(seed, bucket){
+  const x = Math.sin(seed*12.9898 + bucket*78.233) * 43758.5453;
+  return ((x - Math.floor(x)) * 2) - 1; // -1..1
+}
+
+/* Cosmetic label for a specimen's fixed birth metabolism -- same
+   hungerRatePerHour that's always driven decay, just given a name so it
+   reads as a trait of that specimen rather than an invisible stat. */
+function metabolismLabel(c){
+  const r = c.hungerRatePerHour;
+  if(r < 3.5) return "sluggish";
+  if(r < 4.5) return "steady";
+  return "voracious";
+}
 const WARN_THRESHOLDS = [50,25,10,0];
 
 /* Incubator: off-to-the-side storage for specimens the keeper isn't actively
@@ -1172,6 +1206,82 @@ const RAMPAGE_LOGS = [
   "An automated lockdown was triggered after specimen unrest."
 ];
 
+/* ===== Staff voices =====
+   Routine Field Log entries (ambient notes, feedings, rampages, and new
+   mutations) are attributed to a scientist drawn from the player's own
+   Scientist Roster (Settings > Scientist Roster -- the same customizable
+   pool that signs dossiers), rather than to a fixed cast. Each roster
+   entry is assigned one of a few voice archetypes below -- distinct
+   phrasing habits and a different tone -- so the log doesn't read as one
+   uniform narrator, no matter what the player has renamed anyone to.
+   Major structural entries (containment start, stage advancement,
+   termination) stay unauthored -- those read as impersonal case-file
+   entries, not personal notes. Purely cosmetic: voice assignment never
+   affects gameplay. */
+const VOICE_STYLES = {
+  clinical: {
+    label:"Clinical", weight:{ambient:3, feed:3, rampage:1, mutation:2},
+    stylize(txt){
+      return txt
+        .replace(/^Specimen's\b/, "The subject's")
+        .replace(/^Specimen\b/, "The subject")
+        .replace(/\bspecimen's\b/g, "the subject's")
+        .replace(/\bspecimen\b/g, "the subject");
+    },
+    asides:[
+      "Logged for the chart.", "Noted for the weekly summary.",
+      "Nothing urgent, but worth tracking.", "Will revisit if the pattern repeats.",
+      "Filing under routine observation.", "Recommend continued monitoring, nothing more."
+    ],
+    asideChance:0.45
+  },
+  terse: {
+    label:"Terse", weight:{ambient:2, feed:1, rampage:4, mutation:1},
+    stylize(txt){
+      return txt.replace(/\.$/,"").replace(/^Specimen\b/,"Subject").replace(/^The specimen\b/,"Subject");
+    },
+    asides:[
+      "Logged.", "Confirmed via camera feed.", "No further action taken.",
+      "Flagging for next shift.", "Noted in the incident binder.", "Watching it."
+    ],
+    asideChance:0.6
+  },
+  casual: {
+    label:"Casual", weight:{ambient:4, feed:2, rampage:1, mutation:3},
+    stylize(txt){ return txt; },
+    asides:[
+      "Not totally sure what to make of that, but writing it down.",
+      "Might be nothing? Noted it anyway.", "Going to keep an eye on this one.",
+      "Wrote it down before I forgot.", "Still waiting to hear back on that one.",
+      "Making a note to bring this up at the next briefing."
+    ],
+    asideChance:0.55
+  }
+};
+const VOICE_STYLE_IDS = Object.keys(VOICE_STYLES); // ["clinical","terse","casual"]
+
+/* Assigns a voice to a roster index deterministically (round-robin), so a
+   fresh default roster -- or a freshly restored one -- ends up with a
+   reasonably even spread of voices rather than everyone landing on the
+   same style. */
+function voiceForRosterIndex(i){ return VOICE_STYLE_IDS[i % VOICE_STYLE_IDS.length]; }
+
+/* Picks a scientist from the player's live roster to author a routine log
+   line, weighted by that scientist's assigned voice's affinity for this
+   category. Falls back gracefully if the roster is ever empty. */
+function pickLogScientist(category){
+  const pool = state.scientists;
+  if(!pool || !pool.length) return null;
+  const weightOf = sc => (VOICE_STYLES[sc.voice]||VOICE_STYLES.casual).weight[category]||1;
+  const total = pool.reduce((s,sc)=>s+weightOf(sc),0);
+  let r = rnd()*total;
+  for(const sc of pool){
+    r -= weightOf(sc);
+    if(r<=0) return sc;
+  }
+  return pool[pool.length-1];
+}
+
 /* ===== News ticker =====
    Purely cosmetic flavor text -- a slow drip of fake global incident
    headlines that crawl across a thin strip above the header. One headline
@@ -1499,7 +1609,8 @@ function freshCreature(){
     frozen: false,
     hunger: 100,
     hungerZeroAt: null,
-    hungerRatePerHour: +(2.5 + rnd()*3).toFixed(2), // 2.5 - 5.5 %/h
+    hungerRatePerHour: +(2.5 + rnd()*3).toFixed(2), // 2.5 - 5.5 %/h -- fixed for life; this specimen's metabolism
+    hungerSeed: randInt(1, 999999), // seeds this specimen's per-hour decay wobble; fixed for life
     warnFlags: {50:false,25:false,10:false,0:false},
     partCap: randInt(5,11),   // min 5 leaves room above the 4 guaranteed stage-up parts
     traitCap: randInt(4,10),  // traits come only from feeding, so a lower floor is fine
@@ -1536,7 +1647,7 @@ function defaultState(){
     stats: {feeds:0, mutations:0, rampages:0, specimensLost:0, stageChoicesResolved:0, daysRead:0, purchases:0, freezes:0, incubatorStores:0, incubatorTerminations:0, incubatorUnlocks:0},
     achievements: {}, // id -> {at: timestamp}
     settings: {autosaveMin:5, lastAckAway:0, showSprite:true, fullView:false},
-    scientists: DEFAULT_SCIENTISTS.map(n=>({name:n, isDefault:true})),
+    scientists: DEFAULT_SCIENTISTS.map((n,i)=>({name:n, isDefault:true, voice:voiceForRosterIndex(i)})),
     meta: {createdAt: now(), lastTickAt: now(), lastSaveAt: now(), lastScientist: null},
     profile: freshProfile()
   };
@@ -1664,12 +1775,14 @@ function normalizeState(s){
 
   // Scientist roster: dedupe by lowercase name, then backfill any missing
   // defaults so the pool never drops below MIN_SCIENTISTS. Never discards
-  // a custom (non-default) name during this process.
+  // a custom (non-default) name during this process. Each entry also
+  // carries a `voice` (see VOICE_STYLES) used to author routine Field Log
+  // entries -- older saves predating that feature get one backfilled here.
   {
     const seen = new Set();
     let list = Array.isArray(s.scientists) ? s.scientists : [];
     list = list.filter(e=>e && typeof e.name==="string" && e.name.trim())
-      .map(e=>({name:e.name.trim().slice(0,40), isDefault:!!e.isDefault}));
+      .map(e=>({name:e.name.trim().slice(0,40), isDefault:!!e.isDefault, voice:e.voice}));
     list = list.filter(e=>{
       const k = e.name.toLowerCase();
       if(seen.has(k)) return false;
@@ -1683,6 +1796,7 @@ function normalizeState(s){
         seen.add(n.toLowerCase());
       }
     });
+    list.forEach((e,i)=>{ if(!VOICE_STYLES[e.voice]) e.voice = voiceForRosterIndex(i); });
     s.scientists = list;
   }
 
@@ -1699,6 +1813,7 @@ function normalizeState(s){
     [50,25,10,0].forEach(k=>{ if(typeof c.warnFlags[k]!=="boolean") c.warnFlags[k] = false; });
     if(typeof c.hunger!=="number") c.hunger = 100;
     if(typeof c.hungerRatePerHour!=="number") c.hungerRatePerHour = +(2.5+rnd()*3).toFixed(2);
+    if(typeof c.hungerSeed!=="number") c.hungerSeed = randInt(1, 999999);
     if(typeof c.activeMs!=="number") c.activeMs = 0;
     if(typeof c.rampageCount!=="number") c.rampageCount = 0;
     if(typeof c.bornAt!=="number") c.bornAt = now();
@@ -1722,9 +1837,22 @@ function normalizeState(s){
   return s;
 }
 
-function addLog(text, cls){
-  state.log.unshift({ts:now(), text, cls:cls||""});
+function addLog(text, cls, byName, voiceId){
+  state.log.unshift({ts:now(), text, cls:cls||"", by: byName||null, voiceId: voiceId||null});
   if(state.log.length>10) state.log.length=10;
+}
+
+/* Routes a routine log line through a scientist drawn from the player's
+   live roster, using that scientist's assigned voice archetype (see
+   VOICE_STYLES above) to lightly rephrase the line and, sometimes, tack on
+   a short personal aside. If the roster is ever empty, files unauthored. */
+function addAuthoredLog(text, cls, category){
+  const sc = pickLogScientist(category);
+  if(!sc){ addLog(text, cls); return; }
+  const style = VOICE_STYLES[sc.voice] || VOICE_STYLES.casual;
+  let out = style.stylize(text);
+  if(rnd() < style.asideChance) out += " " + choice(style.asides);
+  addLog(out, cls, sc.name, sc.voice);
 }
 
 /* Checks all not-yet-unlocked commendations against current state, granting
@@ -1892,7 +2020,7 @@ function resolveStageChoice(idx){
   c.parts.push(chosenId);
   updateSpriteIdentity(c);
   markDiscovered(true, chosenId);
-  addLog("New development (Stage "+pending.stage+"): "+part.text+".", "evt-mutation");
+  addAuthoredLog("New development (Stage "+pending.stage+"): "+part.text+".", "evt-mutation", "mutation");
   state.stats.stageChoicesResolved++;
   bumpLifetime("stageChoicesResolved");
   return part;
@@ -1919,12 +2047,37 @@ function advanceTime(ms){
   const rate = c.hungerRatePerHour;
 
   if(hunger0>0){
-    const tZero = hunger0/rate; // hours until hunger hits 0
-    if(hours <= tZero){
-      c.hunger = clamp(hunger0 - rate*hours, 0, 100);
+    // Decay in hourly buckets rather than one flat rate*hours calculation,
+    // applying a small deterministic wobble (see metabolismNoise) to each
+    // bucket. Falls back to the plain closed-form result when the wobble
+    // nets out to ~0, but in general two identical-rate specimens (or two
+    // playthroughs) won't trace the exact same curve.
+    const hourOfExistence = (c.lastTickAt - c.bornAt)/HOUR;
+    let bucket = Math.floor(hourOfExistence);
+    let tInBucket = hourOfExistence - bucket;
+    let curHunger = hunger0;
+    let remaining = hours;
+    while(remaining>0 && curHunger>0){
+      const bucketLeft = 1 - tInBucket;
+      const step = Math.min(remaining, bucketLeft);
+      const effRate = rate * (1 + metabolismNoise(c.hungerSeed, bucket)*HUNGER_VARIANCE);
+      const drop = effRate*step;
+      if(drop >= curHunger){
+        const hoursToZero = curHunger/effRate;
+        remaining -= hoursToZero;
+        curHunger = 0;
+        break;
+      }
+      curHunger -= drop;
+      remaining -= step;
+      tInBucket += step;
+      if(tInBucket >= 1){ tInBucket = 0; bucket++; }
+    }
+    if(curHunger>0){
+      c.hunger = clamp(curHunger, 0, 100);
     } else {
       c.hunger = 0;
-      const overshoot = hours - tZero; // hours spent at 0 so far this interval
+      const overshoot = remaining; // hours spent at 0 so far this interval
       c.hungerZeroAt = now() - overshoot*HOUR;
       if(overshoot >= HUNGER_ZERO_GRACE_HOURS){
         c.alive = false;
@@ -1983,7 +2136,7 @@ function advanceTime(ms){
         state.stats.rampages++;
         bumpLifetime("rampages");
         summary.rampage = true; summary.rampageLoss = loss;
-        addLog(choice(RAMPAGE_LOGS)+" (-"+loss+" RC)", "evt-rampage");
+        addAuthoredLog(choice(RAMPAGE_LOGS)+" (-"+loss+" RC)", "evt-rampage", "rampage");
       }
     }
   }
@@ -1991,7 +2144,7 @@ function advanceTime(ms){
   // ambient flavor logs (light touch, capped)
   if(c.alive){
     const n = Math.min(3, Math.floor(hours/5));
-    for(let i=0;i<n;i++){ addLog(pickAmbientLog(c), ""); summary.ambient++; }
+    for(let i=0;i<n;i++){ addAuthoredLog(pickAmbientLog(c), "", "ambient"); summary.ambient++; }
   }
 
   if(summary.died){
@@ -2200,7 +2353,7 @@ function feedCreature(foodId){
   if(c.hunger>0) c.hungerZeroAt=null;
   // reset warn flags that are now above current hunger
   Object.keys(c.warnFlags).forEach(k=>{ if(+k < c.hunger) c.warnFlags[k]=false; });
-  addLog("Fed "+food.name+". Hunger "+Math.round(before)+"% → "+Math.round(c.hunger)+"%.", "");
+  addAuthoredLog("Fed "+food.name+". Hunger "+Math.round(before)+"% → "+Math.round(c.hunger)+"%.", "", "feed");
   let mutation=null, stabilized=false;
   if(rnd() < food.mut){
     const m = pickMutation(c, food.cat);
@@ -3017,7 +3170,8 @@ function timeToHungerEstimates(c){
       parts.push("~"+fmtHM(h*HOUR)+" until "+(t===0?"Starving (0%)":"Critical ("+t+"%)"));
     }
   });
-  return parts.length?parts.join(" · "):"Already at critical levels.";
+  const base = parts.length?parts.join(" · "):"Already at critical levels.";
+  return base+" · "+metabolismLabel(c)+" metabolism ("+rate.toFixed(1)+"%/h avg)";
 }
 
 /* ============================= SPECIMEN SPRITE (Observation Window) =============================
@@ -4529,7 +4683,8 @@ function renderLogHtml(){
   if(!state.log.length) return '<p class="muted small">Nothing recorded yet.</p>';
   return '<ul class="log-list">'+state.log.map(l=>{
     const t = new Date(l.ts);
-    return `<li class="${l.cls}"><span class="t">${pad(t.getHours())}:${pad(t.getMinutes())}</span>${esc(l.text)}</li>`;
+    const byline = l.by ? `<span class="log-by ${l.voiceId||''}">— ${esc(l.by)}</span>` : "";
+    return `<li class="${l.cls}"><span class="t">${pad(t.getHours())}:${pad(t.getMinutes())}</span>${esc(l.text)}${byline}</li>`;
   }).join("")+"</ul>";
 }
 
@@ -5122,11 +5277,13 @@ function renderSettings(){
     </div>
     <div class="sheet">
       <h2>Scientist Roster</h2>
-      <p class="muted small">Every filed dossier is signed by one scientist, drawn at random from this pool (never the same one twice in a row). At least ${MIN_SCIENTISTS} names must remain in rotation at all times.</p>
-      <p class="muted small mono">${state.scientists.length} name(s) in rotation.</p>
+      <p class="muted small">Every filed dossier is signed by one scientist, drawn at random from this pool (never the same one twice in a row). Routine Field Log entries (feedings, ambient notes, rampages) are also attributed to a scientist from this pool, using the voice tag next to their name. At least ${MIN_SCIENTISTS} names must remain in rotation at all times.</p>
+      <p class="muted small mono">${state.scientists.length} name(s) in rotation. Click a name to rename it, or its voice tag to cycle Clinical / Terse / Casual.</p>
       <div class="roster-list" id="rosterList">
         ${state.scientists.map((sc,i)=>`
-          <span class="roster-chip${sc.isDefault?" default":""}">${esc(sc.name)}
+          <span class="roster-chip${sc.isDefault?" default":""}">
+            <span class="rc-name" data-idx="${i}" title="Rename">${esc(sc.name)}</span>
+            <span class="rc-voice ${sc.voice}" data-idx="${i}" title="Click to change voice">${VOICE_STYLES[sc.voice]?VOICE_STYLES[sc.voice].label:"Casual"}</span>
             <button data-idx="${i}" title="Remove" ${state.scientists.length<=MIN_SCIENTISTS?"disabled":""}>&times;</button>
           </span>
         `).join("")}
@@ -5152,7 +5309,7 @@ function renderSettings(){
       <details class="faq"><summary>What is a Field Dossier?</summary><p>Standard procedure requires an on-demand narrative summary be available for any specimen under active containment. "View Dossier" on the Field Report compiles one: classification, anatomical and behavioral aberrations, incident history, and a closing recommendation from reviewing staff.</p></details>
       <details class="faq"><summary>Why doesn't the dossier read the same way twice?</summary><p>No two staff members file a report in identical language, and your specimen's dossier is compiled fresh from the archive each time it is requested. Expect the phrasing, and occasionally the ordering of observations, to shift between filings — the underlying facts do not.</p></details>
       <details class="faq"><summary>How do I retain a copy of the dossier?</summary><p>Requested dossiers are reproduced on archival stock and transcribed in real time as staff compile them — click anywhere on the page to compel an immediate, complete transcription. From there, a screen capture will preserve the physical document as filed, or the "Copy Text" function will extract the report as plain text for inclusion elsewhere in your records.</p></details>
-      <details class="faq"><summary>Who signs the dossier?</summary><p>Every filed dossier is signed off by a staff scientist drawn at random from the roster in Settings — the same one won't sign two dossiers in a row. Add, remove, or restore names in the Scientist Roster section to customize who ends up filing your reports.</p></details>
+      <details class="faq"><summary>Who signs the dossier?</summary><p>Every filed dossier is signed off by a staff scientist drawn at random from the roster in Settings — the same one won't sign two dossiers in a row. That same roster also authors routine Field Log entries (feedings, ambient notes, rampages), each scientist writing in whichever voice — Clinical, Terse, or Casual — is set on their roster chip. Add, rename, remove, or restore names (and click a name's voice tag to change it) in the Scientist Roster section to customize who ends up filing your reports.</p></details>
       <details class="faq"><summary>What is the Keeper ID?</summary><p>The Keeper tab lets you personalize the lead scientist behind your containment effort: a name/nickname, an optional photo, and an editable ID number. "Generate ID Card" compiles all of it into a printable-style badge — organization header, photo, rank, ID number, and a Service Record of career highlights — purely cosmetic, with no effect on gameplay. The stamp in the corner changes wording as your rank climbs.</p></details>
       <details class="faq"><summary>How is my rank calculated?</summary><p>Rank blends two things: how long your Keeper profile has existed, and how many specimens you've raised through to the Archive over your whole career (weighted more heavily, since it reflects active play). It's cosmetic flavor, not a gameplay stat.</p></details>
       <details class="faq"><summary>Does my Keeper photo/name survive a Full Reset or Import?</summary><p>Your Keeper profile — name, photo, rank progress, and service record — is tracked separately from the rest of the save so it can outlive it. Full Reset asks whether to carry it into the new save, and importing a save with a different Keeper profile asks before replacing yours. The photo itself never leaves your device unless you choose to keep your profile across an export.</p></details>
@@ -5227,7 +5384,39 @@ function renderSettings(){
       }
     }
   };
-  $$("#rosterList [data-idx]").forEach(btn=>{
+  $$("#rosterList .rc-name").forEach(el=>{
+    el.onclick=()=>{
+      const idx = parseInt(el.dataset.idx,10);
+      const sc = state.scientists[idx];
+      if(!sc) return;
+      const val = prompt("Rename scientist:", sc.name);
+      if(val==null) return;
+      const trimmed = val.trim().slice(0,40);
+      if(!trimmed) return;
+      if(state.scientists.some((s,i)=>i!==idx && s.name.toLowerCase()===trimmed.toLowerCase())){
+        toast("That name is already in the roster.", "danger");
+        return;
+      }
+      sc.name = trimmed;
+      sc.isDefault = false; // a renamed default is a custom name now
+      save();
+      renderSettings();
+      toast("Renamed to "+trimmed+".", "");
+    };
+  });
+  $$("#rosterList .rc-voice").forEach(el=>{
+    el.onclick=()=>{
+      const idx = parseInt(el.dataset.idx,10);
+      const sc = state.scientists[idx];
+      if(!sc) return;
+      const pos = VOICE_STYLE_IDS.indexOf(sc.voice);
+      sc.voice = VOICE_STYLE_IDS[(pos+1)%VOICE_STYLE_IDS.length];
+      save();
+      renderSettings();
+      toast(sc.name+" is now "+VOICE_STYLES[sc.voice].label+".", "");
+    };
+  });
+  $$("#rosterList button[data-idx]").forEach(btn=>{
     btn.onclick=()=>{
       if(state.scientists.length<=MIN_SCIENTISTS){
         toast("At least "+MIN_SCIENTISTS+" names must remain in rotation.", "danger");
@@ -5248,7 +5437,7 @@ function renderSettings(){
       toast("That name is already in the roster.", "danger");
       return;
     }
-    state.scientists.push({name:val, isDefault:false});
+    state.scientists.push({name:val, isDefault:false, voice:voiceForRosterIndex(state.scientists.length)});
     save();
     renderSettings();
     toast(val+" added to the roster.", "");
@@ -5261,7 +5450,7 @@ function renderSettings(){
     let added = 0;
     DEFAULT_SCIENTISTS.forEach(n=>{
       if(!present.has(n.toLowerCase())){
-        state.scientists.push({name:n, isDefault:true});
+        state.scientists.push({name:n, isDefault:true, voice:voiceForRosterIndex(state.scientists.length)});
         present.add(n.toLowerCase());
         added++;
       }
