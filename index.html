@@ -3192,7 +3192,8 @@ function bodySilhouette(group, rng, severity){
    birth -- extra "something is growing out of it wrong" detail layered on top of the row shape
    itself. Drawn in drawSpecimenBody, skipped during the flat evolution-flash silhouette pass.
    severity (0..1, from life stage + containment class) adds more of them onto further-along
-   specimens. */
+   specimens. Boil-type growths also carry their own pulsePhase/pulseSpeed so they can breathe
+   independently of each other and of the main body bob. */
 function bodyGrowths(rng, severity){
   severity = severity||0;
   const count = 1 + Math.floor(rng()*2) + Math.round(severity*3);
@@ -3203,7 +3204,11 @@ function bodyGrowths(rng, severity){
       side: rng()<0.5 ? -1 : 1,
       len: (0.55 + rng()*1.15) * (1+severity*0.3),
       wid: 0.35 + rng()*0.55,
-      kind: rng()<0.55 ? "spike" : "boil"
+      kind: rng()<0.55 ? "spike" : "boil",
+      // Own phase + speed so boil-type growths breathe out of sync with each other and with the
+      // main body bob -- a slow, organic pulse rather than a uniform "everything throbs at once".
+      pulsePhase: rng()*Math.PI*2,
+      pulseSpeed: 0.7 + rng()*0.6
     });
   }
   return growths;
@@ -3299,7 +3304,7 @@ const sprRuntime = {
   blinkUntilL:0, nextBlinkAtL:0, blinkUntilR:0, nextBlinkAtR:0,
   soundWaveUntil:0, nextSoundWaveAt:0,
   psychicUntil:0, nextPsychicAt:0,
-  lastStage:null, evoFlashStart:0,
+  lastStage:null, evoFlashStart:0, settleUntil:0,
   lastPartsSig:null,
   // Stutter/snap: motion occasionally freezes mid-step for a beat, then jumps the rest of the
   // way instantly instead of interpolating smoothly -- reads like a dropped frame.
@@ -3320,6 +3325,10 @@ const sprRuntime = {
   // triggerSpecimenFlinch() rather than on a timer. flinchRequestId/handledId is how the
   // (possibly game-logic-driven, off animation-loop) trigger hands off to the render loop.
   flinchRequestId:0, flinchHandledId:0, flinchStartAt:0, flinchUntil:0, flinchDir:0,
+  // Breath-fog: condensation that builds on the slit glass near the mouth while it's holding a
+  // close approach, then clears slowly over several seconds afterward rather than vanishing
+  // the instant it steps back. lastFrameT drives the frame-rate-independent rise/fall smoothing.
+  fogLevel:0, lastFrameT:0,
   // Render glitch: a very brief (single/double-frame) corrupted double-exposure.
   nextGlitchAt:0, glitchUntil:0, glitchOffset:0
 };
@@ -3343,6 +3352,7 @@ function sprResetRuntime(c, model){
   sprRuntime.nextPsychicAt = 0;
   sprRuntime.lastStage = model.stage;
   sprRuntime.evoFlashStart = 0;
+  sprRuntime.settleUntil = 0;
   sprRuntime.lastPartsSig = specimenPartsSig(c);
   sprRuntime.nextStutterAt = 0;
   sprRuntime.stutterUntil = 0;
@@ -3364,6 +3374,8 @@ function sprResetRuntime(c, model){
   // Don't cancel a flinch already in flight, but drop any pending request from the previous
   // specimen so switching creatures (e.g. via Incubator) can't fire a stale flinch on the new one.
   sprRuntime.flinchHandledId = sprRuntime.flinchRequestId;
+  sprRuntime.fogLevel = 0;
+  sprRuntime.lastFrameT = 0;
   sprRuntime.nextGlitchAt = 0;
   sprRuntime.glitchUntil = 0;
   sprRuntime.glitchOffset = 0;
@@ -3418,7 +3430,9 @@ function pxRect(ctx,x,y,w,h,color,alpha){
    (evolution-flash grow animation, also reused for the approach-to-slit stare and flinch squash),
    silhouette (flat flash-grow silhouette), sleeping (frozen), gazeDX/gazeDY (small occasional
    eye-look offset, in head-width/unit-height fractions), headTilt (radians, brief head-only
-   rotation independent of the body's fixed lean). */
+   rotation independent of the body's fixed lean). Returns {x,y} screen-space mouth position (or
+   null if drawn as a silhouette), so callers can anchor effects like breath-fog on the slit
+   glass without redoing this layout math. */
 function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
   opts = opts||{};
   const rows = model.rows;
@@ -3431,6 +3445,7 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
 
   ctx.save();
   ctx.globalAlpha = opts.camoAlpha!=null?opts.camoAlpha:1;
+  let mouthAnchor = null;
 
   // Silhouette-first palette: the body reads as a dark shape with only a faint bleed of its
   // category color through it, rather than a fully-lit cartoon fill. Accent ("glow") stays close
@@ -3519,10 +3534,14 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
         ctx.fill();
         ctx.restore();
       } else {
+        // Boil-type growths breathe: a slow radius + alpha pulse, each on its own phase/speed
+        // so a cluster of them never throbs in unison.
+        const pulse = 0.82 + 0.18*Math.sin(performance.now()/1000*g.pulseSpeed + g.pulsePhase);
         ctx.save();
         ctx.fillStyle = body;
+        ctx.globalAlpha *= 0.82 + 0.18*pulse;
         ctx.beginPath();
-        ctx.arc(edgeX+g.side*unitX*g.wid*0.5, y+unitY*g.wid*0.3, unitX*g.wid*0.7, 0, Math.PI*2);
+        ctx.arc(edgeX+g.side*unitX*g.wid*0.5, y+unitY*g.wid*0.3, unitX*g.wid*0.7*pulse, 0, Math.PI*2);
         ctx.fill();
         ctx.restore();
       }
@@ -3631,10 +3650,18 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
     } else {
       pxRect(ctx, hcx-unitX*0.4, mouthY, unitX*0.8, unitY*0.14, shade, 0.85);
     }
+    // Mouth position in screen space, in case the caller wants to anchor something there (e.g.
+    // breath-fog on the slit glass during a close approach) without duplicating this layout math.
+    // Reproduces the head-tilt rotation applied above so the anchor lines up with the drawn mouth.
+    const mouthD = mouthY - headPivotY;
+    mouthAnchor = headTilt
+      ? {x: hcx - mouthD*Math.sin(headTilt), y: headPivotY + mouthD*Math.cos(headTilt)}
+      : {x: hcx, y: mouthY};
     ctx.restore(); // head-tilt transform
   }
 
   ctx.restore();
+  return mouthAnchor;
 }
 
 /* Draws one full frame: background/lighting/containment cues, then the animated sprite itself. */
@@ -3786,6 +3813,9 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   }
   const flashElapsed = tNow - sprRuntime.evoFlashStart;
   const inFlash = sprRuntime.evoFlashStart>0 && flashElapsed < 1100;
+  // Post-mutation stillness: right after the evolution flash finishes, hold in place for a beat
+  // -- as if it's getting used to whatever just changed -- before resuming normal wander/bob.
+  const settling = !inFlash && tNow < sprRuntime.settleUntil;
 
   ctx.clearRect(0,0,SPR_W,SPR_H);
 
@@ -3856,7 +3886,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   // holds still with eyes wide -- as if it just turned to face whoever's watching through the
   // slit. Rare enough to be a surprise rather than a tic.
   if(!sprRuntime.nextNoticeAt) sprRuntime.nextNoticeAt = tNow + 45000 + Math.random()*45000;
-  if(!c.frozen && !sprRuntime.noticeUntil && !sprRuntime.approaching && tNow > sprRuntime.nextNoticeAt){
+  if(!c.frozen && !settling && !sprRuntime.noticeUntil && !sprRuntime.approaching && tNow > sprRuntime.nextNoticeAt){
     sprRuntime.noticeUntil = tNow + 1800 + Math.random()*1400;
   }
   if(sprRuntime.noticeUntil && tNow > sprRuntime.noticeUntil){
@@ -3872,7 +3902,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   // longer than usual, so most approaches are a few seconds but every so often it just... doesn't
   // stop staring for a long while.
   if(!sprRuntime.nextApproachAt) sprRuntime.nextApproachAt = tNow + 100000 + Math.random()*140000;
-  if(!c.frozen && !sprRuntime.approaching && !noticing && tNow > sprRuntime.nextApproachAt){
+  if(!c.frozen && !settling && !sprRuntime.approaching && !noticing && tNow > sprRuntime.nextApproachAt){
     sprRuntime.approaching = true;
     sprRuntime.approachStartAt = tNow;
     sprRuntime.approachHoldMs = (Math.random()<0.22)
@@ -3902,10 +3932,20 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   const approaching = sprRuntime.approaching;
   const staring = noticing || approaching;
 
+  // Breath-fog buildup/decay: rises fairly quickly once it's holding close (approachP high),
+  // falls back slowly over several seconds once it steps back -- frame-rate independent via the
+  // real elapsed time between frames rather than a fixed per-frame increment.
+  const frameDt = sprRuntime.lastFrameT ? (tNow - sprRuntime.lastFrameT) : 16;
+  sprRuntime.lastFrameT = tNow;
+  const fogTarget = (!c.frozen && approachP > 0.55) ? 1 : 0;
+  const fogTau = fogTarget > sprRuntime.fogLevel ? 500 : 3200;
+  sprRuntime.fogLevel += (fogTarget - sprRuntime.fogLevel) * clamp(frameDt/fogTau, 0, 1);
+
   // Gaze drift: while not staring at the viewer, the eyes occasionally glance off to one side
   // for a moment and snap back -- checked on an irregular cadence with a coin-flip so it never
   // settles into a visible rhythm, the way a real animal's eyes wander without a fixed beat.
-  if(staring){
+  // Suppressed during post-mutation stillness too -- it's holding still, not glancing around.
+  if(staring || settling){
     sprRuntime.gazeUntil = 0; sprRuntime.gazeDX = 0; sprRuntime.gazeDY = 0;
   } else {
     if(tNow > sprRuntime.nextGazeCheckAt){
@@ -3923,7 +3963,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
 
   if(staring){
     sprRuntime.targetX = SPR_W/2;
-  } else if(!c.frozen && tNow > sprRuntime.nextWanderAt){
+  } else if(!c.frozen && !settling && tNow > sprRuntime.nextWanderAt){
     const range = SPR_W*0.28;
     sprRuntime.targetX = clamp(SPR_W/2 + (Math.random()*2-1)*range, SPR_W*0.22, SPR_W*0.78);
     sprRuntime.nextWanderAt = tNow + 2600 + Math.random()*2600;
@@ -3938,7 +3978,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     sprRuntime.stutterUntil = 0;
     sprRuntime.nextStutterAt = tNow + 6000 + Math.random()*9000;
   }
-  if(!c.frozen && !staring && !sprRuntime.stutterUntil && tNow > sprRuntime.nextStutterAt){
+  if(!c.frozen && !staring && !settling && !sprRuntime.stutterUntil && tNow > sprRuntime.nextStutterAt){
     sprRuntime.stutterUntil = tNow + 220 + Math.random()*260;
   }
   const stuttering = !!sprRuntime.stutterUntil;
@@ -3949,6 +3989,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   let bob = model.respiratory ? Math.sin(elapsedS*1.1)*3.6 : Math.sin(elapsedS*1.8)*2.4;
   if(c.frozen) bob = Math.sin(elapsedS*0.5)*1.1;
   if(staring) bob *= 0.25;
+  else if(settling) bob *= 0.4;
 
   const floatLift = model.gravitic ? 6 + Math.sin(elapsedS*0.9)*3 : 0;
 
@@ -3964,7 +4005,7 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
   // pattern together, and suppressed entirely while staring (noticing/approaching hold the head
   // dead-forward on purpose).
   if(!sprRuntime.nextTiltCheckAt) sprRuntime.nextTiltCheckAt = tNow + 4000 + Math.random()*5000;
-  if(staring){
+  if(staring || settling){
     sprRuntime.tiltActive = false;
   } else if(!sprRuntime.tiltActive && tNow > sprRuntime.nextTiltCheckAt){
     sprRuntime.nextTiltCheckAt = tNow + 4500 + Math.random()*6500;
@@ -4062,7 +4103,10 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
     drawSpecimenBody(ctx, model, cx, cy, {scaleMul:0.4+0.6*bounce, silhouette:growT<0.8});
     ctx.fillStyle="rgba(255,255,255,"+(flashAlpha*0.85)+")";
     ctx.fillRect(0,0,SPR_W,SPR_H);
-    if(p>=1) sprRuntime.evoFlashStart = 0;
+    if(p>=1){
+      sprRuntime.evoFlashStart = 0;
+      sprRuntime.settleUntil = tNow + 900 + Math.random()*900;
+    }
   } else {
     if(glitching){
       ctx.save();
@@ -4070,7 +4114,21 @@ function drawSpecimenFrame(canvas, ctx, c, dead){
       drawSpecimenBody(ctx, model, cx+sprRuntime.glitchOffset, cy, {closedL:eyesClosedL, closedR:eyesClosedR, camoAlpha, sleeping:c.frozen, ghost:true, silhouette:true, scaleMul:approachScaleMul, gazeDX:sprRuntime.gazeDX, gazeDY:sprRuntime.gazeDY, headTilt});
       ctx.restore();
     }
-    drawSpecimenBody(ctx, model, cx, cy, {closedL:eyesClosedL, closedR:eyesClosedR, camoAlpha, sleeping:c.frozen, noticing:staring, jitterFrame:glitching, scaleMul:approachScaleMul, gazeDX:sprRuntime.gazeDX, gazeDY:sprRuntime.gazeDY, headTilt});
+    const mouthAnchor = drawSpecimenBody(ctx, model, cx, cy, {closedL:eyesClosedL, closedR:eyesClosedR, camoAlpha, sleeping:c.frozen, noticing:staring, jitterFrame:glitching, scaleMul:approachScaleMul, gazeDX:sprRuntime.gazeDX, gazeDY:sprRuntime.gazeDY, headTilt});
+
+    // Breath-fog on the slit glass: a soft pale bloom that builds over the mouth while it holds
+    // a close approach, and lingers/clears slowly afterward rather than snapping off.
+    if(mouthAnchor && sprRuntime.fogLevel > 0.02){
+      const fr = 9 + 5*approachScaleMul;
+      const fx = mouthAnchor.x, fy = mouthAnchor.y - fr*0.3;
+      ctx.save();
+      const fogGrad = ctx.createRadialGradient(fx,fy,0, fx,fy,fr);
+      fogGrad.addColorStop(0, "rgba(224,228,222,"+(sprRuntime.fogLevel*0.5)+")");
+      fogGrad.addColorStop(1, "rgba(224,228,222,0)");
+      ctx.fillStyle = fogGrad;
+      ctx.beginPath(); ctx.arc(fx,fy,fr,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
   }
 
   // Vocal sound-wave pop
