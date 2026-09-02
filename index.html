@@ -3301,6 +3301,13 @@ function specimenHasRarity(c, rarity){
    than a smooth taper), and the whole silhouette gets a slight overall cant so it never sits
    symmetrically on its own centerline. Purely cosmetic, but this is the main lever for "grotesque
    and weird" vs. the old clean cartoon-blob outline. */
+// Saturating clamp: eases toward +/-maxAbs instead of hard-cutting, so an extreme roll reads as
+// "pushed all the way to the edge" rather than visibly clipped/truncated.
+function softClamp(v, maxAbs){
+  if(maxAbs<=0) return 0;
+  return Math.tanh(v/maxAbs)*maxAbs;
+}
+
 function bodySilhouette(group, rng, severity){
   severity = severity||0;
   let base;
@@ -3316,28 +3323,57 @@ function bodySilhouette(group, rng, severity){
   const rows = base.slice();
   const offs = base.map(()=>0);
 
-  // Ragged edges on every silhouette -- no group gets a clean cartoon outline anymore. More
-  // advanced/dangerous specimens get rougher edges on top of the baseline.
-  const jitterAmp = 2.4 * (1 + severity*0.7);
+  // Ragged edges on every silhouette -- no group gets a clean cartoon outline anymore. Severity's
+  // contribution here is kept small on purpose: roughness should come mainly from MORE distinct
+  // distortions below, not from any one row swinging wider.
+  const jitterAmp = 2.4 * (1 + severity*0.25);
   for(let i=0;i<rows.length;i++){
     rows[i] = Math.max(1, rows[i] + (rng()-0.5)*jitterAmp);
   }
 
-  // A few bulge/pinch events, each also dragging that row sideways -- the source of the
-  // lopsided, tumorous silhouette instead of a smooth radial taper. Higher-severity specimens
-  // (later life stage, more dangerous containment class) accumulate more of these.
-  const eventCount = 2 + Math.floor(rng()*3) + Math.round(severity*3);
+  // A few bulge/pinch events, each also dragging that row sideways -- the source of the lopsided,
+  // tumorous silhouette instead of a smooth radial taper. Higher-severity specimens (later life
+  // stage, more dangerous containment class) get MORE of these events, not bigger ones -- a
+  // shuffled draw order means events spread across distinct rows first, and only start doubling
+  // up on a row once every row has already had a turn, so severity reads as "more places on the
+  // body look wrong" rather than "one spot goes extreme".
+  const order = [];
+  for(let i=0;i<rows.length;i++) order.push(i);
+  for(let i=order.length-1;i>0;i--){
+    const j = Math.floor(rng()*(i+1));
+    const tmp = order[i]; order[i]=order[j]; order[j]=tmp;
+  }
+  const eventCount = Math.min(2 + Math.floor(rng()*3) + Math.round(severity*3), rows.length*2);
   for(let e=0;e<eventCount;e++){
-    const idx = Math.floor(rng()*rows.length);
+    const idx = order[e % order.length];
     const outward = rng() < 0.7;
-    const mag = (0.35 + rng()*0.9) * (outward?1:-0.55) * (1+severity*0.4);
-    rows[idx] = Math.max(1, rows[idx] + rows[idx]*mag);
-    offs[idx] += (rng()-0.5)*rows[idx]*0.75;
+    // Magnitude no longer scales with severity -- each individual bulge/pinch stays within a
+    // fixed, plausible range no matter how advanced the specimen is.
+    const mag = (0.35 + rng()*0.9) * (outward?1:-0.55);
+    const baseW = rows[idx];
+    rows[idx] = Math.max(1, Math.min(baseW*2.2, baseW + baseW*mag));
+    // Sideways shove is soft-clamped relative to the row's OWN base width, so a row that's
+    // already been bulged this pass can't drag itself further off centerline than the shape can
+    // plausibly support.
+    offs[idx] = softClamp(offs[idx] + (rng()-0.5)*rows[idx]*0.75, baseW*0.9);
   }
 
-  // Overall lean so the body reads as canted/off-balance rather than sitting square.
-  const lean = (rng()-0.5)*1.2*(1+severity*0.5);
-  for(let i=0;i<rows.length;i++) offs[i] += lean*(i/Math.max(1,rows.length-1));
+  // Overall lean so the body reads as canted/off-balance rather than sitting square. Kept mild
+  // and mostly severity-independent -- a whole-body cant should stay readable as "leaning", not
+  // become another source of a limb flying offscreen.
+  const lean = (rng()-0.5)*1.2*(1+severity*0.25);
+  for(let i=0;i<rows.length;i++){
+    offs[i] += lean*(i/Math.max(1,rows.length-1));
+  }
+
+  // Final safety clamp: whatever combination of bulges + lean a row ended up with, its total
+  // sideways displacement can't exceed its own width by more than a fixed margin. This is a
+  // backstop, not the main mechanism -- the per-event soft-clamp above should already keep things
+  // sane -- but it guarantees no row (and therefore no limb anchored to it) can ever jut out at an
+  // unrealistic distance from the body's centerline.
+  for(let i=0;i<rows.length;i++){
+    offs[i] = softClamp(offs[i], rows[i]*1.1 + 2);
+  }
 
   return {rows, offs};
 }
@@ -3350,13 +3386,13 @@ function bodySilhouette(group, rng, severity){
    independently of each other and of the main body bob. */
 function bodyGrowths(rng, severity){
   severity = severity||0;
-  const count = 1 + Math.floor(rng()*2) + Math.round(severity*3);
+  const count = 1 + Math.floor(rng()*2) + Math.round(severity*4);
   const growths = [];
   for(let i=0;i<count;i++){
     growths.push({
       rowT: rng(),
       side: rng()<0.5 ? -1 : 1,
-      len: (0.55 + rng()*1.15) * (1+severity*0.3),
+      len: (0.55 + rng()*1.15) * (1+severity*0.15),
       wid: 0.35 + rng()*0.55,
       kind: rng()<0.55 ? "spike" : "boil",
       // Own phase + speed so boil-type growths breathe out of sync with each other and with the
@@ -3425,6 +3461,29 @@ function buildSpecimenModel(c){
     return m && m.cat.includes("void");
   });
 
+  // Legs used to be the one part of the sprite that never varied -- two identical mirrored
+  // rectangles regardless of how many leg-slot parts/traits a specimen owned. Own seeded stream
+  // gives each leg independent length/thickness/bend so the stance itself reads as
+  // mutated, and severity nudges in a chance of clawed/jagged feet instead of a flat rectangle
+  // end. legCount also now actually distinguishes "one odd extra leg" (matches flavor text like
+  // "a third leg that drags slightly out of step") from "a proper extra pair", instead of
+  // collapsing every leg-slot part into the same boolean.
+  const rngLegs = seededRng(c.uid+"|legs");
+  const legCount = slots.leg||0;
+  const legMode = legCount<=0 ? "normal" : (legCount===1 ? "third" : "pair");
+  const legVariant = {
+    lenL: 0.85 + rngLegs()*0.3, lenR: 0.85 + rngLegs()*0.3,
+    widL: 0.85 + rngLegs()*0.3, widR: 0.85 + rngLegs()*0.3,
+    bendL: (rngLegs()-0.5)*0.5, bendR: (rngLegs()-0.5)*0.5,
+    clawedL: rngLegs() < 0.25+severity*0.35,
+    clawedR: rngLegs() < 0.25+severity*0.35,
+    // Only used when legMode==="third": the odd extra leg's own side + a slight independent
+    // drag so it visibly lags the other two rather than mirroring them.
+    thirdSide: rngLegs()<0.5?-1:1,
+    thirdLenMul: 0.75 + rngLegs()*0.35,
+    thirdDrag: rngLegs()*0.4
+  };
+
   return {
     stage, cat, pal, rows, offs, growths, vScale,
     scale: 0.62 + stage*0.095,
@@ -3433,7 +3492,7 @@ function buildSpecimenModel(c){
     extraEyes, eyeJitter,
     hasSecondHead: has("cephalic") || (slots.head||0)>=2,
     extraArmsPair: (slots.arm||0)>0,
-    extraLegsPair: (slots.leg||0)>0,
+    legMode, legVariant,
     hasWings: (slots.wing||0)>0, wingCount: slots.wing||0,
     hasTail: (slots.tail||0)>0, tailCount: slots.tail||0,
     jaggedMouth: (slots.mouth||0)>1,
@@ -3596,6 +3655,11 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
   const h = rows.length*unitY;
   const top = cyCenter - h*0.62;
   const rowOffPx = i => (offs[i]||0)*unitX;
+  // Limbs/head used to inherit their torso row's offset 1:1, so an extreme torso bulge would
+  // drag whatever was anchored to that row out just as far -- the main source of "a body part
+  // suddenly juts out too long to one side". Damping this anchor keeps limbs visibly displaced
+  // when the torso is, without letting them fly out to an implausible distance.
+  const LIMB_ANCHOR_DAMP = 0.55;
 
   ctx.save();
   ctx.globalAlpha = opts.camoAlpha!=null?opts.camoAlpha:1;
@@ -3625,13 +3689,43 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
     ctx.restore();
   }
 
-  // Legs -- asymmetric stance, dragged sideways with the last row's offset
+  // Legs -- each leg draws from its own independently-rolled length/thickness/bend (legVariant)
+  // instead of two mirrored rectangles, so the stance itself reads as mutated. The anchor to the
+  // torso's row offset is damped (LIMB_ANCHOR_DAMP) so an extreme torso bulge can't drag the legs
+  // out to an unrealistic distance with it -- they stay attached to a plausible version of where
+  // the body actually is.
   const legW = unitX*0.9, legH = unitY*1.6;
-  const legRowOff = rowOffPx(rows.length-1);
+  const legRowOff = rowOffPx(rows.length-1) * LIMB_ANCHOR_DAMP;
   const legSpread = rows[rows.length-1]*unitX*0.32;
-  [-1,1].forEach(side=>pxRect(ctx, cx+legRowOff+side*legSpread-legW/2, top+h-unitY*0.4, legW, legH, shade));
-  if(model.extraLegsPair){
+  const lv = model.legVariant || {lenL:1,lenR:1,widL:1,widR:1,bendL:0,bendR:0,clawedL:false,clawedR:false,thirdSide:1,thirdLenMul:0.9,thirdDrag:0};
+  const legFootY = top+h-unitY*0.4;
+  const drawLeg = (xBase, lenMul, widMul, bend, clawed)=>{
+    const w = legW*widMul, hgt = legH*lenMul;
+    const x = xBase + bend*unitX;
+    pxRect(ctx, x-w/2, legFootY, w, hgt, shade);
+    if(clawed && !opts.silhouette){
+      ctx.save();
+      ctx.fillStyle = shade;
+      const cy = legFootY+hgt;
+      ctx.beginPath();
+      ctx.moveTo(x-w/2, cy); ctx.lineTo(x-w/2-unitX*0.22, cy+unitY*0.32); ctx.lineTo(x-w*0.1, cy);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x+w/2, cy); ctx.lineTo(x+w/2+unitX*0.22, cy+unitY*0.32); ctx.lineTo(x+w*0.1, cy);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  };
+  drawLeg(cx+legRowOff-legSpread, lv.lenL, lv.widL, lv.bendL, lv.clawedL);
+  drawLeg(cx+legRowOff+legSpread, lv.lenR, lv.widR, lv.bendR, lv.clawedR);
+  if(model.legMode==="pair"){
     [-1,1].forEach(side=>pxRect(ctx, cx+legRowOff+side*(legSpread*1.7)-legW/2, top+h-unitY*0.2, legW*0.85, legH*0.75, shade, 0.9));
+  } else if(model.legMode==="third"){
+    // A single odd extra leg rather than a mirrored pair -- matches the "drags slightly out of
+    // step" flavor of the parts that grant a single third leg, and reads as more specifically
+    // wrong than just doubling everything up symmetrically.
+    const tx = cx+legRowOff+lv.thirdSide*(legSpread*1.6)+lv.thirdDrag*unitX*lv.thirdSide;
+    pxRect(ctx, tx-legW*0.375, legFootY+unitY*0.15, legW*0.75, legH*lv.thirdLenMul, shade, 0.85);
   }
 
   // Tail
@@ -3731,7 +3825,7 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
     const armW=unitX*0.7, armH=unitY*1.5;
     const armRowIdx = Math.floor(rows.length*0.45);
     const armY = top+armRowIdx*unitY;
-    const armRowOff = rowOffPx(armRowIdx);
+    const armRowOff = rowOffPx(armRowIdx) * LIMB_ANCHOR_DAMP;
     const armSpread = rows[armRowIdx]*unitX*0.5;
     [-1,1].forEach(side=>pxRect(ctx, cx+armRowOff+side*armSpread, armY, armW, armH, shade));
     if(model.extraArmsPair){
@@ -3742,7 +3836,7 @@ function drawSpecimenBody(ctx, model, cx, cyCenter, opts){
     // rather than floating dead-center over a lopsided torso. A separate, subtle head-tilt
     // rotation (opts.headTilt) can also be layered on top -- a brief curious/quizzical cant of
     // just the head, distinct from the body's fixed lean, without breaking stride or wander.
-    const headOff = rowOffPx(1);
+    const headOff = rowOffPx(1) * 0.8;
     const hcx = cx+headOff;
     const headW = rows[1]*unitX*0.9;
     const headTilt = opts.headTilt||0;
